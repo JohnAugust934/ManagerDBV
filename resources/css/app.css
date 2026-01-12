@@ -1,3 +1,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Oculta elementos Alpine antes de carregarem */
+[x-cloak] {
+    display: none !important;
+}
+
+/* --- CLASSE DE ANIMAÇÃO PRINCIPAL --- */
+/* Começa invisível para evitar o "piscar" dos círculos */
+.animate-fade-in-up {
+    opacity: 0;
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Quando estiver saindo da página (clicou no link) */
+.page-exit {
+    animation: fadeOut 0.3s ease-in-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.99);
+    }
+}
