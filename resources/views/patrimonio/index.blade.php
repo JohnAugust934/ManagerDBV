@@ -23,7 +23,10 @@
                 </div>
             </div>
 
-            <div class="flex justify-end">
+            <div class="flex justify-end gap-2">
+                <a href="{{ route('relatorios.patrimonio') }}" target="_blank" class="bg-gray-500 text-white px-4 py-2 rounded-md font-bold hover:opacity-90">
+                    Relatório PDF
+                </a>
                 <a href="{{ route('patrimonio.create') }}" class="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-4 py-2 rounded-md font-bold hover:opacity-90">
                     + Adicionar Bem
                 </a>

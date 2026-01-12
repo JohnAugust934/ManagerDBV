@@ -10,6 +10,7 @@ use App\Http\Controllers\PatrimonioController;
 use App\Http\Controllers\AtaController;
 use App\Http\Controllers\AtoController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\RelatorioController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -47,6 +48,11 @@ Route::middleware('auth')->group(function () {
     // --- SECRETARIA ---
     Route::resource('atas', AtaController::class);
     Route::resource('atos', AtoController::class);
+
+    // --- RELATÓRIOS (PDF) ---
+    Route::get('relatorios/autorizacao/{id}', [RelatorioController::class, 'autorizacaoSaida'])->name('relatorios.autorizacao');
+    Route::get('relatorios/financeiro', [RelatorioController::class, 'financeiro'])->name('relatorios.financeiro');
+    Route::get('relatorios/patrimonio', [RelatorioController::class, 'patrimonio'])->name('relatorios.patrimonio');
 });
 
 require __DIR__ . '/auth.php';

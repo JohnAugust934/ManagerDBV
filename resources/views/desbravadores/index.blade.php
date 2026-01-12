@@ -55,9 +55,12 @@
                                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                     <p class="text-gray-900 whitespace-no-wrap">{{ $dbv->classe_atual ?? '-' }}</p>
                                 </td>
-                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm flex gap-2">
                                     <a href="{{ route('desbravadores.especialidades', $dbv->id) }}" class="text-indigo-600 hover:text-indigo-900 font-bold border border-indigo-600 rounded px-2 py-1">
                                         Especialidades
+                                    </a>
+                                    <a href="{{ route('relatorios.autorizacao', $dbv->id) }}" target="_blank" class="text-gray-600 hover:text-gray-900 font-bold border border-gray-600 rounded px-2 py-1" title="Imprimir Autorização">
+                                        PDF
                                     </a>
                                 </td>
                             </tr>
