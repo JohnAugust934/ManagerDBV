@@ -8,6 +8,7 @@ use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\MensalidadeController;
 use App\Http\Controllers\PatrimonioController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AtaController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -42,6 +43,9 @@ Route::middleware('auth')->group(function () {
 
     // --- PATRIMÔNIO ---
     Route::resource('patrimonio', PatrimonioController::class);
+
+    // Secretaria
+    Route::resource('atas', AtaController::class);
 });
 
 require __DIR__ . '/auth.php';
