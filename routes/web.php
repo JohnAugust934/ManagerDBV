@@ -7,8 +7,9 @@ use App\Http\Controllers\EspecialidadeController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\MensalidadeController;
 use App\Http\Controllers\PatrimonioController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AtaController;
+use App\Http\Controllers\AtoController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -36,7 +37,6 @@ Route::middleware('auth')->group(function () {
     // --- FINANCEIRO ---
     Route::resource('caixa', CaixaController::class);
 
-    // Rotas de Mensalidade
     Route::get('mensalidades', [MensalidadeController::class, 'index'])->name('mensalidades.index');
     Route::post('mensalidades/gerar', [MensalidadeController::class, 'gerarMassivo'])->name('mensalidades.gerar');
     Route::post('mensalidades/{id}/pagar', [MensalidadeController::class, 'pagar'])->name('mensalidades.pagar');
@@ -44,8 +44,9 @@ Route::middleware('auth')->group(function () {
     // --- PATRIMÔNIO ---
     Route::resource('patrimonio', PatrimonioController::class);
 
-    // Secretaria
+    // --- SECRETARIA ---
     Route::resource('atas', AtaController::class);
+    Route::resource('atos', AtoController::class);
 });
 
 require __DIR__ . '/auth.php';
