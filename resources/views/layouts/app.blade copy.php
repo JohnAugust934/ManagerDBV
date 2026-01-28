@@ -5,49 +5,34 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ Auth::user()->club->nome ?? config('app.name', 'Desbravadores Manager') }}</title>
+    <title>{{ config('app.name', 'Desbravadores Manager') }}</title>
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <linkpreconnect href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+        </style>
 </head>
 
 <body class="font-sans antialiased bg-gray-100" x-data="{ sidebarOpen: false }"
-    style="opacity: 0; transition: opacity 0.3s ease-in-out;" onload="this.style.opacity='1'">
+    style="opacity: 0; transition: opacity 0.3s ease-in-out;">
 
     <div class="flex h-screen overflow-hidden">
-        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-dbv-blue text-white transition-transform duration-300 transform shadow-xl flex flex-col"
+        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-dbv-blue text-white transition-transform duration-300 transform shadow-xl"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
 
-            <div class="flex items-center px-4 h-20 border-b border-blue-800 bg-blue-900 shadow-md gap-3">
-                @if(Auth::user()->club && Auth::user()->club->logo)
-                <img src="{{ asset('storage/' . Auth::user()->club->logo) }}"
-                    class="h-10 w-10 rounded-full object-cover border-2 border-dbv-yellow"
-                    alt="Logo">
-                @endif
-
-                <a href="{{ route('dashboard') }}" class="flex flex-col justify-center">
-                    <span class="text-lg font-bold tracking-wider uppercase text-dbv-yellow hover:text-white transition leading-tight">
-                        {{ Auth::user()->club->nome ?? 'DBV MANAGER' }}
-                    </span>
-                    @if(Auth::user()->club)
-                    <span class="text-[9px] text-gray-400 font-bold tracking-widest uppercase">
-                        by DBV Manager
-                    </span>
-                    @endif
+            <div class="flex items-center justify-center h-16 border-b border-blue-800 bg-blue-900 shadow-md">
+                <a href="{{ route('dashboard') }}" class="text-2xl font-bold tracking-wider uppercase text-dbv-yellow hover:text-white transition">
+                    DBV Manager
                 </a>
             </div>
 
-            <nav class="mt-5 px-4 space-y-2 flex-1 overflow-y-auto custom-scrollbar">
-
+            <nav class="mt-5 px-4 space-y-2">
                 <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Principal</p>
-
                 <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-dbv-red text-white shadow-lg translate-x-1' : 'text-gray-300 hover:bg-blue-800 hover:text-white hover:translate-x-1' }}">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
@@ -55,15 +40,7 @@
                     Painel Geral
                 </a>
 
-                <a href="{{ route('club.edit') }}" class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('club.edit') ? 'bg-dbv-red text-white shadow-lg translate-x-1' : 'text-gray-300 hover:bg-blue-800 hover:text-white hover:translate-x-1' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                    Meu Clube
-                </a>
-
                 <p class="px-4 mt-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Secretaria</p>
-
                 <a href="{{ route('desbravadores.index') }}" class="flex items-center px-4 py-2 rounded-lg transition-colors {{ request()->routeIs('desbravadores*') ? 'bg-blue-800 text-white' : 'text-gray-300 hover:bg-blue-800' }}">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -90,7 +67,6 @@
                 </a>
 
                 <p class="px-4 mt-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Gestão</p>
-
                 <a href="{{ route('caixa.index') }}" class="flex items-center px-4 py-2 rounded-lg transition-colors {{ request()->routeIs('caixa*') ? 'bg-blue-800 text-white' : 'text-gray-300 hover:bg-blue-800' }}">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -115,21 +91,10 @@
                     </svg>
                     Especialidades
                 </a>
-
-                @if(Auth::user()->is_master)
-                <p class="px-4 mt-6 text-xs font-semibold text-red-400 uppercase tracking-wider">Sistema</p>
-                <a href="{{ route('master.invites') }}" class="flex items-center px-4 py-2 rounded-lg transition-colors {{ request()->routeIs('master*') ? 'bg-red-800 text-white' : 'text-gray-300 hover:bg-red-900' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                    </svg>
-                    Gerar Convites
-                </a>
-                @endif
-
             </nav>
         </aside>
 
-        <div class="flex-1 flex flex-col md:pl-64 transition-all duration-300">
+        <div class="flex-1 flex flex-col md:pl-64">
 
             <header class="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 shadow-sm z-40 sticky top-0">
                 <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 focus:outline-none md:hidden">
@@ -144,15 +109,10 @@
 
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none hover:bg-gray-50 p-2 rounded-full transition">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-dbv-red to-red-500 text-white flex items-center justify-center font-bold shadow-sm border border-red-200">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-dbv-red to-red-500 text-white flex items-center justify-center font-bold shadow-sm">
                             {{ substr(Auth::user()->name, 0, 1) }}
                         </div>
-                        <div class="hidden md:block text-left">
-                            <span class="block text-sm font-medium text-gray-700">{{ Auth::user()->name }}</span>
-                            @if(Auth::user()->club)
-                            <span class="block text-[10px] text-gray-400 font-bold uppercase">{{ Str::limit(Auth::user()->club->nome, 15) }}</span>
-                            @endif
-                        </div>
+                        <span class="hidden md:block text-sm font-medium text-gray-700">{{ Auth::user()->name }}</span>
                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
@@ -161,9 +121,6 @@
                     <div x-show="open" @click.away="open = false"
                         class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-100"
                         style="display: none;">
-
-                        <a href="{{ route('club.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-dbv-blue">Dados do Clube</a>
-
                         <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-dbv-blue">Meu Perfil</a>
                         <div class="border-t border-gray-100 my-1"></div>
                         <form method="POST" action="{{ route('logout') }}">

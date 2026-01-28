@@ -42,11 +42,6 @@
                         <a href="{{ route('login') }}" class="px-8 py-4 bg-white text-dbv-blue hover:bg-gray-100 font-bold rounded-lg text-lg transition shadow-lg">
                             Entrar
                         </a>
-                        @if (Route::has('register'))
-                        <a href="{{ route('register') }}" class="px-8 py-4 bg-transparent border-2 border-white/30 text-white hover:bg-white/10 font-bold rounded-lg text-lg transition">
-                            Criar Conta
-                        </a>
-                        @endif
                         @endauth
                         @endif
                     </div>

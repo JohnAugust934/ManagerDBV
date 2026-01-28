@@ -34,10 +34,5 @@
                 {{ __('Entrar no Sistema') }}
             </button>
         </div>
-
-        <div class="text-center mt-4">
-            <span class="text-sm text-gray-600">Não tem conta? </span>
-            <a href="{{ route('register') }}" class="text-sm font-bold text-dbv-red hover:underline">Cadastre-se</a>
-        </div>
     </form>
 </x-guest-layout>
