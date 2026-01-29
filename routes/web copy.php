@@ -19,9 +19,19 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+// Substitua a rota simples do dashboard por esta com lógica:
+Route::get('/dashboard', function () {
+    // Carrega unidades e calcula pontuação
+    $ranking = \App\Models\Unidade::all()->map(function ($unidade) {
+        return [
+            'nome' => $unidade->nome,
+            'pontos' => $unidade->pontuacao_total,
+            'membros' => $unidade->desbravadores->count()
+        ];
+    })->sortByDesc('pontos')->values(); // Ordena do maior para o menor
+
+    return view('dashboard', compact('ranking'));
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     // --- PERFIL DO USUÁRIO ---
