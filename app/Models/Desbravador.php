@@ -15,28 +15,34 @@ class Desbravador extends Model
     protected $table = 'desbravadores';
 
     protected $fillable = [
+        'ativo',
         'nome',
         'data_nascimento',
         'sexo',
         'unidade_id',
         'classe_atual',
+        'email',
+        'telefone',
+        'endereco',
+        'nome_responsavel',
+        'telefone_responsavel',
+        'numero_sus', // Novo campo
+        'tipo_sanguineo',
+        'alergias',
+        'medicamentos_continuos',
+        'plano_saude',
     ];
 
     protected $casts = [
         'data_nascimento' => 'date',
+        'ativo' => 'boolean',
     ];
 
-    /**
-     * Relacionamento com Unidade
-     */
     public function unidade(): BelongsTo
     {
         return $this->belongsTo(Unidade::class);
     }
 
-    /**
-     * Relacionamento com Especialidades (Muitos para Muitos)
-     */
     public function especialidades(): BelongsToMany
     {
         return $this->belongsToMany(Especialidade::class, 'desbravador_especialidade')
@@ -44,22 +50,18 @@ class Desbravador extends Model
             ->withTimestamps();
     }
 
-    /**
-     * Relacionamento com Frequências (Um para Muitos)
-     */
     public function frequencias(): HasMany
     {
         return $this->hasMany(Frequencia::class);
     }
 
-    /**
-     * Soma total de pontos do desbravador.
-     * * CORREÇÃO: Usamos $this->frequencias (que já é uma Collection) diretamente para somar.
-     */
     public function getTotalPontosAttribute()
     {
-        return $this->frequencias->sum(function ($frequencia) {
-            return $frequencia->pontos;
-        });
+        return $this->frequencias->sum('pontos');
+    }
+
+    public function scopeAtivos($query)
+    {
+        return $query->where('ativo', true);
     }
 }

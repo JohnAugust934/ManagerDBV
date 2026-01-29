@@ -36,7 +36,8 @@ Route::middleware('auth')->group(function () {
 
     // --- CADASTROS BÁSICOS (EXISTENTES) ---
     Route::resource('unidades', UnidadeController::class);
-    Route::resource('desbravadores', DesbravadorController::class);
+    Route::resource('desbravadores', DesbravadorController::class)
+        ->parameters(['desbravadores' => 'desbravador']);
     Route::resource('especialidades', EspecialidadeController::class);
 
     // --- ESPECIALIDADES DO DESBRAVADOR ---

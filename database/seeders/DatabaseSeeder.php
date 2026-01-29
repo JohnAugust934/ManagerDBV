@@ -21,10 +21,9 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Limpar e Preparar
         $this->command->info('Limpando banco e iniciando população...');
 
-        // 2. Criar Clube e Usuários
+        // 1. Clube e Usuários
         $clube = Club::create([
             'nome' => 'Clube Orion',
             'cidade' => 'São Paulo',
@@ -32,7 +31,6 @@ class DatabaseSeeder extends Seeder
             'logo' => null,
         ]);
 
-        // Usuário Master (Você)
         User::create([
             'name' => 'Master Admin',
             'email' => 'admin@desbravadores.com',
@@ -41,7 +39,6 @@ class DatabaseSeeder extends Seeder
             'club_id' => null,
         ]);
 
-        // Usuário Diretor (Para testar o sistema do clube)
         $diretor = User::create([
             'name' => 'Diretor Silva',
             'email' => 'diretor@clube.com',
@@ -50,7 +47,7 @@ class DatabaseSeeder extends Seeder
             'club_id' => $clube->id,
         ]);
 
-        // 3. Criar 4 Unidades (Nomes clássicos)
+        // 2. Unidades
         $nomesUnidades = ['Águias', 'Leões', 'Escorpiões', 'Falcões'];
         $unidades = collect();
 
@@ -61,9 +58,9 @@ class DatabaseSeeder extends Seeder
                 'conselheiro' => 'Conselheiro ' . fake()->firstName,
             ]));
         }
-        $this->command->info('4 Unidades criadas.');
+        $this->command->info('Unidades criadas.');
 
-        // 4. Criar Especialidades (Dados Reais)
+        // 3. Especialidades
         $nomesEspecialidades = [
             'Nós e Amarras',
             'Primeiros Socorros',
@@ -90,21 +87,32 @@ class DatabaseSeeder extends Seeder
                 'cor_fundo' => fake()->hexColor(),
             ]));
         }
-        $this->command->info('15 Especialidades criadas.');
+        $this->command->info('Especialidades criadas.');
 
-        // 5. Criar 32 Desbravadores (8 por unidade)
+        // 4. Desbravadores (ATUALIZADO COM DADOS DE PRONTUÁRIO)
         $desbravadores = collect();
         foreach ($unidades as $unidade) {
             for ($i = 0; $i < 8; $i++) {
                 $dbv = Desbravador::create([
+                    'ativo' => true,
                     'nome' => fake()->name(),
                     'data_nascimento' => fake()->dateTimeBetween('-15 years', '-10 years'),
                     'sexo' => fake()->randomElement(['M', 'F']),
                     'unidade_id' => $unidade->id,
                     'classe_atual' => fake()->randomElement(['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro', 'Excursionista', 'Guia']),
+
+                    // Novos Campos de Prontuário
+                    'email' => fake()->safeEmail(),
+                    'telefone' => fake()->phoneNumber(),
+                    'endereco' => fake()->address(),
+                    'nome_responsavel' => fake()->name(),
+                    'telefone_responsavel' => fake()->phoneNumber(),
+                    'tipo_sanguineo' => fake()->randomElement(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
+                    'alergias' => fake()->boolean(20) ? fake()->word() : null,
+                    'medicamentos_continuos' => fake()->boolean(10) ? 'Insulina' : null,
+                    'plano_saude' => fake()->boolean(60) ? 'Unimed' : null,
                 ]);
 
-                // Vincular 2 ou 3 especialidades aleatórias
                 $dbv->especialidades()->attach($especialidades->random(rand(2, 3))->pluck('id'), [
                     'data_conclusao' => now()->subDays(rand(1, 300))
                 ]);
@@ -112,9 +120,9 @@ class DatabaseSeeder extends Seeder
                 $desbravadores->push($dbv);
             }
         }
-        $this->command->info('32 Desbravadores criados.');
+        $this->command->info('32 Desbravadores criados com Prontuário.');
 
-        // 6. Financeiro (Caixa)
+        // 5. Financeiro
         for ($i = 0; $i < 20; $i++) {
             $tipo = fake()->randomElement(['entrada', 'saida']);
             Caixa::create([
@@ -125,41 +133,22 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 7. Mensalidades
         $dataAtual = now();
         foreach ($desbravadores as $dbv) {
-            // Define o status primeiro
             $status = fake()->boolean(60) ? 'pago' : 'pendente';
-
             Mensalidade::create([
                 'desbravador_id' => $dbv->id,
                 'mes' => $dataAtual->month,
                 'ano' => $dataAtual->year,
                 'valor' => 15.00,
                 'status' => $status,
-                // Só gera data se o status for pago
                 'data_pagamento' => $status === 'pago' ? now() : null,
             ]);
         }
+        $this->command->info('Financeiro populado.');
 
-        // 8. Patrimônio
-        $itensPatrimonio = [
-            'Barraca Canadense 6 Pessoas',
-            'Barraca Iglu 4 Pessoas',
-            'Lona 4x4',
-            'Bandeira do Clube',
-            'Bandeira Nacional',
-            'Mastro Oficial',
-            'Caixa de Som Portátil',
-            'Kit Primeiros Socorros',
-            'Machadinha',
-            'Facão',
-            'Lampião a Gás',
-            'Fogareiro 2 Bocas',
-            'Panela Grande Alumínio',
-            'Cordas de Sisal (Rolo)',
-            'Bússola'
-        ];
+        // 6. Patrimônio
+        $itensPatrimonio = ['Barraca Canadense', 'Barraca Iglu', 'Lona 4x4', 'Bandeira', 'Mastro', 'Caixa de Som', 'Kit Primeiros Socorros', 'Machadinha', 'Facão', 'Lampião', 'Fogareiro', 'Panela', 'Cordas', 'Bússola'];
 
         foreach ($itensPatrimonio as $itemNome) {
             Patrimonio::create([
@@ -174,29 +163,28 @@ class DatabaseSeeder extends Seeder
         }
         $this->command->info('Patrimônio populado.');
 
-        // 9. Secretaria (Atas e Atos)
+        // 7. Secretaria
         for ($i = 0; $i < 15; $i++) {
             Ata::create([
-                'tipo' => 'Regular', // Tipo obrigatório
-                'data_reuniao' => fake()->dateTimeBetween('-6 months', 'now'), // data_reuniao e não data
+                'tipo' => 'Regular',
+                'data_reuniao' => fake()->dateTimeBetween('-6 months', 'now'),
                 'secretario_responsavel' => 'Secretário ' . fake()->firstName,
-                'participantes' => 'Diretoria completa e conselheiros.',
+                'participantes' => 'Diretoria completa.',
                 'conteudo' => fake()->paragraphs(3, true),
             ]);
         }
-
         for ($i = 0; $i < 5; $i++) {
             Ato::create([
-                'tipo' => 'Nomeação', // Tipo obrigatório
+                'tipo' => 'Nomeação',
                 'data' => fake()->dateTimeBetween('-6 months', 'now'),
-                'descricao_resumida' => 'Nomeação de Cargo #' . ($i + 1), // descricao_resumida e não titulo
-                'texto_completo' => 'Nomeação oficial para o cargo de instrutor conforme regulamento.', // texto_completo e não descricao
+                'descricao_resumida' => 'Nomeação de Cargo #' . ($i + 1),
+                'texto_completo' => 'Nomeação oficial para cargo.',
                 'desbravador_id' => $desbravadores->random()->id,
             ]);
         }
         $this->command->info('Secretaria populada.');
 
-        // 10. Frequência (Ranking)
+        // 8. Frequência
         $datas = [
             Carbon::now()->startOfWeek(Carbon::SUNDAY),
             Carbon::now()->subWeek()->startOfWeek(Carbon::SUNDAY),
@@ -205,9 +193,7 @@ class DatabaseSeeder extends Seeder
 
         foreach ($datas as $data) {
             foreach ($desbravadores as $dbv) {
-                // Vicia dados para a unidade 1 ganhar no ranking
                 $chance = ($dbv->unidade_id == $unidades->first()->id) ? 90 : 60;
-
                 Frequencia::create([
                     'desbravador_id' => $dbv->id,
                     'data' => $data,
@@ -218,7 +204,6 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
-        $this->command->info('Frequência e Ranking gerados.');
-        $this->command->info('Banco populado com SUCESSO! 🚀');
+        $this->command->info('Ranking gerado. SUCESSO! 🚀');
     }
 }

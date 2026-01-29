@@ -4,73 +4,108 @@ namespace App\Http\Controllers;
 
 use App\Models\Desbravador;
 use App\Models\Unidade;
-use App\Models\Especialidade;
 use Illuminate\Http\Request;
 
 class DesbravadorController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $desbravadores = Desbravador::with('unidade')->get();
-        return view('desbravadores.index', compact('desbravadores'));
+        $status = $request->input('status', 'ativos'); // Padrão: ativos
+
+        $query = Desbravador::with('unidade')->orderBy('nome');
+
+        if ($status === 'ativos') {
+            $query->where('ativo', true);
+        } elseif ($status === 'inativos') {
+            $query->where('ativo', false);
+        }
+        // Se for 'todos', não aplica filtro de ativo
+
+        $desbravadores = $query->get();
+
+        return view('desbravadores.index', compact('desbravadores', 'status'));
     }
 
     public function create()
     {
-        $unidades = Unidade::all();
+        $unidades = Unidade::orderBy('nome')->get();
         return view('desbravadores.create', compact('unidades'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        // Regras de validação estritas conforme solicitado
+        $dados = $request->validate([
+            // Dados do Clube
             'nome' => 'required|string|max:255',
             'data_nascimento' => 'required|date',
             'sexo' => 'required|in:M,F',
-            'unidade_id' => 'nullable|exists:unidades,id',
-            'classe_atual' => 'nullable|string',
+            'unidade_id' => 'required|exists:unidades,id',
+            'classe_atual' => 'required|string',
+
+            // Dados Pessoais e Contato (Agora Obrigatórios)
+            'email' => 'required|email',
+            'telefone' => 'nullable|string', // Telefone próprio pode ser opcional se tiver o do pai
+            'endereco' => 'required|string|max:500',
+            'nome_responsavel' => 'required|string|max:255',
+            'telefone_responsavel' => 'required|string',
+            'numero_sus' => 'required|string|max:50', // Obrigatório
+
+            // Dados Médicos (Opcionais, mas mantidos)
+            'tipo_sanguineo' => 'nullable|string|max:3',
+            'alergias' => 'nullable|string',
+            'medicamentos_continuos' => 'nullable|string',
+            'plano_saude' => 'nullable|string',
         ]);
 
-        Desbravador::create($request->all());
+        $dados['ativo'] = true; // Novo cadastro nasce ativo
 
-        return redirect()->route('desbravadores.index')
-            ->with('success', 'Desbravador cadastrado com sucesso!');
+        Desbravador::create($dados);
+
+        return redirect()->route('desbravadores.index')->with('success', 'Desbravador cadastrado com sucesso!');
     }
 
-    // --- MÉTODOS NOVOS PARA ESPECIALIDADES ---
-
-    public function gerenciarEspecialidades($id)
+    public function show(Desbravador $desbravador)
     {
-        $desbravador = Desbravador::with('especialidades')->findOrFail($id);
-        $todasEspecialidades = Especialidade::all();
+        $desbravador->load(['unidade', 'especialidades', 'frequencias' => function ($q) {
+            $q->orderBy('data', 'desc')->take(5);
+        }]);
 
-        return view('desbravadores.especialidades', compact('desbravador', 'todasEspecialidades'));
+        return view('desbravadores.show', compact('desbravador'));
     }
 
-    public function salvarEspecialidade(Request $request, $id)
+    public function edit(Desbravador $desbravador)
     {
-        $request->validate([
-            'especialidade_id' => 'required|exists:especialidades,id',
-            'data_conclusao' => 'required|date',
+        $unidades = Unidade::orderBy('nome')->get();
+        return view('desbravadores.edit', compact('desbravador', 'unidades'));
+    }
+
+    public function update(Request $request, Desbravador $desbravador)
+    {
+        $dados = $request->validate([
+            'nome' => 'required|string|max:255',
+            'ativo' => 'boolean',
+            'data_nascimento' => 'required|date',
+            'sexo' => 'required|in:M,F',
+            'unidade_id' => 'required|exists:unidades,id',
+            'classe_atual' => 'required|string',
+            'email' => 'required|email',
+            'telefone' => 'nullable|string',
+            'endereco' => 'required|string',
+            'nome_responsavel' => 'required|string',
+            'telefone_responsavel' => 'required|string',
+            'numero_sus' => 'required|string',
+            'tipo_sanguineo' => 'nullable|string|max:3',
+            'alergias' => 'nullable|string',
+            'medicamentos_continuos' => 'nullable|string',
+            'plano_saude' => 'nullable|string',
         ]);
 
-        $desbravador = Desbravador::findOrFail($id);
+        // Checkbox não marcado não envia valor no request
+        $dados['ativo'] = $request->has('ativo');
 
-        // O método attach cria o vínculo na tabela pivot
-        $desbravador->especialidades()->attach($request->especialidade_id, [
-            'data_conclusao' => $request->data_conclusao
-        ]);
+        $desbravador->update($dados);
 
-        return back()->with('success', 'Especialidade adicionada!');
-    }
-
-    public function removerEspecialidade($id, $especialidade_id)
-    {
-        $desbravador = Desbravador::findOrFail($id);
-
-        // O método detach remove o vínculo
-        $desbravador->especialidades()->detach($especialidade_id);
-
-        return back()->with('success', 'Especialidade removida!');
+        return redirect()->route('desbravadores.show', $desbravador)->with('success', 'Dados atualizados!');
     }
 }
