@@ -79,6 +79,34 @@ class DatabaseSeeder extends Seeder
             'Civismo'
         ];
 
+        // 3.1 Classes e Requisitos
+        $dadosClasses = [
+            ['nome' => 'Amigo', 'cor' => '#3B82F6', 'reqs' => ['Ter 10 anos', 'Decorar o Voto', 'Ler o livro do ano', 'Saber o Hino Nacional']],
+            ['nome' => 'Companheiro', 'cor' => '#F59E0B', 'reqs' => ['Ter 11 anos', 'Saber os livros da Bíblia', 'Fazer uma fogueira', 'Nós e Amarras II']],
+            ['nome' => 'Pesquisador', 'cor' => '#10B981', 'reqs' => ['Ter 12 anos', 'Estudar os Evangelhos', 'Caminhada de 10km']],
+            ['nome' => 'Pioneiro', 'cor' => '#6B7280', 'reqs' => ['Ter 13 anos', 'Fazer pão no espeto', 'Acampar 2 noites']],
+            ['nome' => 'Excursionista', 'cor' => '#8B5CF6', 'reqs' => ['Ter 14 anos', 'Organizar um evento', 'Primeiros Socorros Avançado']],
+            ['nome' => 'Guia', 'cor' => '#EF4444', 'reqs' => ['Ter 15 anos', 'Liderar uma unidade', 'Batismo']],
+        ];
+
+        foreach ($dadosClasses as $idx => $dado) {
+            $classe = \App\Models\Classe::create([
+                'nome' => $dado['nome'],
+                'cor' => $dado['cor'],
+                'ordem' => $idx + 1
+            ]);
+
+            foreach ($dado['reqs'] as $i => $desc) {
+                \App\Models\Requisito::create([
+                    'classe_id' => $classe->id,
+                    'codigo' => substr($dado['nome'], 0, 1) . '-' . ($i + 1),
+                    'descricao' => $desc,
+                    'categoria' => 'Gerais'
+                ]);
+            }
+        }
+        $this->command->info('Classes e Requisitos criados.');
+
         $especialidades = collect();
         foreach ($nomesEspecialidades as $nome) {
             $especialidades->push(Especialidade::create([

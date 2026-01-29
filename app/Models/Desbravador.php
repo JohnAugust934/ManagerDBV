@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Desbravador extends Model
 {
@@ -63,5 +64,32 @@ class Desbravador extends Model
     public function scopeAtivos($query)
     {
         return $query->where('ativo', true);
+    }
+
+    public function requisitosCumpridos()
+    {
+        return $this->belongsToMany(Requisito::class, 'desbravador_requisito')
+            ->withPivot('data_conclusao', 'user_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Retorna a % de conclusão da classe atual.
+     */
+    public function getProgressoClasseAttribute()
+    {
+        // Busca o objeto Classe baseada no nome salvo em string (ex: "Amigo")
+        $classe = Classe::where('nome', $this->classe_atual)->first();
+
+        if (!$classe) return 0;
+
+        $totalRequisitos = $classe->requisitos()->count();
+        if ($totalRequisitos == 0) return 0;
+
+        $cumpridos = $this->requisitosCumpridos()
+            ->where('classe_id', $classe->id)
+            ->count();
+
+        return round(($cumpridos / $totalRequisitos) * 100);
     }
 }

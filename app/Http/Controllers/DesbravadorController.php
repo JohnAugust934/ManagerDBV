@@ -108,4 +108,49 @@ class DesbravadorController extends Controller
 
         return redirect()->route('desbravadores.show', $desbravador)->with('success', 'Dados atualizados!');
     }
+
+    /**
+     * Tela de gestão de especialidades do desbravador.
+     */
+    public function gerenciarEspecialidades(Desbravador $desbravador)
+    {
+        $especialidades = \App\Models\Especialidade::orderBy('nome')->get();
+        return view('desbravadores.especialidades', compact('desbravador', 'especialidades'));
+    }
+
+    /**
+     * Salva as especialidades selecionadas.
+     */
+    public function salvarEspecialidades(Request $request, Desbravador $desbravador)
+    {
+        $dados = $request->validate([
+            'especialidades' => 'array',
+            'especialidades.*' => 'exists:especialidades,id',
+            'data_conclusao' => 'required|date',
+        ]);
+
+        if ($request->has('especialidades')) {
+            // Prepara array para sync com dado extra na pivot
+            $syncData = [];
+            foreach ($request->especialidades as $espId) {
+                $syncData[$espId] = ['data_conclusao' => $request->data_conclusao];
+            }
+
+            // Sync sem apagar as antigas (para adicionar novas)
+            $desbravador->especialidades()->syncWithoutDetaching($syncData);
+
+            return back()->with('success', 'Especialidades adicionadas com sucesso!');
+        }
+
+        return back()->with('warning', 'Nenhuma especialidade selecionada.');
+    }
+
+    /**
+     * Remove uma especialidade específica.
+     */
+    public function removerEspecialidade(Desbravador $desbravador, $especialidadeId)
+    {
+        $desbravador->especialidades()->detach($especialidadeId);
+        return back()->with('success', 'Especialidade removida.');
+    }
 }

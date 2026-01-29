@@ -14,6 +14,7 @@ use App\Http\Controllers\ClubController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProgressoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -40,10 +41,15 @@ Route::middleware('auth')->group(function () {
         ->parameters(['desbravadores' => 'desbravador']);
     Route::resource('especialidades', EspecialidadeController::class);
 
-    // --- ESPECIALIDADES DO DESBRAVADOR ---
-    Route::get('desbravadores/{id}/especialidades', [DesbravadorController::class, 'gerenciarEspecialidades'])->name('desbravadores.especialidades');
-    Route::post('desbravadores/{id}/especialidades', [DesbravadorController::class, 'salvarEspecialidade'])->name('desbravadores.especialidades.store');
-    Route::delete('desbravadores/{id}/especialidades/{especialidade_id}', [DesbravadorController::class, 'removerEspecialidade'])->name('desbravadores.especialidades.destroy');
+    // Gestão de Especialidades
+    Route::get('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'gerenciarEspecialidades'])
+        ->name('desbravadores.especialidades');
+
+    Route::post('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'salvarEspecialidades'])
+        ->name('desbravadores.salvar-especialidades');
+
+    Route::delete('/desbravadores/{desbravador}/especialidades/{especialidade}', [DesbravadorController::class, 'removerEspecialidade'])
+        ->name('desbravadores.remover-especialidade');
 
     // --- FINANCEIRO ---
     Route::resource('caixa', CaixaController::class);
@@ -66,6 +72,9 @@ Route::middleware('auth')->group(function () {
     // --- FREQUÊNCIA ---
     Route::get('/frequencia/chamada', [App\Http\Controllers\FrequenciaController::class, 'create'])->name('frequencia.create');
     Route::post('/frequencia/chamada', [App\Http\Controllers\FrequenciaController::class, 'store'])->name('frequencia.store');
+
+    Route::get('/desbravadores/{desbravador}/progresso', [ProgressoController::class, 'index'])->name('progresso.index');
+    Route::post('/desbravadores/{desbravador}/progresso/toggle', [ProgressoController::class, 'toggle'])->name('progresso.toggle');
 
     // --- ÁREA DO ADMINISTRADOR MASTER ---
     // Rotas para gerar convites (Apenas para o usuário Master)

@@ -7,33 +7,60 @@ use Illuminate\Http\Request;
 
 class UnidadeController extends Controller
 {
-    // 1. Mostrar a lista de unidades
     public function index()
     {
-        $unidades = Unidade::all(); // Pega tudo do banco
+        $unidades = Unidade::withCount('desbravadores')->orderBy('nome')->get();
         return view('unidades.index', compact('unidades'));
     }
 
-    // 2. Mostrar o formulário de cadastro
     public function create()
     {
         return view('unidades.create');
     }
 
-    // 3. Receber os dados do formulário e salvar
     public function store(Request $request)
     {
-        // Validação (O nome é obrigatório)
-        $request->validate([
-            'nome' => 'required|string|max:255',
-            'conselheiro' => 'nullable|string|max:255',
+        $dados = $request->validate([
+            'nome' => 'required|string|max:255|unique:unidades,nome',
+            'conselheiro' => 'required|string|max:255', // Agora obrigatório
+            'grito_guerra' => 'nullable|string', // Opcional
         ]);
 
-        // Salvar no Banco
-        Unidade::create($request->all());
+        Unidade::create($dados);
 
-        // Voltar para a lista com mensagem de sucesso
-        return redirect()->route('unidades.index')
-            ->with('success', 'Unidade criada com sucesso!');
+        return redirect()->route('unidades.index')->with('success', 'Unidade criada com sucesso!');
+    }
+
+    public function show(Unidade $unidade)
+    {
+        $unidade->load(['desbravadores' => function ($query) {
+            $query->orderBy('nome')->where('ativo', true);
+        }]);
+
+        return view('unidades.show', compact('unidade'));
+    }
+
+    /**
+     * Exibe formulário de edição.
+     */
+    public function edit(Unidade $unidade)
+    {
+        return view('unidades.edit', compact('unidade'));
+    }
+
+    /**
+     * Salva as alterações.
+     */
+    public function update(Request $request, Unidade $unidade)
+    {
+        $dados = $request->validate([
+            'nome' => 'required|string|max:255|unique:unidades,nome,' . $unidade->id,
+            'conselheiro' => 'required|string|max:255',
+            'grito_guerra' => 'nullable|string',
+        ]);
+
+        $unidade->update($dados);
+
+        return redirect()->route('unidades.show', $unidade)->with('success', 'Dados da unidade atualizados!');
     }
 }
