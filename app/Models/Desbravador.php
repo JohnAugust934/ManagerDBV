@@ -92,4 +92,11 @@ class Desbravador extends Model
 
         return round(($cumpridos / $totalRequisitos) * 100);
     }
+
+    public function eventos()
+    {
+        return $this->belongsToMany(Evento::class, 'desbravador_evento')
+            ->withPivot('pago', 'autorizacao_entregue')
+            ->withTimestamps();
+    }
 }

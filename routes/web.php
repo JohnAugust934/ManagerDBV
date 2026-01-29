@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProgressoController;
+use App\Http\Controllers\EventoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -75,6 +76,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/desbravadores/{desbravador}/progresso', [ProgressoController::class, 'index'])->name('progresso.index');
     Route::post('/desbravadores/{desbravador}/progresso/toggle', [ProgressoController::class, 'toggle'])->name('progresso.toggle');
+
+    // Gestão de Eventos
+    Route::resource('eventos', EventoController::class);
+    Route::post('eventos/{evento}/inscrever', [EventoController::class, 'inscrever'])->name('eventos.inscrever');
+    Route::delete('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'removerInscricao'])->name('eventos.remover-inscricao');
+    Route::patch('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'atualizarStatus'])->name('eventos.status');
+    Route::get('eventos/{evento}/autorizacao/{desbravador}', [EventoController::class, 'gerarAutorizacao'])->name('eventos.autorizacao');
 
     // --- ÁREA DO ADMINISTRADOR MASTER ---
     // Rotas para gerar convites (Apenas para o usuário Master)

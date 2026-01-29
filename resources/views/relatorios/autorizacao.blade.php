@@ -2,12 +2,12 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
-    <title>Autorização de Saída</title>
+    <title>Autorização</title>
     <style>
         body {
             font-family: sans-serif;
-            font-size: 12px;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
         .header {
@@ -15,68 +15,70 @@
             margin-bottom: 30px;
         }
 
-        .titulo {
-            font-size: 18px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 5px;
+        .content {
+            margin: 20px;
         }
 
-        .texto {
-            font-size: 14px;
-            line-height: 1.6;
-            text-align: justify;
-            margin-bottom: 40px;
-        }
-
-        .assinaturas {
-            width: 100%;
-            margin-top: 100px;
-        }
-
-        .linha-assinatura {
-            border-top: 1px solid #000;
-            width: 40%;
-            margin: 0 auto;
+        .signature {
+            margin-top: 50px;
             text-align: center;
-            padding-top: 5px;
+        }
+
+        .line {
+            border-bottom: 1px solid black;
+            width: 60%;
+            margin: 0 auto;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <div class="titulo">Clube de Desbravadores</div>
-        <div>Autorização de Saída e Participação em Evento</div>
+        <h2>AUTORIZAÇÃO DE ATIVIDADE - CLUBE DE DESBRAVADORES</h2>
+        <h3>{{ Auth::user()->club->nome ?? 'Clube' }}</h3>
     </div>
 
-    <div class="texto">
-        <p>
-            Eu, responsável legal pelo(a) desbravador(a) <strong>{{ $desbravador->nome }}</strong>,
-            nascido(a) em {{ $desbravador->data_nascimento->format('d/m/Y') }},
-            membro da Unidade <strong>{{ $desbravador->unidade->nome ?? 'S/ Unidade' }}</strong>,
-            autorizo a sua participação nas atividades do clube.
-        </p>
-        <p>
-            Declaro estar ciente de que as atividades envolvem requisitos físicos e recreativos,
-            e autorizo a diretoria do clube a tomar as decisões necessárias em casos de emergência médica,
-            caso eu não possa ser contatado imediatamente.
-        </p>
-        <p>
-            Data: _____ / _____ / __________
-        </p>
+    @if(isset($evento))
+    <div class="box">
+        <strong>Evento:</strong> {{ $evento->nome }} <br>
+        <strong>Local:</strong> {{ $evento->local }} <br>
+        <strong>Data de Saída:</strong> {{ $evento->data_inicio->format('d/m/Y H:i') }} <br>
+        <strong>Previsão de Retorno:</strong> {{ $evento->data_fim ? $evento->data_fim->format('d/m/Y H:i') : '---' }}
+    </div>
+    @endif
+
+    <div class="content">
+        <p>Eu, <strong>{{ $desbravador->nome_responsavel }}</strong>, portador(a) do RG/CPF ______________________,</p>
+
+        <p>AUTORIZO o(a) desbravador(a) <strong>{{ $desbravador->nome }}</strong> (Nasc: {{ $desbravador->data_nascimento->format('d/m/Y') }}) a participar da atividade descrita acima.</p>
+
+        <p>Declaro estar ciente das normas do clube e que, em caso de emergência médica, os líderes estão autorizados a tomar as providências necessárias.</p>
+
+        <br>
+        <p><strong>Dados de Saúde:</strong></p>
+        <ul>
+            <li>Tipo Sanguíneo: {{ $desbravador->tipo_sanguineo ?? 'Não informado' }}</li>
+            <li>Alergias: {{ $desbravador->alergias ?? 'Nenhuma' }}</li>
+            <li>Medicamentos: {{ $desbravador->medicamentos_continuos ?? 'Nenhum' }}</li>
+            <li>SUS: {{ $desbravador->numero_sus ?? '---' }}</li>
+            <li>Plano de Saúde: {{ $desbravador->plano_saude ?? 'Não' }}</li>
+        </ul>
     </div>
 
-    <table class="assinaturas">
-        <tr>
-            <td style="text-align: center;">
-                <div class="linha-assinatura">Assinatura do Responsável</div>
-            </td>
-            <td style="text-align: center;">
-                <div class="linha-assinatura">Diretor do Clube</div>
-            </td>
-        </tr>
-    </table>
+    <br><br><br>
+
+    <div class="signature">
+        <div class="line"></div>
+        <p>Assinatura do Responsável</p>
+        <p>Data: _____/_____/__________</p>
+    </div>
 </body>
 
 </html>
