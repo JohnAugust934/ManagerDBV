@@ -66,9 +66,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('atos', AtoController::class);
 
     // --- RELATÓRIOS (PDF) ---
-    Route::get('relatorios/autorizacao/{id}', [RelatorioController::class, 'autorizacaoSaida'])->name('relatorios.autorizacao');
-    Route::get('relatorios/financeiro', [RelatorioController::class, 'financeiro'])->name('relatorios.financeiro');
-    Route::get('relatorios/patrimonio', [RelatorioController::class, 'patrimonio'])->name('relatorios.patrimonio');
+    // Relatórios Individuais (ATENÇÃO AQUI)
+    Route::get('/relatorios/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('relatorios.autorizacao');
+    Route::get('/relatorios/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('relatorios.carteirinha');
+    Route::get('/relatorios/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('relatorios.ficha-medica');
+    // Relatórios Gerais
+    Route::get('/relatorios/financeiro', [RelatorioController::class, 'financeiro'])->name('relatorios.financeiro');
+    Route::get('/relatorios/patrimonio', [RelatorioController::class, 'patrimonio'])->name('relatorios.patrimonio');
 
     // --- FREQUÊNCIA ---
     Route::get('/frequencia/chamada', [App\Http\Controllers\FrequenciaController::class, 'create'])->name('frequencia.create');

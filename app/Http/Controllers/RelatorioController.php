@@ -10,40 +10,59 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class RelatorioController extends Controller
 {
-    // 1. Autorização de Saída (Gera PDF de um desbravador específico)
-    public function autorizacaoSaida($id)
+    // Método de Autorização
+    public function autorizacao(Desbravador $desbravador)
     {
-        $desbravador = Desbravador::with('unidade')->findOrFail($id);
-
-        // Carrega a view e passa os dados
         $pdf = Pdf::loadView('relatorios.autorizacao', compact('desbravador'));
-
-        // Retorna o PDF para visualizar no navegador (stream)
         return $pdf->stream("autorizacao_{$desbravador->nome}.pdf");
     }
 
-    // 2. Relatório Financeiro (Fluxo de Caixa Completo)
-    public function financeiro()
+    // Método Carteirinha
+    public function carteirinha(Desbravador $desbravador)
     {
-        $lancamentos = Caixa::orderBy('data_movimentacao', 'asc')->get();
+        $desbravador->load('unidade', 'especialidades');
 
-        $entradas = $lancamentos->where('tipo', 'entrada')->sum('valor');
-        $saidas = $lancamentos->where('tipo', 'saida')->sum('valor');
-        $saldo = $entradas - $saidas;
+        $pdf = Pdf::loadView('relatorios.carteirinha', compact('desbravador'))
+            ->setPaper('a4', 'portrait');
 
-        $pdf = Pdf::loadView('relatorios.financeiro', compact('lancamentos', 'entradas', 'saidas', 'saldo'));
-
-        return $pdf->stream('relatorio_financeiro.pdf');
+        return $pdf->stream("carteirinha_{$desbravador->nome}.pdf");
     }
 
-    // 3. Relatório de Patrimônio
+    // Método Ficha Médica
+    public function fichaMedica(Desbravador $desbravador)
+    {
+        $pdf = Pdf::loadView('relatorios.ficha_medica', compact('desbravador'));
+        return $pdf->stream("ficha_medica_{$desbravador->nome}.pdf");
+    }
+
+    // Método Financeiro (CORRIGIDO)
+    public function financeiro()
+    {
+        $movimentacoes = Caixa::orderBy('data_movimentacao', 'desc')->get();
+
+        // CORREÇÃO: Passar explicitamente $lancamentos E $movimentacoes para evitar erro na view
+        $lancamentos = $movimentacoes;
+
+        $entradas = $movimentacoes->where('tipo', 'entrada')->sum('valor');
+        $saidas = $movimentacoes->where('tipo', 'saida')->sum('valor');
+        $saldo = $entradas - $saidas;
+
+        return Pdf::loadView('relatorios.financeiro', [
+            'movimentacoes' => $movimentacoes,
+            'lancamentos' => $lancamentos, // Garantia dupla
+            'entradas' => $entradas,
+            'saidas' => $saidas,
+            'saldo' => $saldo
+        ])->stream('relatorio_financeiro.pdf');
+    }
+
+    // Método Patrimônio
     public function patrimonio()
     {
         $itens = Patrimonio::orderBy('item')->get();
-        $totalValor = $itens->sum(fn($i) => $i->quantidade * $i->valor_estimado);
+        $totalValor = $itens->sum('valor_estimado');
 
         $pdf = Pdf::loadView('relatorios.patrimonio', compact('itens', 'totalValor'));
-
         return $pdf->stream('relatorio_patrimonio.pdf');
     }
 }

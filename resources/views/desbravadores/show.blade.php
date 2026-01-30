@@ -8,8 +8,8 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm flex flex-col lg:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-4 w-full lg:w-auto">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm flex flex-col xl:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4 w-full xl:w-auto">
                     <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xl shrink-0">
                         {{ substr($desbravador->nome, 0, 1) }}
                     </div>
@@ -19,32 +19,33 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap justify-center lg:justify-end gap-2 w-full lg:w-auto">
+                <div class="flex flex-wrap justify-center xl:justify-end gap-2 w-full xl:w-auto">
+
+                    <div class="flex gap-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-md">
+                        <a href="{{ route('relatorios.carteirinha', $desbravador->id) }}" target="_blank" class="flex items-center px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-600 rounded text-xs font-bold uppercase transition" title="Carteirinha">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                            </svg>
+                            Crachá
+                        </a>
+                        <a href="{{ route('relatorios.ficha-medica', $desbravador->id) }}" target="_blank" class="flex items-center px-3 py-2 text-red-600 dark:text-red-400 hover:bg-white dark:hover:bg-gray-600 rounded text-xs font-bold uppercase transition" title="Ficha Médica">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                            Médica
+                        </a>
+                    </div>
+
                     <a href="{{ route('progresso.index', $desbravador->id) }}" class="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded shadow-sm text-xs font-bold uppercase transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
                         Classes
                     </a>
 
                     <a href="{{ route('desbravadores.especialidades', $desbravador->id) }}" class="flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded shadow-sm text-xs font-bold uppercase transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                        </svg>
-                        Especialidades
+                        Espec.
                     </a>
 
                     <a href="{{ route('desbravadores.edit', $desbravador) }}" class="flex items-center px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded shadow-sm text-xs font-bold uppercase transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                        </svg>
                         Editar
-                    </a>
-
-                    <a href="{{ route('relatorios.autorizacao', $desbravador->id) }}" target="_blank" class="flex items-center px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded shadow-sm text-xs font-bold uppercase transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                        </svg>
                     </a>
                 </div>
             </div>
