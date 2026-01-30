@@ -65,14 +65,23 @@ Route::middleware('auth')->group(function () {
     Route::resource('atas', AtaController::class);
     Route::resource('atos', AtoController::class);
 
-    // --- RELATÓRIOS (PDF) ---
-    // Relatórios Individuais (ATENÇÃO AQUI)
-    Route::get('/relatorios/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('relatorios.autorizacao');
-    Route::get('/relatorios/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('relatorios.carteirinha');
-    Route::get('/relatorios/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('relatorios.ficha-medica');
-    // Relatórios Gerais
-    Route::get('/relatorios/financeiro', [RelatorioController::class, 'financeiro'])->name('relatorios.financeiro');
-    Route::get('/relatorios/patrimonio', [RelatorioController::class, 'patrimonio'])->name('relatorios.patrimonio');
+    // Módulo de Relatórios
+    Route::prefix('relatorios')->name('relatorios.')->group(function () {
+        // Painel Principal
+        Route::get('/', [RelatorioController::class, 'index'])->name('index');
+
+        // Gerador Personalizado
+        Route::post('/gerar-personalizado', [RelatorioController::class, 'gerarPersonalizado'])->name('custom');
+
+        // Relatórios Específicos (Já existentes + Novos acessos)
+        Route::get('/financeiro', [RelatorioController::class, 'financeiro'])->name('financeiro');
+        Route::get('/patrimonio', [RelatorioController::class, 'patrimonio'])->name('patrimonio');
+
+        // Rotas individuais (mantidas para acesso via perfil, mas não usadas na central geral de listas)
+        Route::get('/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('autorizacao');
+        Route::get('/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('carteirinha');
+        Route::get('/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('ficha-medica');
+    });
 
     // --- FREQUÊNCIA ---
     Route::get('/frequencia/chamada', [App\Http\Controllers\FrequenciaController::class, 'create'])->name('frequencia.create');
