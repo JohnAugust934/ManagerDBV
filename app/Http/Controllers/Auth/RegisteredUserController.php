@@ -4,90 +4,72 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Club;
 use App\Models\Invitation;
+use App\Models\Club;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    public function create(Request $request): View|RedirectResponse
+    public function create(Request $request)
     {
         $token = $request->query('token');
-        $invitation = Invitation::where('token', $token)->whereNull('used_at')->first();
+        if (!$token) abort(403, 'Token inválido.');
 
-        if (!$token || !$invitation) {
-            return redirect()->route('login')->withErrors(['email' => 'É necessário um convite válido para se registrar.']);
-        }
-
-        // Verifica se já existe ALGUM clube cadastrado (Single Tenant logic)
-        $needsClubSetup = Club::count() === 0;
-
-        return view('auth.register', [
-            'email' => $invitation->email,
-            'token' => $token,
-            'needsClubSetup' => $needsClubSetup
-        ]);
+        $invitation = Invitation::where('token', $token)->whereNull('registered_at')->firstOrFail();
+        return view('auth.register-invite', compact('invitation'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
-        // 1. Verificações Comuns
         $request->validate([
             'token' => ['required', 'exists:invitations,token'],
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $invitation = Invitation::where('token', $request->token)->whereNull('used_at')->firstOrFail();
+        $invitation = Invitation::where('token', $request->token)->firstOrFail();
 
-        // Verifica se o clube já existe
-        $existingClub = Club::first();
-
-        if (!$existingClub) {
-            // Se NÃO existe clube, valida os dados do clube também
-            $request->validate([
-                'club_name' => ['required', 'string', 'max:255'],
-                'club_city' => ['required', 'string', 'max:255'],
-            ]);
+        if ($invitation->registered_at) {
+            return back()->withErrors(['email' => 'Convite já utilizado.']);
         }
 
-        DB::transaction(function () use ($request, $invitation, $existingClub) {
+        $clubId = $invitation->club_id;
+        $novoClubeCriado = false;
 
-            // Define qual clube usar (ou cria um novo)
-            if ($existingClub) {
-                $club = $existingClub;
-            } else {
-                $club = Club::create([
-                    'nome' => $request->club_name,
-                    'cidade' => $request->club_city,
-                    'associacao' => $request->club_associacao ?? null,
-                ]);
-            }
-
-            // Cria o Usuário vinculado ao clube
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'is_master' => false,
-                'club_id' => $club->id, // Vincula ao clube (novo ou existente)
+        // SE FOR DIRETOR E NÃO TIVER CLUBE VINCULADO AO CONVITE: CRIA UM NOVO
+        if ($invitation->role === 'diretor' && is_null($clubId)) {
+            $novoClube = Club::create([
+                'nome' => 'Clube de ' . $request->name . ' (Definir Nome)',
+                'cidade' => 'Definir Cidade',
             ]);
+            $clubId = $novoClube->id;
+            $novoClubeCriado = true;
+        }
 
-            // Marca convite como usado
-            $invitation->update(['used_at' => now()]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $invitation->email,
+            'password' => Hash::make($request->password),
+            'role' => $invitation->role,
+            'club_id' => $clubId,
+            'extra_permissions' => $invitation->extra_permissions,
+            'is_master' => false,
+        ]);
 
-            event(new Registered($user));
-            Auth::login($user);
-        });
+        $invitation->update(['registered_at' => now()]);
 
-        return redirect(route('dashboard', absolute: false));
+        event(new Registered($user));
+        Auth::login($user);
+
+        // SE ACABOU DE CRIAR O CLUBE, MANDA EDITAR OS DADOS
+        if ($novoClubeCriado) {
+            return redirect()->route('club.edit')->with('success', 'Bem-vindo! Por favor, defina o nome e cidade do seu Clube.');
+        }
+
+        return redirect(route('dashboard'));
     }
 }

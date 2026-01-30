@@ -5,59 +5,52 @@ namespace App\Http\Controllers;
 use App\Models\Frequencia;
 use App\Models\Unidade;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class FrequenciaController extends Controller
 {
-    /**
-     * Exibe o formulário de chamada (Lista todos agrupados por unidade).
-     */
     public function create()
     {
-        // Carrega unidades e seus desbravadores ativos
-        $unidades = Unidade::with(['desbravadores' => function ($query) {
-            $query->orderBy('nome');
-        }])->orderBy('nome')->get();
+        // Busca unidades que o usuário pode gerenciar
+        $unidades = Unidade::with(['desbravadores' => function ($q) {
+            $q->where('ativo', true)->orderBy('nome');
+        }])->get()->filter(function ($unidade) {
+            return Gate::allows('gerir-unidade', $unidade);
+        });
 
         return view('frequencia.create', compact('unidades'));
     }
 
-    /**
-     * Salva a chamada em massa.
-     */
     public function store(Request $request)
     {
         $request->validate([
             'data' => 'required|date',
-            'frequencia' => 'array', // Array de dados
+            'unidade_id' => 'required|exists:unidades,id',
+            'presencas' => 'required|array'
         ]);
 
-        $data = $request->data;
-        $dadosFrequencia = $request->frequencia ?? [];
+        $unidade = Unidade::findOrFail($request->unidade_id);
 
-        DB::transaction(function () use ($data, $dadosFrequencia) {
-            // Itera sobre os dados enviados (desbravador_id => [dados])
-            foreach ($dadosFrequencia as $id => $atributos) {
+        // Verifica permissão (Master/Diretor passam direto, Conselheiro valida nome)
+        if (Gate::denies('gerir-unidade', $unidade)) {
+            abort(403, 'Você não tem permissão para esta unidade.');
+        }
 
-                // Prepara os valores booleanos (checkbox não enviado é false)
-                $presente = isset($atributos['presente']);
-
-                Frequencia::updateOrCreate(
-                    [
-                        'desbravador_id' => $id,
-                        'data' => $data
-                    ],
-                    [
-                        'presente' => $presente,
-                        // Se não veio presente, os outros devem ser false logicamente, 
-                        // mas vamos salvar o que vier do form
-                        'pontual' => isset($atributos['pontual']),
-                        'biblia' => isset($atributos['biblia']),
-                        'uniforme' => isset($atributos['uniforme']),
-                    ]
-                );
-            }
-        });
+        foreach ($request->presencas as $id => $dados) {
+            Frequencia::updateOrCreate(
+                [
+                    'desbravador_id' => $id,
+                    'data' => $request->data
+                ],
+                [
+                    // isset() funciona para checkboxes que não enviam valor quando desmarcados
+                    'presente' => isset($dados['presente']),
+                    'pontual' => isset($dados['pontual']),
+                    'biblia' => isset($dados['biblia']),
+                    'uniforme' => isset($dados['uniforme']),
+                ]
+            );
+        }
 
         return redirect()->route('dashboard')->with('success', 'Chamada realizada com sucesso!');
     }

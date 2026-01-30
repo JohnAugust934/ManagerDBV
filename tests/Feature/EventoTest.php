@@ -17,7 +17,8 @@ class EventoTest extends TestCase
     public function test_pode_criar_evento()
     {
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id]);
+        // CORREÇÃO: Diretor tem acesso total a eventos
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
         $response = $this->actingAs($user)->post(route('eventos.store'), [
             'nome' => 'Acampamento de Verão',
@@ -33,7 +34,8 @@ class EventoTest extends TestCase
     public function test_pode_inscrever_desbravador_e_marcar_pago()
     {
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id]);
+        // CORREÇÃO: Diretor ou Tesoureiro
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
         $unidade = Unidade::factory()->create();
         $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id]);
         $evento = Evento::create([

@@ -11,116 +11,156 @@ use App\Http\Controllers\AtaController;
 use App\Http\Controllers\AtoController;
 use App\Http\Controllers\RelatorioController;
 use App\Http\Controllers\ClubController;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProgressoController;
 use App\Http\Controllers\EventoController;
+use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\FrequenciaController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 
+// --- ROTA PÚBLICA ---
 Route::get('/', function () {
     return view('welcome');
 });
 
+// ROTAS PÚBLICAS (Registro via Convite)
+Route::get('/register-invite', [RegisteredUserController::class, 'create'])->name('register.invite');
+Route::post('/register-invite', [RegisteredUserController::class, 'store'])->name('register.store_invite');
+
+// --- DASHBOARD (Acesso Comum a Todos) ---
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+// --- GRUPO PROTEGIDO (REQUER LOGIN) ---
 Route::middleware('auth')->group(function () {
-    // --- PERFIL DO USUÁRIO ---
+
+    // --- PERFIL DO USUÁRIO (Acesso Comum) ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // --- GESTÃO DO CLUBE ---
-    Route::get('/clube', [ClubController::class, 'edit'])->name('club.edit');
-    Route::patch('/clube', [ClubController::class, 'update'])->name('club.update');
-    Route::delete('/clube/logo', [ClubController::class, 'destroyLogo'])->name('club.logo.destroy');
+    // GESTÃO DE USUÁRIOS E CONVITES (MASTER)
+    Route::middleware('can:master')->group(function () {
+        // CRUD de usuários existentes
+        Route::resource('usuarios', UsuarioController::class);
 
-    // --- CADASTROS BÁSICOS (EXISTENTES) ---
-    Route::resource('unidades', UnidadeController::class);
-    Route::resource('desbravadores', DesbravadorController::class)
-        ->parameters(['desbravadores' => 'desbravador']);
-    Route::resource('especialidades', EspecialidadeController::class);
+        // CRUD de Convites
+        Route::get('/invites', [InvitationController::class, 'index'])->name('invites.index');
+        Route::get('/invites/create', [InvitationController::class, 'create'])->name('invites.create');
+        Route::post('/invites', [InvitationController::class, 'store'])->name('invites.store');
+        Route::delete('/invites/{invite}', [InvitationController::class, 'destroy'])->name('invites.destroy');
+    });
 
-    // Gestão de Especialidades
-    Route::get('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'gerenciarEspecialidades'])
-        ->name('desbravadores.especialidades');
+    // --- MÓDULO SECRETARIA (Diretor e Secretário) ---
+    Route::middleware('can:secretaria')->group(function () {
+        // Dados do Clube
+        Route::get('/clube', [ClubController::class, 'edit'])->name('club.edit');
+        Route::patch('/clube', [ClubController::class, 'update'])->name('club.update');
+        Route::delete('/clube/logo', [ClubController::class, 'destroyLogo'])->name('club.logo.destroy');
 
-    Route::post('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'salvarEspecialidades'])
-        ->name('desbravadores.salvar-especialidades');
+        // Documentos Oficiais
+        Route::resource('atas', AtaController::class);
+        Route::resource('atos', AtoController::class);
 
-    Route::delete('/desbravadores/{desbravador}/especialidades/{especialidade}', [DesbravadorController::class, 'removerEspecialidade'])
-        ->name('desbravadores.remover-especialidade');
+        // Gestão Plena de Desbravadores e Unidades (Criação/Edição)
+        Route::resource('desbravadores', DesbravadorController::class)
+            ->parameters(['desbravadores' => 'desbravador']);
 
-    // --- FINANCEIRO ---
-    Route::resource('caixa', CaixaController::class);
-    Route::get('mensalidades', [MensalidadeController::class, 'index'])->name('mensalidades.index');
-    Route::post('mensalidades/gerar', [MensalidadeController::class, 'gerarMassivo'])->name('mensalidades.gerar');
-    Route::post('mensalidades/{id}/pagar', [MensalidadeController::class, 'pagar'])->name('mensalidades.pagar');
+        Route::resource('unidades', UnidadeController::class)->except(['index', 'show']);
+    });
 
-    // --- PATRIMÔNIO ---
-    Route::resource('patrimonio', PatrimonioController::class);
+    // --- VISUALIZAÇÃO DE MEMBROS E UNIDADES (Aberto também a Conselheiros) ---
+    // A rota INDEX e SHOW é permitida para conselheiros, mas o EDIT/CREATE só para secretaria (acima)
+    Route::get('/unidades', [UnidadeController::class, 'index'])->name('unidades.index');
+    Route::get('/unidades/{unidade}', [UnidadeController::class, 'show'])->name('unidades.show');
 
-    // --- SECRETARIA ---
-    Route::resource('atas', AtaController::class);
-    Route::resource('atos', AtoController::class);
+    // Se o conselheiro precisar ver o perfil do desbravador (mas não editar todos os dados sensíveis)
+    // Por enquanto, deixamos o 'show' do desbravador acessível se souber o ID, 
+    // mas a edição completa está protegida no resource acima.
+    Route::get('/desbravadores/{desbravador}', [DesbravadorController::class, 'show'])->name('desbravadores.show');
 
-    // Módulo de Relatórios
+
+    // --- MÓDULO PEDAGÓGICO (Instrutores e Conselheiros também acessam) ---
+    Route::middleware('can:pedagogico')->group(function () {
+        // Especialidades (CRUD Geral)
+        Route::resource('especialidades', EspecialidadeController::class);
+
+        // Gestão de Especialidades do Membro
+        Route::get('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'gerenciarEspecialidades'])
+            ->name('desbravadores.especialidades');
+        Route::post('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'salvarEspecialidades'])
+            ->name('desbravadores.salvar-especialidades');
+        Route::delete('/desbravadores/{desbravador}/especialidades/{especialidade}', [DesbravadorController::class, 'removerEspecialidade'])
+            ->name('desbravadores.remover-especialidade');
+
+        // Classes Progressivas
+        Route::get('/desbravadores/{desbravador}/progresso', [ProgressoController::class, 'index'])->name('progresso.index');
+        Route::post('/desbravadores/{desbravador}/progresso/toggle', [ProgressoController::class, 'toggle'])->name('progresso.toggle');
+
+        // Frequência (Chamada)
+        Route::get('/frequencia/chamada', [FrequenciaController::class, 'create'])->name('frequencia.create');
+        Route::post('/frequencia/chamada', [FrequenciaController::class, 'store'])->name('frequencia.store');
+    });
+
+
+    // --- MÓDULO FINANCEIRO (Tesoureiro e Diretor) ---
+    Route::middleware('can:financeiro')->group(function () {
+        Route::resource('caixa', CaixaController::class);
+        Route::resource('patrimonio', PatrimonioController::class);
+
+        // Mensalidades
+        Route::get('mensalidades', [MensalidadeController::class, 'index'])->name('mensalidades.index');
+        Route::post('mensalidades/gerar', [MensalidadeController::class, 'gerarMassivo'])->name('mensalidades.gerar');
+        Route::post('mensalidades/{id}/pagar', [MensalidadeController::class, 'pagar'])->name('mensalidades.pagar');
+    });
+
+
+    // --- MÓDULO DE EVENTOS ---
+    // Visualização: Todos (via menu)
+    Route::get('/eventos', [EventoController::class, 'index'])->name('eventos.index');
+    Route::get('/eventos/{evento}', [EventoController::class, 'show'])->name('eventos.show');
+
+    // Gestão (Criar/Inscrever/Pagamento): Apenas quem tem permissão 'eventos' (Diretor, Secretaria, Tesoureiro)
+    Route::middleware('can:eventos')->group(function () {
+        Route::get('/eventos/create', [EventoController::class, 'create'])->name('eventos.create');
+        Route::post('/eventos', [EventoController::class, 'store'])->name('eventos.store');
+        Route::get('/eventos/{evento}/edit', [EventoController::class, 'edit'])->name('eventos.edit');
+        Route::put('/eventos/{evento}', [EventoController::class, 'update'])->name('eventos.update');
+        Route::delete('/eventos/{evento}', [EventoController::class, 'destroy'])->name('eventos.destroy');
+
+        Route::post('eventos/{evento}/inscrever', [EventoController::class, 'inscrever'])->name('eventos.inscrever');
+        Route::delete('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'removerInscricao'])->name('eventos.remover-inscricao');
+        Route::patch('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'atualizarStatus'])->name('eventos.status');
+
+        // Autorização Específica do Evento
+        Route::get('eventos/{evento}/autorizacao/{desbravador}', [EventoController::class, 'gerarAutorizacao'])->name('eventos.autorizacao');
+    });
+
+
+    // --- CENTRAL DE RELATÓRIOS (Acesso Misto) ---
     Route::prefix('relatorios')->name('relatorios.')->group(function () {
         // Painel Principal
         Route::get('/', [RelatorioController::class, 'index'])->name('index');
-
-        // Gerador Personalizado
         Route::post('/gerar-personalizado', [RelatorioController::class, 'gerarPersonalizado'])->name('custom');
 
-        // Relatórios Específicos (Já existentes + Novos acessos)
-        Route::get('/financeiro', [RelatorioController::class, 'financeiro'])->name('financeiro');
-        Route::get('/patrimonio', [RelatorioController::class, 'patrimonio'])->name('patrimonio');
+        // Financeiro (Protegido)
+        Route::get('/financeiro', [RelatorioController::class, 'financeiro'])
+            ->name('financeiro')
+            ->middleware('can:financeiro');
 
-        // Rotas individuais (mantidas para acesso via perfil, mas não usadas na central geral de listas)
+        // Patrimônio (Protegido)
+        Route::get('/patrimonio', [RelatorioController::class, 'patrimonio'])
+            ->name('patrimonio')
+            ->middleware('can:financeiro');
+
+        // Documentos Pessoais (Abertos para quem pode ver desbravadores)
         Route::get('/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('autorizacao');
         Route::get('/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('carteirinha');
         Route::get('/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('ficha-medica');
     });
-
-    // --- FREQUÊNCIA ---
-    Route::get('/frequencia/chamada', [App\Http\Controllers\FrequenciaController::class, 'create'])->name('frequencia.create');
-    Route::post('/frequencia/chamada', [App\Http\Controllers\FrequenciaController::class, 'store'])->name('frequencia.store');
-
-    Route::get('/desbravadores/{desbravador}/progresso', [ProgressoController::class, 'index'])->name('progresso.index');
-    Route::post('/desbravadores/{desbravador}/progresso/toggle', [ProgressoController::class, 'toggle'])->name('progresso.toggle');
-
-    // Gestão de Eventos
-    Route::resource('eventos', EventoController::class);
-    Route::post('eventos/{evento}/inscrever', [EventoController::class, 'inscrever'])->name('eventos.inscrever');
-    Route::delete('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'removerInscricao'])->name('eventos.remover-inscricao');
-    Route::patch('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'atualizarStatus'])->name('eventos.status');
-    Route::get('eventos/{evento}/autorizacao/{desbravador}', [EventoController::class, 'gerarAutorizacao'])->name('eventos.autorizacao');
-
-    // --- ÁREA DO ADMINISTRADOR MASTER ---
-    // Rotas para gerar convites (Apenas para o usuário Master)
-    Route::get('/master/invites', function () {
-        if (!auth()->user()->is_master) {
-            abort(403, 'Acesso restrito ao Master Admin.');
-        }
-        $invites = \App\Models\Invitation::latest()->get();
-        return view('admin.invites', compact('invites'));
-    })->name('master.invites');
-
-    Route::post('/master/invites', function (Request $request) {
-        if (!auth()->user()->is_master) {
-            abort(403);
-        }
-        $request->validate(['email' => 'required|email|unique:users,email']);
-
-        $token = \Illuminate\Support\Str::random(32);
-        \App\Models\Invitation::create([
-            'email' => $request->email,
-            'token' => $token
-        ]);
-
-        return back()->with('success', "Convite gerado com sucesso!");
-    })->name('master.invites.store');
 });
 
 require __DIR__ . '/auth.php';

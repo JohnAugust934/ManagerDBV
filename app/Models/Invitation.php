@@ -9,5 +9,22 @@ class Invitation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['email', 'token', 'used_at'];
+    protected $fillable = [
+        'email',
+        'token',
+        'role',
+        'club_id',
+        'extra_permissions',
+        'registered_at'
+    ];
+
+    protected $casts = [
+        'extra_permissions' => 'array',
+        'registered_at' => 'datetime',
+    ];
+
+    public function club()
+    {
+        return $this->belongsTo(Club::class);
+    }
 }

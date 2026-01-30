@@ -1,27 +1,45 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Models\Patrimonio;
 use App\Models\User;
+use App\Models\Club;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-test('usuario pode ver lista de patrimonio', function () {
-    $user = User::factory()->create();
-    Patrimonio::factory()->count(3)->create();
+class PatrimonioTest extends TestCase
+{
+    use RefreshDatabase;
 
-    $response = $this->actingAs($user)->get(route('patrimonio.index'));
-    $response->assertStatus(200);
-});
+    public function test_usuario_pode_ver_lista_de_patrimonio()
+    {
+        $clube = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
+        // CORREÇÃO: Tesoureiro
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'tesoureiro']);
+        Patrimonio::factory()->count(3)->create();
 
-test('usuario pode cadastrar novo item', function () {
-    $user = User::factory()->create();
-    $dados = [
-        'item' => 'Barraca Teste',
-        'quantidade' => 2,
-        'estado_conservacao' => 'Novo',
-        'valor_estimado' => 500.00
-    ];
+        $response = $this->actingAs($user)->get(route('patrimonio.index'));
+        $response->assertStatus(200);
+    }
 
-    $response = $this->actingAs($user)->post(route('patrimonio.store'), $dados);
+    public function test_usuario_pode_cadastrar_novo_item()
+    {
+        $clube = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
+        // CORREÇÃO: Tesoureiro
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'tesoureiro']);
 
-    $response->assertRedirect(route('patrimonio.index'));
-    $this->assertDatabaseHas('patrimonios', ['item' => 'Barraca Teste']);
-});
+        $dados = [
+            'item' => 'Barraca Teste',
+            'quantidade' => 2,
+            'valor_estimado' => 500.00,
+            'estado_conservacao' => 'Bom',
+            'local_armazenamento' => 'Sede'
+        ];
+
+        $response = $this->actingAs($user)->post(route('patrimonio.store'), $dados);
+
+        $response->assertRedirect(route('patrimonio.index'));
+        $this->assertDatabaseHas('patrimonios', ['item' => 'Barraca Teste']);
+    }
+}

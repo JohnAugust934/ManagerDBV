@@ -1,39 +1,50 @@
 <?php
 
+namespace Tests\Feature;
+
+use App\Models\Club;
 use App\Models\Unidade;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-test('apenas usuarios logados podem ver unidades', function () {
-    $response = $this->get('/unidades');
-    $response->assertRedirect('/login');
-});
+class UnidadeTest extends TestCase
+{
+    use RefreshDatabase;
 
-test('usuario logado pode ver lista de unidades', function () {
-    $user = User::factory()->create();
+    public function test_apenas_usuarios_logados_podem_ver_unidades()
+    {
+        $response = $this->get('/unidades');
+        $response->assertRedirect('/login');
+    }
 
-    // Cria 3 unidades no banco de teste
-    Unidade::factory()->count(3)->create();
+    public function test_usuario_logado_pode_ver_lista_de_unidades()
+    {
+        $clube = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
+        // CORREÇÃO: Conselheiro pode ver, mas não criar
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'conselheiro']);
 
-    $response = $this->actingAs($user)->get('/unidades');
+        $response = $this->actingAs($user)->get('/unidades');
+        $response->assertStatus(200);
+    }
 
-    $response->assertStatus(200);
-});
+    public function test_pode_criar_uma_nova_unidade()
+    {
+        $clube = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
+        // CORREÇÃO: Diretor é necessário para criar
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
-test('pode criar uma nova unidade', function () {
-    $user = User::factory()->create();
+        $dados = [
+            'nome' => 'Unidade Teste Águia',
+            'grito_guerra' => 'Voar alto!',
+            'conselheiro' => 'João da Silva'
+        ];
 
-    $dados = [
-        'nome' => 'Unidade Teste Águia',
-        'conselheiro' => 'Diretor Teste',
-    ];
+        $response = $this->actingAs($user)->post('/unidades', $dados);
 
-    $response = $this->actingAs($user)->post('/unidades', $dados);
-
-    // Deve redirecionar após salvar
-    $response->assertRedirect(route('unidades.index'));
-
-    // Verifica se salvou no banco
-    $this->assertDatabaseHas('unidades', [
-        'nome' => 'Unidade Teste Águia'
-    ]);
-});
+        $response->assertRedirect(route('unidades.index'));
+        $this->assertDatabaseHas('unidades', [
+            'nome' => 'Unidade Teste Águia'
+        ]);
+    }
+}
