@@ -9,15 +9,17 @@ class CaixaController extends Controller
 {
     public function index()
     {
-        // Ordena por data (mais recente primeiro)
-        $lancamentos = Caixa::orderBy('data_movimentacao', 'desc')->get();
-
-        // Calcula o saldo total
+        // Totais Gerais (Para os Widgets)
         $entradas = Caixa::where('tipo', 'entrada')->sum('valor');
         $saidas = Caixa::where('tipo', 'saida')->sum('valor');
         $saldoAtual = $entradas - $saidas;
 
-        return view('financeiro.caixa.index', compact('lancamentos', 'saldoAtual'));
+        // Lista Paginada (Para a Tabela)
+        $lancamentos = Caixa::orderBy('data_movimentacao', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return view('financeiro.caixa.index', compact('lancamentos', 'saldoAtual', 'entradas', 'saidas'));
     }
 
     public function create()

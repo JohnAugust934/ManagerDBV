@@ -1,131 +1,278 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            Controle de Mensalidades
-        </h2>
+        <div class="flex items-center justify-between w-full h-full gap-4">
+            <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
+                {{ __('Mensalidades') }}
+            </h2>
+
+            <button onclick="document.getElementById('modal-gerar').classList.remove('hidden')"
+                class="hidden md:inline-flex items-center justify-center px-4 py-2 bg-dbv-blue border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-blue-800 transition shadow-md shrink-0">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                    </path>
+                </svg>
+                Gerar Carnê
+            </button>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="py-6 space-y-6" x-data="{
+        paymentModalOpen: false,
+        pagamentoUrl: '',
+        nomeDesbravador: '',
+        valorMensalidade: '',
+        openPaymentModal(url, nome, valor) {
+            this.pagamentoUrl = url;
+            this.nomeDesbravador = nome;
+            this.valorMensalidade = valor;
+            this.paymentModalOpen = true;
+        }
+    }">
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg shadow border-l-4 border-blue-500">
-                    <h3 class="text-blue-800 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">Referência</h3>
-                    <p class="text-2xl font-bold text-blue-900 dark:text-white">{{ str_pad($mes, 2, '0', STR_PAD_LEFT) }}/{{ $ano }}</p>
-                </div>
+        <div class="md:hidden px-4">
+            <button onclick="document.getElementById('modal-gerar').classList.remove('hidden')"
+                class="w-full flex items-center justify-center px-4 py-3 bg-dbv-blue border border-transparent rounded-xl font-bold text-sm text-white uppercase tracking-widest hover:bg-blue-800 shadow-md transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Gerar Mensalidades
+            </button>
+        </div>
 
-                <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg shadow border-l-4 border-green-500">
-                    <h3 class="text-green-800 dark:text-green-300 text-xs font-bold uppercase tracking-wider">Recebido (Mês)</h3>
-                    <p class="text-2xl font-bold text-green-900 dark:text-white">R$ {{ number_format($valorRecebido, 2, ',', '.') }}</p>
-                    <span class="text-xs text-green-600 font-semibold">{{ $totalPago }} pagantes</span>
-                </div>
+        <div class="px-4 md:px-0">
 
-                <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg shadow border-l-4 border-yellow-500">
-                    <h3 class="text-yellow-800 dark:text-yellow-300 text-xs font-bold uppercase tracking-wider">Pendente (Mês)</h3>
-                    <p class="text-2xl font-bold text-yellow-900 dark:text-white">R$ {{ number_format($valorPendente, 2, ',', '.') }}</p>
-                    <span class="text-xs text-yellow-600 font-semibold">{{ $totalPendente }} em aberto</span>
-                </div>
+            <div
+                class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <form method="GET" action="{{ route('mensalidades.index') }}"
+                    class="flex items-center gap-2 w-full md:w-auto">
+                    <select name="mes"
+                        class="flex-1 md:w-40 border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg focus:ring-dbv-blue focus:border-dbv-blue text-sm"
+                        onchange="this.form.submit()">
+                        @foreach (range(1, 12) as $m)
+                            <option value="{{ $m }}" {{ $mes == $m ? 'selected' : '' }}>
+                                {{ \Carbon\Carbon::create()->month($m)->locale('pt_BR')->monthName }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <select name="ano"
+                        class="w-24 border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg focus:ring-dbv-blue focus:border-dbv-blue text-sm"
+                        onchange="this.form.submit()">
+                        @foreach (range(date('Y') - 1, date('Y') + 1) as $y)
+                            <option value="{{ $y }}" {{ $ano == $y ? 'selected' : '' }}>{{ $y }}
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
 
-                <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg shadow border-l-4 border-red-500 relative overflow-hidden group">
-                    <div class="absolute right-0 top-0 p-2 opacity-10 group-hover:opacity-20 transition">
-                        <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+                <div class="flex gap-4 text-sm w-full md:w-auto justify-between md:justify-end">
+                    <div class="text-center md:text-right">
+                        <span class="block text-xs font-bold text-gray-500 uppercase">Recebido</span>
+                        <span class="font-bold text-green-600 dark:text-green-400">R$
+                            {{ number_format($valorRecebido, 2, ',', '.') }}</span>
+                        <span class="text-xs text-gray-400">({{ $totalPago }} pagantes)</span>
                     </div>
-                    <h3 class="text-red-800 dark:text-red-300 text-xs font-bold uppercase tracking-wider">Dívida Ativa (Total)</h3>
-                    <p class="text-2xl font-bold text-red-900 dark:text-white">R$ {{ number_format($totalInadimplenteGeral, 2, ',', '.') }}</p>
-                    <span class="text-xs text-red-600 font-semibold">{{ $qtdInadimplentes }} boletos atrasados</span>
+                    <div class="text-center md:text-right">
+                        <span class="block text-xs font-bold text-gray-500 uppercase">Pendente</span>
+                        <span class="font-bold text-red-500 dark:text-red-400">R$
+                            {{ number_format($valorPendente, 2, ',', '.') }}</span>
+                        <span class="text-xs text-gray-400">({{ $totalPendente }} devendo)</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-4 justify-between items-end bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            @if ($mensalidades->count() > 0)
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                    <div class="divide-y divide-gray-100 dark:divide-slate-700">
+                        @foreach ($mensalidades as $mensalidade)
+                            <div
+                                class="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition relative overflow-hidden">
 
-                <form action="{{ route('mensalidades.gerar') }}" method="POST" class="flex flex-col gap-2 w-full md:w-auto">
-                    @csrf
-                    <label class="text-xs font-bold text-gray-500 uppercase">Gerar Cobrança em Massa</label>
-                    <div class="flex gap-2">
-                        <input type="hidden" name="mes" value="{{ $mes }}">
-                        <input type="hidden" name="ano" value="{{ $ano }}">
-                        <input type="number" name="valor" step="0.01" placeholder="Valor (R$)" required class="w-32 text-sm rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600">
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded uppercase shadow transition">
-                            Gerar para Todos
-                        </button>
-                    </div>
-                </form>
+                                <div
+                                    class="absolute left-0 top-0 bottom-0 w-1 {{ $mensalidade->status == 'pago' ? 'bg-green-500' : 'bg-red-400' }}">
+                                </div>
 
-                <form action="{{ route('mensalidades.index') }}" method="GET" class="flex flex-col gap-2 w-full md:w-auto">
-                    <label class="text-xs font-bold text-gray-500 uppercase">Filtrar Período</label>
-                    <div class="flex gap-2">
-                        <select name="mes" class="rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 text-sm">
-                            @for($i=1; $i<=12; $i++)
-                                <option value="{{ $i }}" {{ $mes == $i ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $i, 10)) }}</option>
-                                @endfor
-                        </select>
-                        <input type="number" name="ano" value="{{ $ano }}" class="w-20 rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 text-sm">
-                        <button type="submit" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm shadow transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </form>
-            </div>
+                                <div class="pl-3 flex-1">
+                                    <h4 class="font-bold text-gray-900 dark:text-white">
+                                        {{ $mensalidade->desbravador->nome }}</h4>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span
+                                            class="text-xs px-2 py-0.5 rounded-md font-bold uppercase {{ $mensalidade->status == 'pago' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }}">
+                                            {{ $mensalidade->status == 'pago' ? 'PAGO' : 'PENDENTE' }}
+                                        </span>
+                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                            R$ {{ number_format($mensalidade->valor, 2, ',', '.') }}
+                                        </span>
+                                    </div>
+                                </div>
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <table class="min-w-full leading-normal">
-                        <thead>
-                            <tr>
-                                <th class="px-5 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Desbravador</th>
-                                <th class="px-5 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Valor</th>
-                                <th class="px-5 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th class="px-5 py-3 bg-gray-50 dark:bg-gray-700 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($mensalidades as $m)
-                            <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition">
-                                <td class="px-5 py-4 bg-white dark:bg-gray-800 text-sm font-bold">{{ $m->desbravador->nome }}</td>
-                                <td class="px-5 py-4 bg-white dark:bg-gray-800 text-sm">R$ {{ number_format($m->valor, 2, ',', '.') }}</td>
-                                <td class="px-5 py-4 bg-white dark:bg-gray-800 text-sm">
-                                    @if($m->status == 'pago')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                        Pago @if($m->data_pagamento) em {{ $m->data_pagamento->format('d/m') }} @endif
-                                    </span>
-                                    @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                                        Pendente
-                                    </span>
-                                    @endif
-                                </td>
-                                <td class="px-5 py-4 bg-white dark:bg-gray-800 text-sm text-right">
-                                    @if($m->status == 'pendente')
-                                    <form action="{{ route('mensalidades.pagar', $m->id) }}" method="POST" class="inline-block">
-                                        @csrf
-                                        <button type="submit" class="text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-600 rounded px-3 py-1 text-xs font-bold transition duration-200 uppercase tracking-wide">
+                                <div class="pl-3 md:pl-0">
+                                    @if ($mensalidade->status == 'pendente')
+                                        <button
+                                            @click="openPaymentModal('{{ route('mensalidades.pagar', $mensalidade->id) }}', '{{ $mensalidade->desbravador->nome }}', '{{ number_format($mensalidade->valor, 2, ',', '.') }}')"
+                                            class="w-full md:w-auto inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase rounded-lg shadow-sm transition">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M5 13l4 4L19 7" />
+                                            </svg>
                                             Receber
                                         </button>
-                                    </form>
                                     @else
-                                    <span class="text-gray-400 text-xs italic">Concluído</span>
+                                        <span class="text-xs text-gray-400 flex items-center">
+                                            <svg class="w-4 h-4 mr-1 text-green-500" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Pago em
+                                            {{ \Carbon\Carbon::parse($mensalidade->data_pagamento)->format('d/m') }}
+                                        </span>
                                     @endif
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-
-                    @if($mensalidades->isEmpty())
-                    <div class="flex flex-col items-center justify-center py-10 text-gray-500">
-                        <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <p>Nenhuma mensalidade encontrada para este período.</p>
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
-                    @endif
+                </div>
+            @else
+                <div
+                    class="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-700">
+                    <p class="text-gray-500 dark:text-gray-400">Nenhuma mensalidade gerada para este mês.</p>
+                    <button onclick="document.getElementById('modal-gerar').classList.remove('hidden')"
+                        class="mt-4 text-dbv-blue hover:underline font-bold text-sm">Gerar Agora</button>
+                </div>
+            @endif
+
+            <div x-show="paymentModalOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto"
+                aria-labelledby="modal-title" role="dialog" aria-modal="true">
+
+                <div x-show="paymentModalOpen" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"></div>
+
+                <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+                    <div x-show="paymentModalOpen" x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        @click.away="paymentModalOpen = false"
+                        class="relative bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-md w-full border border-gray-100 dark:border-slate-700">
+
+                        <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="sm:flex sm:items-start">
+                                <div
+                                    class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 sm:mx-0 sm:h-10 sm:w-10 mb-4 sm:mb-0">
+                                    <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                    <h3 class="text-lg leading-6 font-bold text-gray-900 dark:text-white"
+                                        id="modal-title">
+                                        Receber Mensalidade
+                                    </h3>
+                                    <div class="mt-4">
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                            Confirmar recebimento de:
+                                        </p>
+                                        <p class="text-2xl font-extrabold text-green-600 dark:text-green-400 mt-1 mb-2"
+                                            x-text="'R$ ' + valorMensalidade"></p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                                            Referente a: <strong x-text="nomeDesbravador"></strong>
+                                        </p>
+                                        <p class="text-xs text-gray-400 mt-4 italic">
+                                            * O valor será lançado automaticamente como entrada no caixa.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-gray-50 dark:bg-slate-700/50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                            <button type="button" @click="paymentModalOpen = false"
+                                class="w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none sm:w-auto sm:text-sm">
+                                Cancelar
+                            </button>
+
+                            <form :action="pagamentoUrl" method="POST" class="w-full sm:w-auto">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:w-auto sm:text-sm">
+                                    Confirmar Recebimento
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
         </div>
-    </div>
+
+        <div id="modal-gerar" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title"
+            role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+                    onclick="document.getElementById('modal-gerar').classList.add('hidden')"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div
+                    class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                    <form action="{{ route('mensalidades.gerar') }}" method="POST">
+                        @csrf
+                        <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Gerar Mensalidades
+                                em Massa</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Isso criará uma cobrança para
+                                <strong>todos</strong> os desbravadores ativos.</p>
+
+                            <div class="mt-4 grid grid-cols-2 gap-4">
+                                <div>
+                                    <x-input-label for="mes_gerar" :value="__('Mês')" />
+                                    <select name="mes" id="mes_gerar"
+                                        class="block w-full mt-1 border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg shadow-sm">
+                                        @foreach (range(1, 12) as $m)
+                                            <option value="{{ $m }}"
+                                                {{ date('m') == $m ? 'selected' : '' }}>{{ $m }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <x-input-label for="ano_gerar" :value="__('Ano')" />
+                                    <select name="ano" id="ano_gerar"
+                                        class="block w-full mt-1 border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg shadow-sm">
+                                        <option value="{{ date('Y') }}">{{ date('Y') }}</option>
+                                        <option value="{{ date('Y') + 1 }}">{{ date('Y') + 1 }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <x-input-label for="valor_gerar" :value="__('Valor da Mensalidade (R$)')" />
+                                    <x-text-input id="valor_gerar" class="block mt-1 w-full" type="number"
+                                        step="0.01" name="valor" value="15.00" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-slate-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="submit"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-dbv-blue text-base font-medium text-white hover:bg-blue-800 sm:ml-3 sm:w-auto sm:text-sm">
+                                Confirmar
+                            </button>
+                            <button type="button"
+                                onclick="document.getElementById('modal-gerar').classList.add('hidden')"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 </x-app-layout>

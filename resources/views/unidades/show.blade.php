@@ -1,145 +1,200 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            Gestão de Unidade
-        </h2>
-    </x-slot>
+        <div class="flex items-center justify-between w-full h-full gap-4">
+            <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
+                Unidade {{ $unidade->nome }}
+            </h2>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-                <a href="{{ route('unidades.index') }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 flex items-center font-bold text-sm transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Voltar para Lista
+            <div class="hidden md:flex items-center gap-2 shrink-0">
+                <a href="{{ route('unidades.index') }}"
+                    class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none transition shadow-sm">
+                    Voltar
                 </a>
-
-                <a href="{{ route('unidades.edit', $unidade->id) }}" class="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md font-bold text-xs uppercase tracking-widest shadow-sm transition focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                <a href="{{ route('unidades.edit', $unidade) }}"
+                    class="inline-flex items-center justify-center px-4 py-2 bg-dbv-yellow border border-transparent rounded-lg font-bold text-xs text-yellow-900 uppercase tracking-widest hover:bg-yellow-500 active:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition ease-in-out duration-150 shadow-sm">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Editar Dados da Unidade
+                    Editar
                 </a>
             </div>
+        </div>
+    </x-slot>
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-indigo-500">
-                <div class="p-6">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div class="py-6 space-y-6">
 
-                        <div>
-                            <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">{{ $unidade->nome }}</h3>
-                            <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                <span class="uppercase font-bold tracking-wide mr-2 text-xs text-indigo-600 dark:text-indigo-400">Conselheiro:</span>
-                                <span class="font-medium text-lg text-gray-700 dark:text-gray-300">{{ $unidade->conselheiro }}</span>
+        <div class="grid grid-cols-2 gap-3 md:hidden px-4">
+            <a href="{{ route('unidades.index') }}"
+                class="flex items-center justify-center py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl font-bold text-sm text-gray-700 dark:text-gray-300 shadow-sm">
+                Voltar
+            </a>
+            <a href="{{ route('unidades.edit', $unidade) }}"
+                class="flex items-center justify-center py-3 bg-dbv-yellow border border-transparent rounded-xl font-bold text-sm text-yellow-900 shadow-sm">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Editar
+            </a>
+        </div>
+
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden mx-4 md:mx-0">
+            <div class="h-3 w-full bg-gradient-to-r from-dbv-blue via-blue-600 to-blue-400"></div>
+
+            <div class="p-6 md:p-8">
+                <div class="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6">
+
+                    <div class="shrink-0">
+                        <div
+                            class="w-24 h-24 rounded-full bg-blue-50 dark:bg-slate-700 flex items-center justify-center border-4 border-blue-100 dark:border-slate-600 text-dbv-blue dark:text-blue-400 text-4xl font-black shadow-inner">
+                            {{ substr($unidade->nome, 0, 1) }}
+                        </div>
+                    </div>
+
+                    <div class="flex-1">
+                        <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">{{ $unidade->nome }}</h3>
+
+                        <div
+                            class="flex flex-col md:flex-row items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            <span class="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 px-3 py-1 rounded-full">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                Conselheiro: <strong>{{ $unidade->conselheiro }}</strong>
+                            </span>
+                            <span
+                                class="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
+                                    </path>
+                                </svg>
+                                {{ $unidade->desbravadores->count() }} Membros
+                            </span>
+                        </div>
+
+                        @if ($unidade->grito_guerra)
+                            <div
+                                class="relative bg-yellow-50 dark:bg-yellow-900/10 p-4 rounded-xl border-l-4 border-dbv-yellow italic text-gray-700 dark:text-gray-300">
+                                <svg class="absolute top-2 left-2 w-4 h-4 text-yellow-500 opacity-50"
+                                    fill="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        d="M14.017 21L14.017 18C14.017 16.8954 13.1216 16 12.017 16H9.01705C7.91248 16 7.01705 16.8954 7.01705 18L7.01705 21H14.017ZM21.017 6.00005C21.017 11.4395 16.666 16.0354 11.3912 16.148L11.4589 16.148C10.3543 16.148 9.45889 17.0435 9.45889 18.148V21.0001H4.45889C3.90661 21.0001 3.45889 20.5523 3.45889 20.0001V4.00005C3.45889 3.44776 3.90661 3.00005 4.45889 3.00005H21.017V6.00005Z">
+                                    </path>
+                                </svg>
+                                <p class="pl-4">"{{ $unidade->grito_guerra }}"</p>
                             </div>
-                        </div>
-
-                        @if($unidade->grito_guerra)
-                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-100 dark:border-gray-600 max-w-xl w-full md:w-auto relative">
-                            <svg class="absolute top-2 left-2 w-6 h-6 text-gray-200 dark:text-gray-600 opacity-50 transform -scale-x-100" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M14.017 21L14.017 18C14.017 16.054 15.65 14.773 17.683 14.225C17.935 14.156 18.106 13.918 18.082 13.658C17.228 13.791 16.365 13.575 15.674 13.065C14.28 12.036 14.017 10.05 14.017 8.007V5H21V12.083C21 16.92 17.892 20.89 14.017 21ZM5 21L5 18C5 16.054 6.633 14.773 8.667 14.225C8.918 14.156 9.09 13.918 9.065 13.658C8.212 13.791 7.348 13.575 6.658 13.065C5.263 12.036 5 10.05 5 8.007V5H11.983V12.083C11.983 16.92 8.875 20.89 5 21Z" />
-                            </svg>
-                            <p class="text-gray-700 dark:text-gray-300 italic font-serif text-center px-4 relative z-10">
-                                "{{ $unidade->grito_guerra }}"
-                            </p>
-                        </div>
-                        @else
-                        <div class="text-gray-400 italic text-sm">
-                            (Sem grito de guerra definido)
-                        </div>
                         @endif
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        Membros da Unidade
-                    </h3>
-                    <span class="bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
-                        {{ $unidade->desbravadores->count() }} Desbravadores Ativos
-                    </span>
-                </div>
-
-                <div class="p-0">
-                    @if($unidade->desbravadores->isEmpty())
-                    <div class="p-12 text-center flex flex-col items-center">
-                        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-full mb-3">
-                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                            </svg>
-                        </div>
-                        <p class="text-gray-500 dark:text-gray-400 mb-4 font-medium">Nenhum desbravador ativo nesta unidade.</p>
-                        <a href="{{ route('desbravadores.create') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline font-bold text-sm">
-                            + Cadastrar novo desbravador
-                        </a>
-                    </div>
-                    @else
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                <tr>
-                                    <th class="px-6 py-4">Nome</th>
-                                    <th class="px-6 py-4">Classe</th>
-                                    <th class="px-6 py-4 text-center">Idade</th>
-                                    <th class="px-6 py-4 text-center">Ações Rápidas</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @foreach($unidade->desbravadores as $dbv)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition group">
-                                    <td class="px-6 py-4 font-bold text-gray-900 dark:text-white">
-                                        <a href="{{ route('desbravadores.show', $dbv) }}" class="hover:text-indigo-500 flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold shadow-sm">
-                                                {{ substr($dbv->nome, 0, 1) }}
-                                            </div>
-                                            {{ $dbv->nome }}
-                                        </a>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-2 py-1 bg-gray-100 dark:bg-gray-600 rounded text-xs text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-500">
-                                            {{ $dbv->classe_atual }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center text-gray-600 dark:text-gray-400">
-                                        {{ \Carbon\Carbon::parse($dbv->data_nascimento)->age }} anos
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex justify-center gap-2">
-                                            <a href="{{ route('progresso.index', $dbv->id) }}" class="flex items-center px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded hover:bg-green-100 text-xs font-bold transition" title="Acompanhar Classes">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                                Classes
-                                            </a>
-                                            <a href="{{ route('desbravadores.especialidades', $dbv->id) }}" class="flex items-center px-2 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100 text-xs font-bold transition" title="Gerenciar Especialidades">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                                                </svg>
-                                                Espec.
-                                            </a>
-                                            <a href="{{ route('desbravadores.show', $dbv) }}" class="flex items-center px-2 py-1 bg-gray-50 text-gray-600 border border-gray-200 rounded hover:bg-gray-100 text-xs font-bold transition" title="Ver Prontuário">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @endif
-                </div>
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden mx-4 md:mx-0">
+            <div
+                class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-700/30">
+                <h3 class="font-bold text-lg text-gray-800 dark:text-gray-100">Membros da Unidade</h3>
             </div>
 
+            @if ($unidade->desbravadores->count() > 0)
+
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                        <thead class="bg-gray-50 dark:bg-slate-700/50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Nome</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Cargo</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Idade</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                            @foreach ($unidade->desbravadores as $dbv)
+                                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                @if ($dbv->foto)
+                                                    <img class="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-slate-600 shadow-sm"
+                                                        src="{{ asset('storage/' . $dbv->foto) }}" alt="">
+                                                @else
+                                                    <div
+                                                        class="h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-600 flex items-center justify-center text-gray-500 dark:text-gray-300 font-bold">
+                                                        {{ substr($dbv->nome, 0, 1) }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-bold text-gray-900 dark:text-white">
+                                                    {{ $dbv->nome }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $dbv->cargo ?? 'Desbravador' }}
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
+                                        {{ \Carbon\Carbon::parse($dbv->data_nascimento)->age }} anos
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="{{ route('desbravadores.show', $dbv) }}"
+                                            class="text-dbv-blue dark:text-blue-400 hover:underline font-bold">Ver
+                                            Perfil</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="md:hidden divide-y divide-gray-100 dark:divide-slate-700">
+                    @foreach ($unidade->desbravadores as $dbv)
+                        <div class="p-4 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                @if ($dbv->foto)
+                                    <img class="h-12 w-12 rounded-full object-cover border border-gray-200 dark:border-slate-600"
+                                        src="{{ asset('storage/' . $dbv->foto) }}" alt="">
+                                @else
+                                    <div
+                                        class="h-12 w-12 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-gray-300 font-bold">
+                                        {{ substr($dbv->nome, 0, 1) }}
+                                    </div>
+                                @endif
+                                <div>
+                                    <h4 class="font-bold text-gray-900 dark:text-white">{{ $dbv->nome }}</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ $dbv->cargo ?? 'Desbravador' }} &bull;
+                                        {{ \Carbon\Carbon::parse($dbv->data_nascimento)->age }} anos</p>
+                                </div>
+                            </div>
+                            <a href="{{ route('desbravadores.show', $dbv) }}"
+                                class="p-2 text-gray-400 hover:text-dbv-blue dark:hover:text-blue-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-center py-8">
+                    <p class="text-gray-500 dark:text-gray-400">Esta unidade ainda não possui membros.</p>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

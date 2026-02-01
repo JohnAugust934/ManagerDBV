@@ -1,60 +1,71 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            Redigir Nova Ata
+        <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
+            {{ __('Registrar Ata') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-
-                    <form action="{{ route('atas.store') }}" method="POST">
+    <div class="py-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div class="p-6">
+                    <form method="POST" action="{{ route('atas.store') }}" class="space-y-6">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-bold mb-2">Data da Reunião</label>
-                                <input type="date" name="data_reuniao" required value="{{ date('Y-m-d') }}"
-                                    class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="col-span-1 md:col-span-2">
+                                <x-input-label for="titulo" :value="__('Título / Pauta Principal')" />
+                                <x-text-input id="titulo" class="block mt-1 w-full" type="text" name="titulo"
+                                    :value="old('titulo')" required autofocus
+                                    placeholder="Ex: Reunião de Diretoria Ordinária" />
                             </div>
+
                             <div>
-                                <label class="block text-sm font-bold mb-2">Tipo de Reunião</label>
-                                <select name="tipo" required class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
-                                    <option value="Regular">Regular (Domingo)</option>
-                                    <option value="Diretoria">Diretoria</option>
-                                    <option value="Campori">Campori / Evento</option>
-                                    <option value="Extraordinária">Extraordinária</option>
-                                </select>
+                                <x-input-label for="data_reuniao" :value="__('Data')" />
+                                <x-text-input id="data_reuniao" class="block mt-1 w-full" type="date"
+                                    name="data_reuniao" :value="old('data_reuniao', date('Y-m-d'))" required />
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <x-input-label for="hora_inicio" :value="__('Início')" />
+                                    <x-text-input id="hora_inicio" class="block mt-1 w-full" type="time"
+                                        name="hora_inicio" :value="old('hora_inicio')" required />
+                                </div>
+                                <div>
+                                    <x-input-label for="hora_fim" :value="__('Fim')" />
+                                    <x-text-input id="hora_fim" class="block mt-1 w-full" type="time"
+                                        name="hora_fim" :value="old('hora_fim')" />
+                                </div>
+                            </div>
+
+                            <div class="col-span-1 md:col-span-2">
+                                <x-input-label for="local" :value="__('Local da Reunião')" />
+                                <x-text-input id="local" class="block mt-1 w-full" type="text" name="local"
+                                    :value="old('local')" placeholder="Ex: Sala dos Desbravadores" required />
+                            </div>
+
+                            <div class="col-span-1 md:col-span-2">
+                                <x-input-label for="conteudo" :value="__('Conteúdo da Ata (Deliberações)')" />
+                                <textarea id="conteudo" name="conteudo" rows="10"
+                                    class="block mt-1 w-full border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:border-dbv-blue focus:ring-dbv-blue rounded-lg shadow-sm"
+                                    required>{{ old('conteudo') }}</textarea>
+                            </div>
+
+                            <div class="col-span-1 md:col-span-2">
+                                <x-input-label for="participantes" :value="__('Participantes (Opcional)')" />
+                                <x-text-input id="participantes" class="block mt-1 w-full" type="text"
+                                    name="participantes" :value="old('participantes')" placeholder="Separe os nomes por vírgula" />
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-2">Secretário Responsável</label>
-                            <input type="text" name="secretario_responsavel" value="{{ Auth::user()->name }}"
-                                class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-2">Participantes (Resumo)</label>
-                            <input type="text" name="participantes" placeholder="Ex: Toda a diretoria e conselheiros"
-                                class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
-                        </div>
-
-                        <div class="mb-6">
-                            <label class="block text-sm font-bold mb-2">Conteúdo da Ata</label>
-                            <textarea name="conteudo" rows="10" required placeholder="Descreva tudo o que foi tratado..."
-                                class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white"></textarea>
-                        </div>
-
-                        <div class="flex justify-end">
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
-                                Salvar Ata
-                            </button>
+                        <div
+                            class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+                            <x-secondary-button onclick="window.history.back()">Cancelar</x-secondary-button>
+                            <x-primary-button>Salvar Ata</x-primary-button>
                         </div>
                     </form>
-
                 </div>
             </div>
         </div>

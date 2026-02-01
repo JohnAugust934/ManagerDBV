@@ -1,66 +1,55 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            Emitir Ato Administrativo
+        <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
+            {{ __('Publicar Ato Oficial') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-
-                    <form action="{{ route('atos.store') }}" method="POST">
+    <div class="py-6">
+        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div class="p-6">
+                    <form method="POST" action="{{ route('atos.store') }}" class="space-y-6">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="grid grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-bold mb-2">Data do Ato</label>
-                                <input type="date" name="data" required value="{{ date('Y-m-d') }}"
-                                    class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
+                                <x-input-label for="numero" :value="__('Número do Ato')" />
+                                <x-text-input id="numero" class="block mt-1 w-full" type="text" name="numero"
+                                    :value="old('numero')" required placeholder="Ex: 001/2026" />
                             </div>
                             <div>
-                                <label class="block text-sm font-bold mb-2">Tipo de Ato</label>
-                                <select name="tipo" required class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
-                                    <option value="Nomeação">Nomeação (Cargos)</option>
-                                    <option value="Exoneração">Exoneração (Saída de Cargo)</option>
-                                    <option value="Admissão">Admissão/Investidura</option>
-                                    <option value="Transferência">Transferência</option>
-                                    <option value="Disciplina">Disciplina</option>
-                                    <option value="Outro">Outro</option>
-                                </select>
+                                <x-input-label for="data" :value="__('Data')" />
+                                <x-text-input id="data" class="block mt-1 w-full" type="date" name="data"
+                                    :value="old('data', date('Y-m-d'))" required />
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-2">Descrição Resumida</label>
-                            <input type="text" name="descricao_resumida" required placeholder="Ex: Nomeação para Capitão da Unidade Águias"
-                                class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-2">Desbravador Envolvido (Opcional)</label>
-                            <select name="desbravador_id" class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
-                                <option value="">-- Não se aplica / Geral --</option>
-                                @foreach($desbravadores as $dbv)
-                                <option value="{{ $dbv->id }}">{{ $dbv->nome }}</option>
-                                @endforeach
+                        <div>
+                            <x-input-label for="tipo" :value="__('Tipo de Ato')" />
+                            <select id="tipo" name="tipo"
+                                class="block mt-1 w-full border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:border-dbv-blue focus:ring-dbv-blue rounded-lg shadow-sm">
+                                <option value="Nomeação">Nomeação</option>
+                                <option value="Exoneração">Exoneração</option>
+                                <option value="Voto da Comissão">Voto da Comissão</option>
+                                <option value="Aviso">Aviso</option>
                             </select>
                         </div>
 
-                        <div class="mb-6">
-                            <label class="block text-sm font-bold mb-2">Texto Oficial (Opcional)</label>
-                            <textarea name="texto_completo" rows="4" placeholder="Detalhes adicionais..."
-                                class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white"></textarea>
+                        <div>
+                            <x-input-label for="descricao" :value="__('Descrição / Teor do Ato')" />
+                            <textarea id="descricao" name="descricao" rows="4"
+                                class="block mt-1 w-full border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:border-dbv-blue focus:ring-dbv-blue rounded-lg shadow-sm"
+                                required></textarea>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
-                                Registrar Ato
-                            </button>
+                        <div
+                            class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+                            <x-secondary-button onclick="window.history.back()">Cancelar</x-secondary-button>
+                            <x-primary-button class="bg-red-600 hover:bg-red-700">Publicar Ato</x-primary-button>
                         </div>
                     </form>
-
                 </div>
             </div>
         </div>

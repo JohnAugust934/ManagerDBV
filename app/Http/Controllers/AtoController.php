@@ -3,36 +3,40 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ato;
-use App\Models\Desbravador;
 use Illuminate\Http\Request;
 
 class AtoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Traz os atos com o nome do desbravador (se houver)
-        $atos = Ato::with('desbravador')->orderBy('data', 'desc')->get();
+        $query = Ato::orderBy('data', 'desc');
+
+        if ($request->filled('search')) {
+            $query->where('descricao', 'like', "%{$request->search}%")
+                ->orWhere('numero', 'like', "%{$request->search}%");
+        }
+
+        $atos = $query->paginate(10);
+
         return view('secretaria.atos.index', compact('atos'));
     }
 
     public function create()
     {
-        $desbravadores = Desbravador::where('ativo', true)->orderBy('nome')->get();
-        return view('secretaria.atos.create', compact('desbravadores'));
+        return view('secretaria.atos.create');
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $dados = $request->validate([
+            'numero' => 'required|string|max:20',
             'data' => 'required|date',
-            'tipo' => 'required|string',
-            'descricao_resumida' => 'required|string|max:255',
-            'desbravador_id' => 'nullable|exists:desbravadores,id',
+            'tipo' => 'required|string', // Ex: Nomeação, Exoneração, Voto
+            'descricao' => 'required|string',
         ]);
 
-        Ato::create($request->all());
+        Ato::create($dados);
 
-        return redirect()->route('atos.index')
-            ->with('success', 'Ato administrativo registrado!');
+        return redirect()->route('atos.index')->with('success', 'Ato publicado com sucesso!');
     }
 }

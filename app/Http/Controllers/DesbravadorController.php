@@ -3,25 +3,42 @@
 namespace App\Http\Controllers;
 
 use App\Models\Desbravador;
-use App\Models\Unidade;
+use App\Models\Especialidade;
+use App\Models\Unidade; // Importante para o método de especialidades
 use Illuminate\Http\Request;
 
 class DesbravadorController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->input('status', 'ativos'); // Padrão: ativos
-
+        // Inicia a query carregando a unidade para otimizar (Eager Loading)
         $query = Desbravador::with('unidade')->orderBy('nome');
 
+        // 1. Filtro da Barra de Busca (Nome ou Email)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nome', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // 2. Filtro por Unidade (Dropdown)
+        if ($request->filled('unidade_id')) {
+            $query->where('unidade_id', $request->unidade_id);
+        }
+
+        // 3. Filtro de Status (Padrão: Apenas ativos, a menos que solicitado)
+        $status = $request->input('status', 'ativos');
         if ($status === 'ativos') {
             $query->where('ativo', true);
         } elseif ($status === 'inativos') {
             $query->where('ativo', false);
         }
-        // Se for 'todos', não aplica filtro de ativo
 
-        $desbravadores = $query->get();
+        // CORREÇÃO PRINCIPAL: Usar paginate(10) em vez de get()
+        // Isso resolve o erro "Method appends does not exist"
+        $desbravadores = $query->paginate(10);
 
         return view('desbravadores.index', compact('desbravadores', 'status'));
     }
@@ -29,12 +46,12 @@ class DesbravadorController extends Controller
     public function create()
     {
         $unidades = Unidade::orderBy('nome')->get();
+
         return view('desbravadores.create', compact('unidades'));
     }
 
     public function store(Request $request)
     {
-        // Regras de validação estritas conforme solicitado
         $dados = $request->validate([
             // Dados do Clube
             'nome' => 'required|string|max:255',
@@ -43,22 +60,22 @@ class DesbravadorController extends Controller
             'unidade_id' => 'required|exists:unidades,id',
             'classe_atual' => 'required|string',
 
-            // Dados Pessoais e Contato (Agora Obrigatórios)
+            // Dados Pessoais e Contato
             'email' => 'required|email',
-            'telefone' => 'nullable|string', // Telefone próprio pode ser opcional se tiver o do pai
+            'telefone' => 'nullable|string',
             'endereco' => 'required|string|max:500',
             'nome_responsavel' => 'required|string|max:255',
             'telefone_responsavel' => 'required|string',
-            'numero_sus' => 'required|string|max:50', // Obrigatório
+            'numero_sus' => 'required|string|max:50',
 
-            // Dados Médicos (Opcionais, mas mantidos)
+            // Dados Médicos
             'tipo_sanguineo' => 'nullable|string|max:3',
             'alergias' => 'nullable|string',
             'medicamentos_continuos' => 'nullable|string',
             'plano_saude' => 'nullable|string',
         ]);
 
-        $dados['ativo'] = true; // Novo cadastro nasce ativo
+        $dados['ativo'] = true;
 
         Desbravador::create($dados);
 
@@ -77,6 +94,7 @@ class DesbravadorController extends Controller
     public function edit(Desbravador $desbravador)
     {
         $unidades = Unidade::orderBy('nome')->get();
+
         return view('desbravadores.edit', compact('desbravador', 'unidades'));
     }
 
@@ -101,7 +119,6 @@ class DesbravadorController extends Controller
             'plano_saude' => 'nullable|string',
         ]);
 
-        // Checkbox não marcado não envia valor no request
         $dados['ativo'] = $request->has('ativo');
 
         $desbravador->update($dados);
@@ -109,34 +126,26 @@ class DesbravadorController extends Controller
         return redirect()->route('desbravadores.show', $desbravador)->with('success', 'Dados atualizados!');
     }
 
-    /**
-     * Tela de gestão de especialidades do desbravador.
-     */
     public function gerenciarEspecialidades(Desbravador $desbravador)
     {
-        $especialidades = \App\Models\Especialidade::orderBy('nome')->get();
+        $especialidades = Especialidade::orderBy('nome')->get();
+
         return view('desbravadores.especialidades', compact('desbravador', 'especialidades'));
     }
 
-    /**
-     * Salva as especialidades selecionadas.
-     */
     public function salvarEspecialidades(Request $request, Desbravador $desbravador)
     {
-        $dados = $request->validate([
+        $request->validate([
             'especialidades' => 'array',
             'especialidades.*' => 'exists:especialidades,id',
             'data_conclusao' => 'required|date',
         ]);
 
         if ($request->has('especialidades')) {
-            // Prepara array para sync com dado extra na pivot
             $syncData = [];
             foreach ($request->especialidades as $espId) {
                 $syncData[$espId] = ['data_conclusao' => $request->data_conclusao];
             }
-
-            // Sync sem apagar as antigas (para adicionar novas)
             $desbravador->especialidades()->syncWithoutDetaching($syncData);
 
             return back()->with('success', 'Especialidades adicionadas com sucesso!');
@@ -145,12 +154,10 @@ class DesbravadorController extends Controller
         return back()->with('warning', 'Nenhuma especialidade selecionada.');
     }
 
-    /**
-     * Remove uma especialidade específica.
-     */
     public function removerEspecialidade(Desbravador $desbravador, $especialidadeId)
     {
         $desbravador->especialidades()->detach($especialidadeId);
+
         return back()->with('success', 'Especialidade removida.');
     }
 }
