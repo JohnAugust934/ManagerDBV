@@ -2,24 +2,23 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use App\Models\User;
-use App\Models\Club;
-use App\Models\Unidade;
-use App\Models\Desbravador;
-use App\Models\Especialidade;
-use App\Models\Caixa;
-use App\Models\Patrimonio;
 use App\Models\Ata;
 use App\Models\Ato;
-use App\Models\Mensalidade;
-use App\Models\Frequencia;
-use App\Models\Evento;
+use App\Models\Caixa;
 use App\Models\Classe;
+use App\Models\Club;
+use App\Models\Desbravador;
+use App\Models\Especialidade;
+use App\Models\Evento;
+use App\Models\Frequencia;
+use App\Models\Mensalidade;
+use App\Models\Patrimonio;
 use App\Models\Requisito;
+use App\Models\Unidade;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -41,7 +40,7 @@ class DatabaseSeeder extends Seeder
         // ---------------------------------------------------------
         // 2. USUÁRIOS DO SISTEMA (POR CARGO)
         // ---------------------------------------------------------
-        
+
         $cargos = [
             ['name' => 'Administrador Master', 'email' => 'admin@desbravadores.com', 'role' => 'master', 'club_id' => null, 'is_master' => true],
             ['name' => 'Diretor Silva', 'email' => 'diretor@clube.com', 'role' => 'diretor', 'club_id' => $clube->id, 'is_master' => false],
@@ -56,7 +55,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => $cargo['role'],
                 'club_id' => $cargo['club_id'],
-                'is_master' => $cargo['is_master']
+                'is_master' => $cargo['is_master'],
             ]);
         }
 
@@ -65,7 +64,7 @@ class DatabaseSeeder extends Seeder
         // ---------------------------------------------------------
         // 3. UNIDADES & CONSELHEIROS
         // ---------------------------------------------------------
-        
+
         $unidades = collect();
         $dadosUnidades = [
             ['nome' => 'Águias', 'grito' => 'Voando alto, sempre avante!', 'conselheiro' => 'Conselheiro Pedro', 'email' => 'pedro@clube.com'],
@@ -96,7 +95,7 @@ class DatabaseSeeder extends Seeder
         // ---------------------------------------------------------
         // 4. PEDAGÓGICO
         // ---------------------------------------------------------
-        
+
         $dadosClasses = [
             ['nome' => 'Amigo', 'cor' => '#3B82F6', 'reqs' => ['Ter 10 anos completos', 'Saber o Hino Nacional', 'Ler o livro do ano', 'Saber o Voto e a Lei']],
             ['nome' => 'Companheiro', 'cor' => '#F59E0B', 'reqs' => ['Ter 11 anos completos', 'Memorizar livros da Bíblia', 'Demonstrar nós básicos', 'Participar de caminhada de 5km']],
@@ -110,15 +109,15 @@ class DatabaseSeeder extends Seeder
         foreach ($dadosClasses as $idx => $dado) {
             $classe = Classe::firstOrCreate(['nome' => $dado['nome']], [
                 'cor' => $dado['cor'],
-                'ordem' => $idx + 1
+                'ordem' => $idx + 1,
             ]);
             $classesModels->push($classe);
 
             foreach ($dado['reqs'] as $i => $desc) {
                 Requisito::firstOrCreate(['descricao' => $desc], [
                     'classe_id' => $classe->id,
-                    'codigo' => substr($dado['nome'], 0, 1) . '-' . ($i + 1),
-                    'categoria' => 'Gerais'
+                    'codigo' => substr($dado['nome'], 0, 1).'-'.($i + 1),
+                    'categoria' => 'Gerais',
                 ]);
             }
         }
@@ -129,7 +128,7 @@ class DatabaseSeeder extends Seeder
             'Culinária', 'Fogueiras e Cozinha', 'Répteis', 'Anfíbios',
             'Astronomia', 'Arte de Acampar', 'Pioneiria', 'Excursionismo',
             'Natação Principiante', 'Ordem Unida', 'Civismo', 'Cães', 'Gatos',
-            'Sementes', 'Flores', 'Cactos', 'Arte de Contar Histórias'
+            'Sementes', 'Flores', 'Cactos', 'Arte de Contar Histórias',
         ];
 
         $especialidades = collect();
@@ -150,7 +149,7 @@ class DatabaseSeeder extends Seeder
         foreach ($unidades as $unidade) {
             for ($i = 0; $i < rand(6, 8); $i++) {
                 $sexo = fake()->randomElement(['M', 'F']);
-                
+
                 $dbv = Desbravador::create([
                     'ativo' => true,
                     'nome' => fake()->name($sexo == 'M' ? 'male' : 'female'),
@@ -172,17 +171,17 @@ class DatabaseSeeder extends Seeder
 
                 // Especialidades
                 $dbv->especialidades()->attach($especialidades->random(rand(1, 5))->pluck('id'), [
-                    'data_conclusao' => fake()->dateTimeBetween('-2 years', 'now')
+                    'data_conclusao' => fake()->dateTimeBetween('-2 years', 'now'),
                 ]);
 
                 // Progresso
                 $classeObj = $classesModels->where('nome', $dbv->classe_atual)->first();
                 if ($classeObj) {
                     $reqs = $classeObj->requisitos->random(rand(1, 2));
-                    foreach($reqs as $req) {
+                    foreach ($reqs as $req) {
                         $dbv->requisitosCumpridos()->attach($req->id, [
                             'user_id' => $diretor->id,
-                            'data_conclusao' => now()->subDays(rand(1, 60))
+                            'data_conclusao' => now()->subDays(rand(1, 60)),
                         ]);
                     }
                 }
@@ -209,16 +208,16 @@ class DatabaseSeeder extends Seeder
                 'valor' => $evt['valor'],
                 'data_inicio' => date('Y-m-d H:i:s', strtotime($evt['inicio'])),
                 'data_fim' => date('Y-m-d H:i:s', strtotime($evt['fim'])),
-                'descricao' => 'Evento oficial do calendário anual.'
+                'descricao' => 'Evento oficial do calendário anual.',
             ]);
 
             foreach ($desbravadores as $dbv) {
-                $chance = (strtotime($evt['inicio']) < time()) ? 80 : 40; 
+                $chance = (strtotime($evt['inicio']) < time()) ? 80 : 40;
                 if (fake()->boolean($chance)) {
                     $pago = ($evento->valor == 0) || fake()->boolean(60);
                     $evento->desbravadores()->attach($dbv->id, [
                         'pago' => $pago,
-                        'autorizacao_entregue' => fake()->boolean(70)
+                        'autorizacao_entregue' => fake()->boolean(70),
                     ]);
                 }
             }
@@ -241,9 +240,9 @@ class DatabaseSeeder extends Seeder
         // MENSALIDADES (CORRIGIDO PARA EVITAR ERRO DE DIA 31)
         // Usamos startOfMonth() para garantir que a data seja sempre dia 01
         $meses = [
-            now()->startOfMonth()->subMonths(2), 
-            now()->startOfMonth()->subMonth(), 
-            now()->startOfMonth()
+            now()->startOfMonth()->subMonths(2),
+            now()->startOfMonth()->subMonth(),
+            now()->startOfMonth(),
         ];
 
         foreach ($meses as $data) {
@@ -256,7 +255,7 @@ class DatabaseSeeder extends Seeder
                 ], [
                     'valor' => 20.00,
                     'status' => $status,
-                    'data_pagamento' => $status == 'pago' ? $data->copy()->addDays(rand(1, 10)) : null
+                    'data_pagamento' => $status == 'pago' ? $data->copy()->addDays(rand(1, 10)) : null,
                 ]);
             }
         }
@@ -280,30 +279,38 @@ class DatabaseSeeder extends Seeder
                 'estado_conservacao' => $item['estado'],
                 'data_aquisicao' => fake()->date(),
                 'local_armazenamento' => 'Almoxarifado Sede',
-                'observacoes' => 'Inventário 2026'
+                'observacoes' => 'Inventário 2026',
             ]);
         }
         $this->command->info('✅ Patrimônio populado.');
 
         // ---------------------------------------------------------
-        // 9. SECRETARIA
+        // 9. SECRETARIA (CORRIGIDO: TITULO, HORAS E LOCAL)
         // ---------------------------------------------------------
         for ($i = 0; $i < 5; $i++) {
             Ata::create([
+                'titulo' => 'Reunião Administrativa nº '.($i + 1),
                 'tipo' => fake()->randomElement(['Regular', 'Diretoria', 'Planejamento']),
                 'data_reuniao' => fake()->dateTimeBetween('-6 months', 'now'),
+
+                // CORREÇÃO: Campos obrigatórios adicionados
+                'hora_inicio' => fake()->time('H:i'),
+                'hora_fim' => fake()->time('H:i'),
+                'local' => 'Sede do Clube',
+
                 'secretario_responsavel' => 'Secretária Ana',
                 'participantes' => 'Diretoria completa.',
                 'conteudo' => fake()->paragraphs(3, true),
             ]);
         }
 
+        // ATOS ADMINISTRATIVOS
         for ($i = 0; $i < 3; $i++) {
             Ato::create([
+                'numero' => str_pad($i + 1, 3, '0', STR_PAD_LEFT).'/2026',
                 'tipo' => fake()->randomElement(['Nomeação', 'Exoneração']),
                 'data' => fake()->dateTimeBetween('-6 months', 'now'),
-                'descricao_resumida' => 'Ato oficial administrativo.',
-                'texto_completo' => fake()->paragraph(),
+                'descricao' => fake()->paragraph(),
                 'desbravador_id' => $desbravadores->random()->id,
             ]);
         }
