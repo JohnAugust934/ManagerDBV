@@ -1,0 +1,42 @@
+name: CI (Testes Automatizados)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar o PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, fileinfo
+          coverage: none
+
+      - name: Copiar arquivo .env
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      - name: Instalar Dependências do Composer
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Gerar Chave da Aplicação
+        run: php artisan key:generate
+
+      - name: Criar Banco de Dados SQLite (Arquivo vazio para garantir)
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+
+      - name: Rodar Testes (Pest)
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test
