@@ -9,7 +9,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesbravadorController;
 use App\Http\Controllers\EspecialidadeController;
 use App\Http\Controllers\EventoController;
-use App\Http\Controllers\FrequenciaController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MensalidadeController;
 use App\Http\Controllers\PatrimonioController;
@@ -99,9 +98,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/desbravadores/{desbravador}/progresso', [ProgressoController::class, 'index'])->name('progresso.index');
         Route::post('/desbravadores/{desbravador}/progresso/toggle', [ProgressoController::class, 'toggle'])->name('progresso.toggle');
 
-        // Frequência (Chamada)
-        Route::get('/frequencia/chamada', [FrequenciaController::class, 'create'])->name('frequencia.create');
-        Route::post('/frequencia/chamada', [FrequenciaController::class, 'store'])->name('frequencia.store');
+        // Frequência (Agrupadas)
+        Route::prefix('frequencia')->name('frequencia.')->group(function () {
+            // Nova rota para ver o histórico (Visualização)
+            Route::get('/', [App\Http\Controllers\FrequenciaController::class, 'index'])->name('index');
+
+            // Rota antiga para fazer a chamada (Ação)
+            Route::get('/chamada', [App\Http\Controllers\FrequenciaController::class, 'create'])->name('create');
+            Route::post('/store', [App\Http\Controllers\FrequenciaController::class, 'store'])->name('store');
+        });
     });
 
     // --- MÓDULO FINANCEIRO (Tesoureiro e Diretor) ---

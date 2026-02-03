@@ -168,16 +168,39 @@
                         Unidades
                     </a>
 
-                    {{-- 4. Frequência (Novo) --}}
-                    <a href="{{ route('frequencia.create') }}"
-                        class="{{ $linkClass }} {{ request()->routeIs('frequencia*') ? $activeClass : $inactiveClass }}">
-                        <svg class="w-5 h-5 mr-3 {{ request()->routeIs('frequencia*') ? 'text-white' : 'text-blue-300 group-hover:text-white' }}"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        Frequência
-                    </a>
+                    {{-- 4. Frequência (Dropdown) --}}
+                    <div x-data="{ open: {{ request()->routeIs('frequencia*') ? 'true' : 'false' }} }">
+                        <button @click="open = !open"
+                            class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-blue-100 transition-colors duration-200 rounded-lg hover:bg-white/10 hover:text-white">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('frequencia*') ? 'text-white' : 'text-blue-300' }}"
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                                Frequência
+                            </div>
+                            <svg :class="open ? 'rotate-180' : ''"
+                                class="w-4 h-4 transition-transform duration-200 text-blue-300" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-cloak class="pl-11 pr-3 mt-1 space-y-1">
+                            {{-- Opção 1: Histórico (Padrão) --}}
+                            <a href="{{ route('frequencia.index') }}"
+                                class="block px-3 py-2 text-sm text-blue-200 transition-colors rounded-md hover:text-white hover:bg-white/5 {{ request()->routeIs('frequencia.index') ? 'text-white bg-white/10' : '' }}">
+                                Histórico Mensal
+                            </a>
+
+                            {{-- Opção 2: Nova Chamada --}}
+                            <a href="{{ route('frequencia.create') }}"
+                                class="block px-3 py-2 text-sm text-blue-200 transition-colors rounded-md hover:text-white hover:bg-white/5 {{ request()->routeIs('frequencia.create') ? 'text-white bg-white/10' : '' }}">
+                                Nova Chamada
+                            </a>
+                        </div>
+                    </div>
 
                     {{-- 5. Documentos --}}
                     <div x-data="{ open: {{ request()->routeIs('atas*') || request()->routeIs('atos*') ? 'true' : 'false' }} }">
