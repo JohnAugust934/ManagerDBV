@@ -17,7 +17,6 @@ class FrequenciaTest extends TestCase
     public function test_pode_acessar_historico_frequencia()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        // Role correto: 'secretario' (conforme seu User.php)
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
         $response = $this->actingAs($user)->get(route('frequencia.index'));
@@ -34,23 +33,20 @@ class FrequenciaTest extends TestCase
         $unidade = Unidade::factory()->create();
         $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
 
-        // Cria frequência em JANEIRO de 2026 (Dia 15)
+        // Cria frequência em JANEIRO de 2026
         Frequencia::create([
             'desbravador_id' => $dbv->id,
             'data' => '2026-01-15',
             'presente' => true,
         ]);
 
-        // 1. Acessa o filtro de JANEIRO 2026 -> Deve encontrar o dia 15
+        // Acessa o filtro de JANEIRO 2026 -> Deve encontrar
         $response = $this->actingAs($user)->get(route('frequencia.index', ['mes' => 1, 'ano' => 2026]));
-        $response->assertSeeText('15'); // assertSeeText ignora classes CSS como duration-150
+        $response->assertSeeText('15');
         $response->assertSee($dbv->nome);
 
-        // 2. Acessa o filtro de FEVEREIRO 2026 -> Não deve encontrar o dia 15
+        // Acessa o filtro de FEVEREIRO 2026 -> Não deve encontrar a reunião de janeiro
         $response2 = $this->actingAs($user)->get(route('frequencia.index', ['mes' => 2, 'ano' => 2026]));
-
-        // Aqui usamos assertDontSeeText para garantir que não vemos o TEXTO "15",
-        // mas ignoramos o "15" que existe nas classes CSS do layout (duration-150)
         $response2->assertDontSeeText('15');
     }
 
@@ -63,5 +59,32 @@ class FrequenciaTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Registro de Chamada');
+    }
+
+    public function test_salvar_chamada_com_falta_gera_registro_de_ausencia()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'master']);
+
+        $unidade = Unidade::factory()->create();
+        $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
+
+        $dados = [
+            'data' => now()->format('Y-m-d'),
+            'presencas' => [
+                $dbv->id => [
+                    'registrado' => '1', // Simula o hidden input
+                    // 'presente' => não enviado (checkbox desmarcado)
+                ],
+            ],
+        ];
+
+        $this->actingAs($user)->post(route('frequencia.store'), $dados);
+
+        // Verifica se criou o registro no banco com presente = 0
+        $this->assertDatabaseHas('frequencias', [
+            'desbravador_id' => $dbv->id,
+            'presente' => false, // Deve ser falso, mas o registro deve EXISTIR
+        ]);
     }
 }

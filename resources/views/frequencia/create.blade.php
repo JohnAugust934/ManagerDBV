@@ -55,9 +55,14 @@
                                                     @foreach ($unidade->desbravadores as $dbv)
                                                         <tr
                                                             class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">
-                                                            <td class="px-4 py-3 font-medium">{{ $dbv->nome }}</td>
+                                                            <td class="px-4 py-3 font-medium">
+                                                                {{-- CORREÇÃO: Input Hidden para garantir envio mesmo se tudo estiver desmarcado --}}
+                                                                <input type="hidden"
+                                                                    name="presencas[{{ $dbv->id }}][registrado]"
+                                                                    value="1">
+                                                                {{ $dbv->nome }}
+                                                            </td>
 
-                                                            {{-- CORREÇÃO: Mudado de 'frequencia' para 'presencas' para bater com o Controller --}}
                                                             <td class="px-4 py-3 text-center">
                                                                 <input type="checkbox"
                                                                     name="presencas[{{ $dbv->id }}][presente]"
