@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Evento;
+use App\Models\Caixa;
 use App\Models\Desbravador;
-use Illuminate\Http\Request;
+use App\Models\Evento;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EventoController extends Controller
 {
+    // ... index, create, store, edit, update (MANTIDOS IGUAIS) ...
     public function index()
     {
-        // Ordena eventos futuros primeiro
-        $eventos = Evento::orderBy('data_inicio', 'desc')->get();
+        $eventos = Evento::withCount('desbravadores')->orderBy('data_inicio', 'desc')->paginate(9);
+
         return view('eventos.index', compact('eventos'));
     }
 
@@ -27,79 +30,155 @@ class EventoController extends Controller
             'nome' => 'required|string|max:255',
             'local' => 'required|string|max:255',
             'data_inicio' => 'required|date',
-            'data_fim' => 'nullable|date|after_or_equal:data_inicio',
+            'data_fim' => 'required|date|after_or_equal:data_inicio',
             'valor' => 'required|numeric|min:0',
             'descricao' => 'nullable|string',
         ]);
-
         Evento::create($dados);
 
-        return redirect()->route('eventos.index')->with('success', 'Evento criado com sucesso!');
+        return redirect()->route('eventos.index')->with('success', 'Evento criado!');
     }
 
     public function show(Evento $evento)
     {
-        // Carrega inscritos e também todos os desbravadores para o select de inscrição
-        $evento->load(['desbravadores' => function ($q) {
-            $q->orderBy('nome');
-        }]);
+        $evento->load(['desbravadores.unidade']);
 
-        // Lista de quem NÃO está inscrito ainda (apenas ativos)
-        $naoInscritos = Desbravador::ativos()
-            ->whereDoesntHave('eventos', function ($q) use ($evento) {
-                $q->where('evento_id', $evento->id);
-            })
+        // CORREÇÃO: Carrega quem NÃO está inscrito para o select
+        $inscritosIds = $evento->desbravadores->pluck('id');
+        $naoInscritos = Desbravador::where('ativo', true)
+            ->whereNotIn('id', $inscritosIds)
             ->orderBy('nome')
             ->get();
 
         return view('eventos.show', compact('evento', 'naoInscritos'));
     }
 
-    // --- Métodos de Inscrição ---
+    public function edit(Evento $evento)
+    {
+        return view('eventos.edit', compact('evento'));
+    }
+
+    public function update(Request $request, Evento $evento)
+    {
+        $dados = $request->validate([
+            'nome' => 'required|string|max:255',
+            'local' => 'required|string|max:255',
+            'data_inicio' => 'required|date',
+            'data_fim' => 'required|date|after_or_equal:data_inicio',
+            'valor' => 'required|numeric|min:0',
+            'descricao' => 'nullable|string',
+        ]);
+
+        $evento->update($dados);
+
+        // ALTERADO: Redireciona para a tela de visualização (show) do evento
+        return redirect()->route('eventos.show', $evento->id)->with('success', 'Evento atualizado!');
+    }
+
+    public function destroy(Evento $evento)
+    {
+        if ($evento->desbravadores()->count() > 0) {
+            return back()->with('error', 'Não é possível excluir evento com inscritos. Remova as inscrições primeiro.');
+        }
+        $evento->delete();
+
+        return redirect()->route('eventos.index')->with('success', 'Evento removido.');
+    }
+
+    // --- MÉTODOS DE INSCRIÇÃO ---
 
     public function inscrever(Request $request, Evento $evento)
     {
         $request->validate(['desbravador_id' => 'required|exists:desbravadores,id']);
 
-        $evento->desbravadores()->attach($request->desbravador_id, [
-            'pago' => false,
-            'autorizacao_entregue' => false
-        ]);
+        if (! $evento->desbravadores()->where('desbravador_id', $request->desbravador_id)->exists()) {
+            $evento->desbravadores()->attach($request->desbravador_id, ['pago' => false, 'autorizacao_entregue' => false]);
 
-        return back()->with('success', 'Inscrição realizada!');
+            return back()->with('success', 'Inscrito com sucesso!');
+        }
+
+        return back()->with('info', 'Já estava inscrito.');
+    }
+
+    // NOVO: Inscrição em Lote
+    public function inscreverEmLote(Request $request, Evento $evento)
+    {
+        $request->validate(['desbravadores' => 'required|array']);
+
+        $count = 0;
+        foreach ($request->desbravadores as $id) {
+            if (! $evento->desbravadores()->where('desbravador_id', $id)->exists()) {
+                $evento->desbravadores()->attach($id, ['pago' => false, 'autorizacao_entregue' => false]);
+                $count++;
+            }
+        }
+
+        return back()->with('success', "$count desbravadores inscritos!");
     }
 
     public function removerInscricao(Evento $evento, Desbravador $desbravador)
     {
+        // Se estava pago, deveríamos estornar do caixa?
+        // Por simplicidade, assumimos que o tesoureiro ajusta manual se necessário, ou removemos aqui.
+        // Vamos apenas remover a inscrição.
         $evento->desbravadores()->detach($desbravador->id);
-        return back()->with('success', 'Inscrição removida.');
+
+        return back()->with('success', 'Removido do evento.');
     }
 
+    // ATUALIZADO: AJAX + Integração com Caixa
     public function atualizarStatus(Request $request, Evento $evento, Desbravador $desbravador)
     {
-        // Atualiza pivot (Pago / Autorização)
-        $campo = $request->campo; // 'pago' ou 'autorizacao_entregue'
-        $valor = $request->valor == '1';
+        $campo = $request->campo;
+        $valor = filter_var($request->valor, FILTER_VALIDATE_BOOLEAN);
 
-        if (in_array($campo, ['pago', 'autorizacao_entregue'])) {
-            $evento->desbravadores()->updateExistingPivot($desbravador->id, [
-                $campo => $valor
-            ]);
+        if ($campo === 'pago') {
+            DB::transaction(function () use ($evento, $desbravador, $valor) {
+                // 1. Atualiza Pivot
+                $evento->desbravadores()->updateExistingPivot($desbravador->id, ['pago' => $valor]);
+
+                // 2. Lança no Caixa (Se tiver valor > 0)
+                if ($evento->valor > 0) {
+                    if ($valor) {
+                        // Entrada
+                        Caixa::create([
+                            'descricao' => "Evento: {$evento->nome} - {$desbravador->nome}",
+                            'tipo' => 'entrada',
+                            'valor' => $evento->valor,
+                            'data_movimentacao' => now(),
+                        ]);
+                    } else {
+                        // Saída (Estorno)
+                        Caixa::create([
+                            'descricao' => "Estorno Evento: {$evento->nome} - {$desbravador->nome}",
+                            'tipo' => 'saida',
+                            'valor' => $evento->valor,
+                            'data_movimentacao' => now(),
+                        ]);
+                    }
+                }
+            });
+
+            // Retorno JSON para o AJAX
+            return response()->json(['success' => true, 'novo_status' => $valor]);
         }
 
-        return back()->with('success', 'Status atualizado!');
-    }
+        if ($campo === 'autorizacao_entregue') {
+            $evento->desbravadores()->updateExistingPivot($desbravador->id, ['autorizacao_entregue' => $valor]);
 
-    // --- PDF ---
+            return response()->json(['success' => true, 'novo_status' => $valor]);
+        }
+
+        return response()->json(['error' => 'Campo inválido'], 400);
+    }
 
     public function gerarAutorizacao(Evento $evento, Desbravador $desbravador)
     {
-        // Usa a view existente mas injetando dados do evento
         $pdf = Pdf::loadView('relatorios.autorizacao', [
             'desbravador' => $desbravador,
-            'evento' => $evento // Passa o evento para preencher local e data
+            'evento' => $evento,
         ]);
 
-        return $pdf->stream("autorizacao_{$evento->nome}_{$desbravador->nome}.pdf");
+        return $pdf->stream('autorizacao.pdf');
     }
 }

@@ -83,7 +83,7 @@
                     <svg class="w-5 h-5 mr-3 {{ request()->routeIs('dashboard') ? 'text-white' : 'text-blue-300 group-hover:text-white' }}"
                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                     Painel
                 </a>
@@ -118,19 +118,6 @@
                     </div>
                 </div>
 
-                @can('eventos')
-                    <a href="{{ route('eventos.index') }}"
-                        class="{{ $linkClass }} {{ request()->routeIs('eventos*') ? $activeClass : $inactiveClass }}">
-                        <svg class="w-5 h-5 mr-3 {{ request()->routeIs('eventos*') ? 'text-white' : 'text-blue-300 group-hover:text-white' }}"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Eventos
-                    </a>
-                @endcan
-
-
                 {{-- ================= SECRETARIA ================= --}}
                 @can('secretaria')
                     <p class="px-3 mt-6 text-[10px] font-bold text-blue-300/80 uppercase tracking-wider mb-2">Secretaria</p>
@@ -157,7 +144,7 @@
                         Desbravadores
                     </a>
 
-                    {{-- 3. Unidades (Movido para cá) --}}
+                    {{-- 3. Unidades --}}
                     <a href="{{ route('unidades.index') }}"
                         class="{{ $linkClass }} {{ request()->routeIs('unidades*') ? $activeClass : $inactiveClass }}">
                         <svg class="w-5 h-5 mr-3 {{ request()->routeIs('unidades*') ? 'text-white' : 'text-blue-300 group-hover:text-white' }}"
@@ -168,7 +155,18 @@
                         Unidades
                     </a>
 
-                    {{-- 4. Frequência (Dropdown) --}}
+                    {{-- 4. Eventos (MOVIDO PARA CÁ) --}}
+                    <a href="{{ route('eventos.index') }}"
+                        class="{{ $linkClass }} {{ request()->routeIs('eventos*') ? $activeClass : $inactiveClass }}">
+                        <svg class="w-5 h-5 mr-3 {{ request()->routeIs('eventos*') ? 'text-white' : 'text-blue-300 group-hover:text-white' }}"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Eventos
+                    </a>
+
+                    {{-- 5. Frequência (Dropdown) --}}
                     <div x-data="{ open: {{ request()->routeIs('frequencia*') ? 'true' : 'false' }} }">
                         <button @click="open = !open"
                             class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-blue-100 transition-colors duration-200 rounded-lg hover:bg-white/10 hover:text-white">
@@ -202,7 +200,7 @@
                         </div>
                     </div>
 
-                    {{-- 5. Documentos --}}
+                    {{-- 6. Documentos --}}
                     <div x-data="{ open: {{ request()->routeIs('atas*') || request()->routeIs('atos*') ? 'true' : 'false' }} }">
                         <button @click="open = !open"
                             class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-blue-100 transition-colors duration-200 rounded-lg hover:bg-white/10 hover:text-white">
@@ -276,7 +274,7 @@
                     <p class="px-3 mt-6 text-[10px] font-bold text-blue-300/80 uppercase tracking-wider mb-2">Pedagógico
                     </p>
 
-                    {{-- 1. Classes (Atualizado) --}}
+                    {{-- 1. Classes --}}
                     <a href="{{ route('classes.index') }}"
                         class="{{ $linkClass }} {{ request()->routeIs('classes*') ? $activeClass : $inactiveClass }}">
                         <svg class="w-5 h-5 mr-3 {{ request()->routeIs('classes*') ? 'text-white' : 'text-blue-300 group-hover:text-white' }}"
