@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Desbravador;
 use App\Models\Caixa;
-use App\Models\Unidade;
+use App\Models\Desbravador;
 use App\Models\Frequencia;
-use Illuminate\Http\Request;
+use App\Models\Mensalidade;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -14,62 +13,54 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. Total de Desbravadores
-        $totalMembros = Desbravador::count();
-
-        // 2. Saldo em Caixa (Entradas - Saídas)
+        // 1. Financeiro: Saldo em Caixa
         $entradas = Caixa::where('tipo', 'entrada')->sum('valor');
         $saidas = Caixa::where('tipo', 'saida')->sum('valor');
         $saldoAtual = $entradas - $saidas;
 
-        // 3. Aniversariantes do Mês
-        $mesAtual = Carbon::now()->month;
+        // 2. Financeiro: Inadimplência (Mês Atual)
+        $mesAtual = now()->month;
+        $anoAtual = now()->year;
 
-        // Busca todos do mês e ordena pela coleção (agnóstico de banco de dados)
-        $aniversariantes = Desbravador::whereMonth('data_nascimento', $mesAtual)
-            ->get()
-            ->sortBy(function ($dbv) {
-                return $dbv->data_nascimento->day;
-            });
+        $totalMensalidades = Mensalidade::where('mes', $mesAtual)
+            ->where('ano', $anoAtual)
+            ->count();
 
-        // 4. Ranking das Unidades (Lógica existente aprimorada)
-        $ranking = Unidade::all()->map(function ($unidade) {
-            return [
-                'nome' => $unidade->nome,
-                'pontos' => $unidade->pontuacao_total, // Usa o accessor do Model
-                'membros' => $unidade->desbravadores->count()
-            ];
-        })->sortByDesc('pontos')->values();
+        $pendentes = Mensalidade::where('mes', $mesAtual)
+            ->where('ano', $anoAtual)
+            ->where('status', 'pendente')
+            ->count();
 
-        // 5. Dados para Gráfico de Frequência (Últimas 4 reuniões)
-        $datasReunioes = Frequencia::select('data')
-            ->distinct()
+        $taxaInadimplencia = $totalMensalidades > 0
+            ? round(($pendentes / $totalMensalidades) * 100, 1)
+            : 0;
+
+        // 3. Operacional: Total de Ativos
+        $totalAtivos = Desbravador::ativos()->count();
+
+        // 4. Analytics: Gráfico de Frequência (Últimas 5 reuniões)
+        // Agrupa por data e conta quantos 'presente = true' vs Total
+        // CORREÇÃO: Usar 'presente = true' para compatibilidade com PostgreSQL
+        $frequencias = Frequencia::select(
+            'data',
+            DB::raw('count(*) as total'),
+            DB::raw('sum(case when presente = true then 1 else 0 end) as presentes')
+        )
+            ->groupBy('data')
             ->orderBy('data', 'desc')
-            ->take(4)
-            ->pluck('data')
-            ->sort()
-            ->values();
+            ->take(5)
+            ->get()
+            ->reverse(); // Inverte para o gráfico mostrar cronologicamente (esq -> dir)
 
-        $graficoFrequencia = [];
-        $totalAtivos = Desbravador::count(); // Pega o total uma vez para otimizar
-
-        foreach ($datasReunioes as $data) {
-            // whereDate garante que ignoramos a hora (00:00:00) na comparação
-            $presentes = Frequencia::whereDate('data', $data)->where('presente', true)->count();
-
-            $graficoFrequencia[] = [
-                'data' => Carbon::parse($data)->format('d/m'),
-                'presentes' => $presentes,
-                'percentual' => $totalAtivos > 0 ? round(($presentes / $totalAtivos) * 100) : 0
-            ];
-        }
+        $labelsGrafico = $frequencias->map(fn ($f) => Carbon::parse($f->data)->format('d/m'));
+        $dadosGrafico = $frequencias->map(fn ($f) => $f->total > 0 ? round(($f->presentes / $f->total) * 100) : 0);
 
         return view('dashboard', compact(
-            'totalMembros',
             'saldoAtual',
-            'aniversariantes',
-            'ranking',
-            'graficoFrequencia'
+            'taxaInadimplencia',
+            'totalAtivos',
+            'labelsGrafico',
+            'dadosGrafico'
         ));
     }
 }
