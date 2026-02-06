@@ -9,7 +9,12 @@ class UnidadeController extends Controller
 {
     public function index()
     {
-        $unidades = Unidade::withCount('desbravadores')->orderBy('nome')->get();
+        // Traz apenas as unidades do clube do usuário logado
+        $unidades = Unidade::where('club_id', auth()->user()->club_id)
+            ->withCount('desbravadores')
+            ->orderBy('nome')
+            ->get();
+
         return view('unidades.index', compact('unidades'));
     }
 
@@ -20,47 +25,66 @@ class UnidadeController extends Controller
 
     public function store(Request $request)
     {
-        $dados = $request->validate([
-            'nome' => 'required|string|max:255|unique:unidades,nome',
-            'conselheiro' => 'required|string|max:255', // Agora obrigatório
-            'grito_guerra' => 'nullable|string', // Opcional
+        $validated = $request->validate([
+            'nome' => 'required|string|max:255',
+            'grito_guerra' => 'nullable|string',
+            'conselheiro' => 'required|string|max:255',
         ]);
 
-        Unidade::create($dados);
+        // Força o vínculo com o clube do usuário logado
+        $validated['club_id'] = auth()->user()->club_id;
 
-        return redirect()->route('unidades.index')->with('success', 'Unidade criada com sucesso!');
+        Unidade::create($validated);
+
+        return redirect()->route('unidades.index')
+            ->with('success', 'Unidade criada com sucesso!');
     }
 
-    public function show(Unidade $unidade)
-    {
-        $unidade->load(['desbravadores' => function ($query) {
-            $query->orderBy('nome')->where('ativo', true);
-        }]);
-
-        return view('unidades.show', compact('unidade'));
-    }
-
-    /**
-     * Exibe formulário de edição.
-     */
     public function edit(Unidade $unidade)
     {
+        $this->authorizeAccess($unidade);
+
         return view('unidades.edit', compact('unidade'));
     }
 
-    /**
-     * Salva as alterações.
-     */
     public function update(Request $request, Unidade $unidade)
     {
-        $dados = $request->validate([
-            'nome' => 'required|string|max:255|unique:unidades,nome,' . $unidade->id,
-            'conselheiro' => 'required|string|max:255',
+        $this->authorizeAccess($unidade);
+
+        $validated = $request->validate([
+            'nome' => 'required|string|max:255',
             'grito_guerra' => 'nullable|string',
+            'conselheiro' => 'required|string|max:255',
         ]);
 
-        $unidade->update($dados);
+        $unidade->update($validated);
 
-        return redirect()->route('unidades.show', $unidade)->with('success', 'Dados da unidade atualizados!');
+        return redirect()->route('unidades.index')
+            ->with('success', 'Unidade atualizada com sucesso!');
+    }
+
+    public function destroy(Unidade $unidade)
+    {
+        $this->authorizeAccess($unidade);
+
+        // Proteção: Não apaga se tiver membros
+        if ($unidade->desbravadores()->exists()) {
+            return back()->with('error', 'Não é possível excluir esta unidade pois existem desbravadores vinculados a ela.');
+        }
+
+        $unidade->delete();
+
+        return redirect()->route('unidades.index')
+            ->with('success', 'Unidade excluída com sucesso!');
+    }
+
+    /**
+     * Verifica se a unidade pertence ao clube do usuário
+     */
+    private function authorizeAccess(Unidade $unidade)
+    {
+        if ($unidade->club_id !== auth()->user()->club_id) {
+            abort(403, 'Acesso não autorizado a esta unidade.');
+        }
     }
 }

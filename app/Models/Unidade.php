@@ -10,7 +10,12 @@ class Unidade extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nome', 'conselheiro', 'grito_guerra'];
+    protected $fillable = [
+        'nome',
+        'grito_guerra',
+        'conselheiro',
+        'club_id', // <--- ESSENCIAL PARA O VÍNCULO FUNCIONAR
+    ];
 
     // Relacionamento: Uma unidade tem vários desbravadores
     public function desbravadores(): HasMany
@@ -28,7 +33,10 @@ class Unidade extends Model
     // Opcional: Média por membro (para ser justo com unidades menores)
     public function getPontuacaoMediaAttribute()
     {
-        if ($this->desbravadores->count() === 0) return 0;
+        if ($this->desbravadores->count() === 0) {
+            return 0;
+        }
+
         return $this->pontuacao_total / $this->desbravadores->count();
     }
 }

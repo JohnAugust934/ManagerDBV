@@ -14,28 +14,32 @@ class UnidadeManagementTest extends TestCase
 
     public function test_pode_criar_unidade_com_campos_obrigatorios()
     {
-        $clube = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
-        // CORREÇÃO: Diretor (para criar unidades)
-        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
 
         $response = $this->actingAs($user)->post(route('unidades.store'), [
-            'nome' => 'Unidade Teste',
-            'conselheiro' => 'Conselheiro Teste',
-            'grito_guerra' => 'Força e Honra'
+            'nome' => 'Unidade Alpha',
+            'conselheiro' => 'João',
+            'grito_guerra' => 'Força total!',
         ]);
 
         $response->assertRedirect(route('unidades.index'));
-        $this->assertDatabaseHas('unidades', ['nome' => 'Unidade Teste', 'conselheiro' => 'Conselheiro Teste']);
+
+        $this->assertDatabaseHas('unidades', [
+            'nome' => 'Unidade Alpha',
+            'conselheiro' => 'João',
+            'club_id' => $club->id,
+        ]);
     }
 
     public function test_nao_pode_criar_sem_conselheiro()
     {
-        $clube = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
 
         $response = $this->actingAs($user)->post(route('unidades.store'), [
-            'nome' => 'Unidade Falha',
-            // Faltando conselheiro
+            'nome' => 'Unidade Beta',
+            'grito_guerra' => 'Grito',
         ]);
 
         $response->assertSessionHasErrors(['conselheiro']);
@@ -43,21 +47,29 @@ class UnidadeManagementTest extends TestCase
 
     public function test_pode_editar_unidade()
     {
-        $clube = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
-        $unidade = Unidade::factory()->create();
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
 
-        $response = $this->actingAs($user)->put(route('unidades.update', $unidade->id), [
-            'nome' => 'Unidade Nova',
-            'conselheiro' => 'Maria',
-            'grito_guerra' => 'Novo Grito'
+        // CORREÇÃO: Garante que a unidade criada pertença ao clube do usuário
+        $unidade = Unidade::create([
+            'nome' => 'Unidade Antiga',
+            'conselheiro' => 'José',
+            'club_id' => $club->id, // <--- O VÍNCULO IMPORTANTE
         ]);
 
-        $response->assertRedirect(route('unidades.show', $unidade));
+        $response = $this->actingAs($user)->put(route('unidades.update', $unidade), [
+            'nome' => 'Unidade Nova',
+            'conselheiro' => 'Maria',
+            'grito_guerra' => 'Novo Grito',
+        ]);
+
+        // Redireciona para index após update (padrão do Controller)
+        $response->assertRedirect(route('unidades.index'));
 
         $this->assertDatabaseHas('unidades', [
             'id' => $unidade->id,
             'nome' => 'Unidade Nova',
+            'conselheiro' => 'Maria',
         ]);
     }
 }
