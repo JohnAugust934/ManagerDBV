@@ -12,18 +12,53 @@ class EspecialidadeTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_pode_criar_uma_especialidade()
+    public function test_usuario_pode_criar_uma_especialidade()
     {
-        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        // CORREÇÃO: Papel instrutor (acesso pedagógico)
-        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        // Instrutor ou superior pode criar
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'instrutor']);
 
-        $response = $this->actingAs($user)->post(route('especialidades.store'), [
-            'nome' => 'Fogueiras',
-            'area' => 'Estudos da Natureza'
-        ]);
+        $dados = [
+            'nome' => 'Felinos',
+            'area' => 'Estudo da Natureza',
+        ];
+
+        $response = $this->actingAs($user)->post(route('especialidades.store'), $dados);
 
         $response->assertRedirect(route('especialidades.index'));
-        $this->assertDatabaseHas('especialidades', ['nome' => 'Fogueiras']);
+        $this->assertDatabaseHas('especialidades', ['nome' => 'Felinos']);
+    }
+
+    public function test_valida_duplicidade_de_nome()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'instrutor']);
+
+        Especialidade::create(['nome' => 'Cães', 'area' => 'Estudo da Natureza']);
+
+        $response = $this->actingAs($user)->post(route('especialidades.store'), [
+            'nome' => 'Cães',
+            'area' => 'Outra',
+        ]);
+
+        $response->assertSessionHasErrors(['nome']);
+    }
+
+    public function test_busca_especialidade_filtra_corretamente()
+    {
+        $club = Club::create(['nome' => 'Clube Busca', 'cidade' => 'RJ']);
+
+        // Garante permissão de visualização (role instrutor ou similar)
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'instrutor']);
+
+        Especialidade::create(['nome' => 'Nós e Amarras', 'area' => 'Atividades Recreativas']);
+        Especialidade::create(['nome' => 'Primeiros Socorros', 'area' => 'Saúde']);
+
+        // Busca por parte do nome (case insensitive)
+        $response = $this->actingAs($user)->get(route('especialidades.index', ['search' => 'amarras']));
+
+        $response->assertStatus(200);
+        $response->assertSee('Nós e Amarras');
+        $response->assertDontSee('Primeiros Socorros');
     }
 }

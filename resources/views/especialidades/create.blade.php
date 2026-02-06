@@ -1,48 +1,79 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
             {{ __('Cadastrar Especialidade') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
+    <div class="py-6 md:py-12">
+        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                    <form action="{{ route('especialidades.store') }}" method="POST">
+            <div
+                class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+
+                <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                        Nova Especialidade
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        Adicione uma nova especialidade à biblioteca do clube.
+                    </p>
+                </div>
+
+                <div class="p-6 md:p-8">
+                    <form method="POST" action="{{ route('especialidades.store') }}" class="space-y-6">
                         @csrf
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-2" for="nome">Nome da Especialidade</label>
-                            <input type="text" name="nome" id="nome" required placeholder="Ex: Fogueiras e Cozinha ao Ar Livre"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-600 dark:text-gray-300">
+                        {{-- 1. Nome --}}
+                        <div>
+                            <x-input-label for="nome" value="Nome da Especialidade *" />
+                            <x-text-input id="nome" name="nome" type="text" class="mt-1 block w-full"
+                                :value="old('nome')" placeholder="Ex: Fogueiras e Cozinha ao Ar Livre" required
+                                autofocus />
+                            <x-input-error class="mt-2" :messages="$errors->get('nome')" />
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-2" for="area">Área</label>
-                            <select name="area" id="area" required
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-600 dark:text-gray-300">
-                                <option value="">Selecione...</option>
-                                <option value="ADRA">ADRA</option>
-                                <option value="Artes e Habilidades Manuais">Artes e Habilidades Manuais</option>
-                                <option value="Atividades Agrícolas">Atividades Agrícolas</option>
-                                <option value="Atividades Missionárias">Atividades Missionárias</option>
-                                <option value="Atividades Profissionais">Atividades Profissionais</option>
-                                <option value="Atividades Recreativas">Atividades Recreativas</option>
-                                <option value="Ciência e Saúde">Ciência e Saúde</option>
-                                <option value="Estudos da Natureza">Estudos da Natureza</option>
-                                <option value="Habilidades Domésticas">Habilidades Domésticas</option>
-                            </select>
+                        {{-- 2. Área --}}
+                        <div>
+                            <x-input-label for="area" value="Área / Categoria *" />
+                            <div class="relative mt-1">
+                                <select id="area" name="area"
+                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-dbv-blue focus:ring-dbv-blue rounded-lg shadow-sm appearance-none"
+                                    required>
+                                    <option value="" disabled selected>Selecione a área...</option>
+                                    @foreach (['ADRA', 'Artes e Habilidades Manuais', 'Atividades Agropecuárias', 'Atividades Missionárias e Comunitárias', 'Atividades Profissionais', 'Atividades Recreativas', 'Ciência e Saúde', 'Estudo da Natureza', 'Habilidades Domésticas', 'Mestrados'] as $area)
+                                        <option value="{{ $area }}"
+                                            {{ old('area') == $area ? 'selected' : '' }}>
+                                            {{ $area }}
+                                        </option>
+                                    @endforeach
+                                    <option value="Outra">Outra</option>
+                                </select>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <x-input-error class="mt-2" :messages="$errors->get('area')" />
                         </div>
 
-                        <div class="flex items-center justify-end mt-4">
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:bg-gray-700 dark:focus:bg-white active:bg-gray-900 dark:active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                                Salvar
-                            </button>
+                        {{-- Botões --}}
+                        <div
+                            class="flex items-center justify-end pt-6 border-t border-gray-100 dark:border-gray-700 gap-4">
+                            <a href="{{ route('especialidades.index') }}"
+                                class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 font-medium">
+                                Cancelar
+                            </a>
+
+                            <x-primary-button class="justify-center">
+                                {{ __('Cadastrar') }}
+                            </x-primary-button>
                         </div>
+
                     </form>
-
                 </div>
             </div>
         </div>
