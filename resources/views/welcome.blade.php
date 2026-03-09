@@ -45,13 +45,6 @@
                         @else
                             <a href="{{ route('login') }}"
                                 class="text-sm font-bold text-gray-700 dark:text-gray-300 hover:text-dbv-blue dark:hover:text-white transition">Entrar</a>
-
-                            @if (Route::has('register'))
-                                <a href="{{ route('register') }}"
-                                    class="hidden md:inline-flex items-center justify-center px-4 py-2 bg-dbv-blue border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-blue-800 focus:outline-none transition shadow-lg shadow-blue-900/20">
-                                    Cadastrar Clube
-                                </a>
-                            @endif
                         @endauth
                     @endif
 
@@ -118,12 +111,6 @@
                         class="px-8 py-4 bg-dbv-blue text-white rounded-xl font-bold text-lg hover:bg-blue-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
                         Entrar Agora
                     </a>
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}"
-                            class="px-8 py-4 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-300 transition-all duration-200">
-                            Criar Conta
-                        </a>
-                    @endif
                 @endauth
             </div>
         </div>

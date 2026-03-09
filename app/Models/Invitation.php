@@ -15,11 +15,13 @@ class Invitation extends Model
         'role',
         'club_id',
         'extra_permissions',
-        'registered_at'
+        'expires_at',
+        'registered_at',
     ];
 
     protected $casts = [
         'extra_permissions' => 'array',
+        'expires_at' => 'date', // Garante que seja tratado como data no formato Y-m-d
         'registered_at' => 'datetime',
     ];
 
