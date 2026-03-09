@@ -39,6 +39,7 @@ class User extends Authenticatable
         'unidades' => 'Gestão de Unidades',
         'pedagogico' => 'Classes e Especialidades',
         'eventos' => 'Gestão de Eventos',
+        'relatorios' => 'Acesso aos Relatórios do Clube', // <-- MÓDULO RECRIADO AQUI
     ];
 
     public function club()
@@ -48,20 +49,21 @@ class User extends Authenticatable
 
     // --- Lógica de Acesso ---
 
-    /**
-     * Verifica se o usuário tem permissão para um módulo.
-     * Regra: Master tem tudo. Outros dependem do cargo OU permissão extra.
-     */
     public function temPermissao(string $modulo): bool
     {
-        if ($this->role === 'master') return true;
+        if ($this->role === 'master') {
+            return true;
+        }
 
         // Verifica permissões padrão do cargo
         $permissoesPadrao = $this->getPermissoesPadrao();
-        if (in_array($modulo, $permissoesPadrao)) return true;
+        if (in_array($modulo, $permissoesPadrao)) {
+            return true;
+        }
 
         // Verifica permissões extras (checkboxes)
         $extras = $this->extra_permissions ?? [];
+
         return in_array($modulo, $extras);
     }
 
@@ -72,18 +74,17 @@ class User extends Authenticatable
     {
         switch ($this->role) {
             case 'diretor':
-                return ['financeiro', 'secretaria', 'unidades', 'pedagogico', 'eventos'];
+                return ['financeiro', 'secretaria', 'unidades', 'pedagogico', 'eventos', 'relatorios']; // <-- ADICIONADO AQUI
 
             case 'secretario':
-                return ['secretaria', 'unidades', 'pedagogico', 'eventos'];
+                return ['secretaria', 'unidades', 'pedagogico', 'eventos', 'relatorios']; // <-- ADICIONADO AQUI
 
             case 'tesoureiro':
-                return ['financeiro', 'eventos']; // Tesoureiro vê eventos pois tem custo
+                return ['financeiro', 'eventos', 'relatorios']; // <-- ADICIONADO AQUI
 
             case 'conselheiro':
             case 'instrutor':
-                return ['pedagogico', 'eventos']; // Apenas pedagógico e ver eventos
-                // OBS: Conselheiro vê a própria unidade via lógica no Controller, não permissão global de 'gerir unidades'
+                return ['pedagogico']; // Apenas pedagógico (Eventos foram removidos anteriormente)
 
             default:
                 return [];

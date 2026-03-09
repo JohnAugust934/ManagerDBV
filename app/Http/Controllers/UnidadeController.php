@@ -9,13 +9,32 @@ class UnidadeController extends Controller
 {
     public function index()
     {
-        // Traz apenas as unidades do clube do usuário logado
-        $unidades = Unidade::where('club_id', auth()->user()->club_id)
-            ->withCount('desbravadores')
-            ->orderBy('nome')
-            ->get();
+        // 🔒 TRAVA DE SEGURANÇA: Bloqueia o instrutor
+        if (auth()->user()->role === 'instrutor') {
+            abort(403, 'Acesso negado. Instrutores não têm permissão para visualizar as unidades.');
+        }
 
+        // Busca as unidades pertencentes ao clube do usuário logado
+        $unidades = Unidade::where('club_id', auth()->user()->club_id)->get();
+
+        // Carrega a tela com os dados
         return view('unidades.index', compact('unidades'));
+    }
+
+    public function show(Unidade $unidade)
+    {
+        // 🔒 TRAVA DE SEGURANÇA: Bloqueia o instrutor
+        if (auth()->user()->role === 'instrutor') {
+            abort(403, 'Acesso negado. Instrutores não têm permissão para visualizar as unidades.');
+        }
+
+        // Segurança extra: Garante que o usuário só veja unidades do próprio clube
+        if ($unidade->club_id !== auth()->user()->club_id) {
+            abort(403, 'Acesso negado.');
+        }
+
+        // Carrega a tela do painel da unidade (o erro estava aqui, escondido por '//'!)
+        return view('unidades.show', compact('unidade'));
     }
 
     public function create()

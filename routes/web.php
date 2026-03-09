@@ -145,8 +145,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/desbravadores', [RankingController::class, 'desbravadores'])->name('desbravadores');
     });
 
-    // 9. RELATÓRIOS
-    Route::prefix('relatorios')->name('relatorios.')->group(function () {
+    // 9. RELATÓRIOS (Acesso exclusivo com permissão 'relatorios')
+    Route::prefix('relatorios')->name('relatorios.')->middleware('can:relatorios')->group(function () {
         Route::get('/', [RelatorioController::class, 'index'])->name('index');
         Route::post('/gerar-personalizado', [RelatorioController::class, 'gerarPersonalizado'])->name('custom');
 

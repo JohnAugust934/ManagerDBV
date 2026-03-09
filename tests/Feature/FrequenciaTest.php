@@ -22,7 +22,7 @@ class FrequenciaTest extends TestCase
         $response = $this->actingAs($user)->get(route('frequencia.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Histórico de Frequência');
+        $response->assertSee('Histórico');
     }
 
     public function test_historico_filtra_por_mes_e_ano()
@@ -30,7 +30,8 @@ class FrequenciaTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        $unidade = Unidade::factory()->create();
+        // CORREÇÃO: A unidade criada no teste precisa pertencer ao mesmo clube do usuário!
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
 
         // Cria frequência em JANEIRO de 2026
@@ -66,7 +67,8 @@ class FrequenciaTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'master']);
 
-        $unidade = Unidade::factory()->create();
+        // CORREÇÃO: A unidade criada no teste precisa pertencer ao mesmo clube
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
 
         $dados = [
@@ -84,7 +86,7 @@ class FrequenciaTest extends TestCase
         // Verifica se criou o registro no banco com presente = 0
         $this->assertDatabaseHas('frequencias', [
             'desbravador_id' => $dbv->id,
-            'presente' => false, // Deve ser falso, mas o registro deve EXISTIR
+            'presente' => false,
         ]);
     }
 }

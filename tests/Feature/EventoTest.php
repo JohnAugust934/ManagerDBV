@@ -18,7 +18,9 @@ class EventoTest extends TestCase
     public function test_pode_ver_lista_de_eventos()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+
+        // CORREÇÃO: O instrutor não tem mais acesso a eventos, mudamos para 'secretario'
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
         Evento::factory()->count(3)->create();
 
@@ -32,7 +34,7 @@ class EventoTest extends TestCase
     {
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
 
-        // 1. Instrutor tenta criar (Deve falhar)
+        // 1. Instrutor tenta criar (Deve falhar com 403)
         $instrutor = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
         $this->actingAs($instrutor)->get(route('eventos.create'))->assertForbidden();
 
@@ -57,7 +59,7 @@ class EventoTest extends TestCase
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
         $evento = Evento::factory()->create(['nome' => 'Original']);
 
-        // 1. Instrutor tenta editar
+        // 1. Instrutor tenta editar (Deve falhar)
         $instrutor = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
         $this->actingAs($instrutor)->get(route('eventos.edit', $evento->id))->assertForbidden();
 
@@ -72,9 +74,7 @@ class EventoTest extends TestCase
             'valor' => $evento->valor,
         ]);
 
-        // CORREÇÃO: O teste agora espera redirecionar para o SHOW, não Index
         $response->assertRedirect(route('eventos.show', $evento->id));
-
         $this->assertDatabaseHas('eventos', ['id' => $evento->id, 'nome' => 'Nome Editado']);
     }
 

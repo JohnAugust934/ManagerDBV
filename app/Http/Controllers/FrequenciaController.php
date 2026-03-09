@@ -6,19 +6,17 @@ use App\Models\Desbravador;
 use App\Models\Frequencia;
 use App\Models\Unidade;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 class FrequenciaController extends Controller
 {
-    // NOVO: Tela de Histórico Mensal
+    // Tela de Histórico Mensal
     public function index(Request $request)
     {
         // Define Mês e Ano (Pega do request ou usa o atual)
         $mes = $request->input('mes', now()->month);
         $ano = $request->input('ano', now()->year);
 
-        // Busca todas as datas que tiveram reunião neste mês/ano (para montar o cabeçalho da tabela)
-        // Isso evita mostrar colunas de dias que não houve clube.
+        // Busca todas as datas que tiveram reunião neste mês/ano
         $datasReunioes = Frequencia::whereYear('data', $ano)
             ->whereMonth('data', $mes)
             ->selectRaw('DATE(data) as data_reuniao')
@@ -27,9 +25,13 @@ class FrequenciaController extends Controller
             ->pluck('data_reuniao');
 
         // Busca Desbravadores ativos com suas frequências filtradas pelo mês/ano
+        // CORREÇÃO: Verifica o clube através do relacionamento com a unidade
         $desbravadores = Desbravador::with(['unidade', 'frequencias' => function ($query) use ($mes, $ano) {
             $query->whereYear('data', $ano)->whereMonth('data', $mes);
         }])
+            ->whereHas('unidade', function ($query) {
+                $query->where('club_id', auth()->user()->club_id); // Segurança
+            })
             ->where('ativo', true)
             ->orderBy('nome')
             ->get();
@@ -39,11 +41,12 @@ class FrequenciaController extends Controller
 
     public function create()
     {
+        // Busca todas as unidades do clube com seus desbravadores ativos
         $unidades = Unidade::with(['desbravadores' => function ($q) {
             $q->where('ativo', true)->orderBy('nome');
-        }])->get()->filter(function ($unidade) {
-            return Gate::allows('gerir-unidade', $unidade);
-        });
+        }])
+            ->where('club_id', auth()->user()->club_id) // Segurança: Apenas unidades do clube
+            ->get();
 
         return view('frequencia.create', compact('unidades'));
     }
@@ -56,13 +59,11 @@ class FrequenciaController extends Controller
         ]);
 
         foreach ($request->presencas as $id => $dados) {
+            // CORREÇÃO: Carrega a unidade junto para checar a qual clube o desbravador pertence
             $dbv = Desbravador::with('unidade')->find($id);
 
-            if (! $dbv) {
-                continue;
-            }
-
-            if (Gate::denies('gerir-unidade', $dbv->unidade)) {
+            // Ignora se não achou o desbravador ou se a unidade dele for de outro clube
+            if (! $dbv || $dbv->unidade->club_id !== auth()->user()->club_id) {
                 continue;
             }
 

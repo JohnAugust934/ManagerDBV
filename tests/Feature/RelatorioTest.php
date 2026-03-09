@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Caixa;
 use App\Models\Club;
 use App\Models\Desbravador;
 use App\Models\Unidade;
 use App\Models\User;
-use App\Models\Caixa;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,13 +16,28 @@ class RelatorioTest extends TestCase
 
     protected $user;
 
+    protected $clube;
+
     protected function setUp(): void
     {
         parent::setUp();
-        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $this->user = User::factory()->create(['club_id' => $clube->id]);
-        $unidade = Unidade::factory()->create();
-        Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
+
+        // 1. Criamos o Clube
+        $this->clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+
+        // CORREÇÃO FINAL: Usamos o cargo 'diretor' que possui explicitamente as permissões de 'relatorios' e 'financeiro'
+        $this->user = User::factory()->create([
+            'club_id' => $this->clube->id,
+            'role' => 'diretor',
+        ]);
+
+        // 3. Criamos a unidade e desbravador atrelados
+        $unidade = Unidade::factory()->create(['club_id' => $this->clube->id]);
+
+        Desbravador::factory()->create([
+            'unidade_id' => $unidade->id,
+            'ativo' => true,
+        ]);
     }
 
     public function test_pode_acessar_central_de_relatorios()
@@ -36,7 +51,7 @@ class RelatorioTest extends TestCase
     {
         $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
             'tipo' => 'desbravadores',
-            'status' => 'ativos'
+            'status' => 'ativos',
         ]);
 
         $response->assertStatus(200);
@@ -45,11 +60,17 @@ class RelatorioTest extends TestCase
 
     public function test_pode_gerar_relatorio_personalizado_caixa()
     {
-        Caixa::create(['descricao' => 'Teste', 'valor' => 50, 'tipo' => 'entrada', 'data_movimentacao' => now()]);
+        Caixa::create([
+            'descricao' => 'Teste',
+            'valor' => 50,
+            'tipo' => 'entrada',
+            'data_movimentacao' => now(),
+            'club_id' => $this->clube->id,
+        ]);
 
         $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
             'tipo' => 'caixa',
-            'tipo_movimentacao' => 'todos'
+            'tipo_movimentacao' => 'todos',
         ]);
 
         $response->assertStatus(200);
@@ -60,7 +81,7 @@ class RelatorioTest extends TestCase
     {
         $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
             'tipo' => 'fichas_medicas',
-            'status' => 'ativos'
+            'status' => 'ativos',
         ]);
 
         $response->assertStatus(200);
