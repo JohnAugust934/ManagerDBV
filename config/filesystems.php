@@ -60,6 +60,18 @@ return [
             'report' => false,
         ],
 
+        // NOVO DISCO PARA O CLOUDFLARE R2
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'us-east-1', // O R2 usa essa região como padrão automático
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+        ],
+
     ],
 
     /*

@@ -160,6 +160,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
+    // 10. ADMIN MASTER (Acesso Total e Gestão)
+    Route::middleware('can:master')->group(function () {
+        Route::resource('usuarios', UsuarioController::class)->except(['show']);
+        Route::resource('invites', InvitationController::class)->except(['show', 'edit', 'update']);
+
+        // NOVAS ROTAS DE BACKUP
+        Route::get('/backups', [App\Http\Controllers\BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups', [App\Http\Controllers\BackupController::class, 'store'])->name('backups.store');
+        Route::get('/backups/download', [App\Http\Controllers\BackupController::class, 'download'])->name('backups.download');
+        Route::delete('/backups/destroy', [App\Http\Controllers\BackupController::class, 'destroy'])->name('backups.destroy');
+    });
+
 });
 
 require __DIR__.'/auth.php';

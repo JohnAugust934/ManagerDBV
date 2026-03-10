@@ -315,13 +315,24 @@
                 @can('master')
                     <div class="mt-8 pt-4 border-t border-white/10">
                         <p class="px-3 text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2">Admin Master</p>
+
                         <a href="{{ route('usuarios.index') }}"
-                            class="{{ $linkClass }} {{ request()->routeIs('usuarios*') ? 'bg-red-900/50 text-white' : 'text-red-300 hover:bg-red-900/30 hover:text-white' }}">
+                            class="{{ $linkClass }} {{ request()->routeIs('usuarios*') || request()->routeIs('invites*') ? 'bg-red-900/50 text-white' : 'text-red-300 hover:bg-red-900/30 hover:text-white' }}">
                             <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                             Gestão de Acessos
+                        </a>
+
+                        {{-- NOVO BOTÃO DE BACKUP --}}
+                        <a href="{{ route('backups.index') }}"
+                            class="{{ $linkClass }} {{ request()->routeIs('backups*') ? 'bg-red-900/50 text-white mt-1' : 'text-red-300 hover:bg-red-900/30 hover:text-white mt-1' }}">
+                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            Backups & Nuvem
                         </a>
                     </div>
                 @endcan
