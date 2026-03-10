@@ -170,6 +170,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/backups', [App\Http\Controllers\BackupController::class, 'store'])->name('backups.store');
         Route::get('/backups/download', [App\Http\Controllers\BackupController::class, 'download'])->name('backups.download');
         Route::delete('/backups/destroy', [App\Http\Controllers\BackupController::class, 'destroy'])->name('backups.destroy');
+
+        // NOVAS ROTAS DE IMPORTAÇÃO E RESTAURAÇÃO
+        Route::post('/backups/import', [App\Http\Controllers\BackupController::class, 'import'])->name('backups.import');
+        Route::post('/backups/restore', [App\Http\Controllers\BackupController::class, 'restore'])->name('backups.restore');
     });
 
 });
