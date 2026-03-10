@@ -15,7 +15,6 @@ class BackupSystemTest extends TestCase
 
     public function test_apenas_master_pode_acessar_backups()
     {
-        // Finge que os discos existem para não quebrar no GitHub Actions (onde não há .env do R2)
         Storage::fake('local');
         Storage::fake('r2');
 
@@ -122,5 +121,22 @@ class BackupSystemTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
         Storage::disk('local')->assertMissing($caminho);
+    }
+
+    public function test_rotinas_de_backup_estao_agendadas()
+    {
+        // Instancia o Agendador do Laravel
+        $schedule = app()->make(\Illuminate\Console\Scheduling\Schedule::class);
+        $events = collect($schedule->events());
+
+        // Verifica se a rotina de limpeza existe e roda às 01:00 (0 1 * * *)
+        $backupClean = $events->first(fn ($event) => str_contains($event->command, 'backup:clean'));
+        $this->assertNotNull($backupClean, 'O agendamento de limpeza de backups não foi encontrado.');
+        $this->assertEquals('0 1 * * *', $backupClean->expression, 'A limpeza não está agendada para a 01:00 da manhã.');
+
+        // Verifica se a rotina de criação existe e roda às 03:00 (0 3 * * *)
+        $backupRun = $events->first(fn ($event) => str_contains($event->command, 'backup:run'));
+        $this->assertNotNull($backupRun, 'O agendamento de criação de backup não foi encontrado.');
+        $this->assertEquals('0 3 * * *', $backupRun->expression, 'O backup não está agendado para as 03:00 da manhã.');
     }
 }
