@@ -15,19 +15,21 @@ class BackupSystemTest extends TestCase
 
     public function test_apenas_master_pode_acessar_backups()
     {
+        // Finge que os discos existem para não quebrar no GitHub Actions (onde não há .env do R2)
+        Storage::fake('local');
+        Storage::fake('r2');
+
         $master = User::factory()->create(['role' => 'master']);
         $diretor = User::factory()->create(['role' => 'diretor']);
 
-        // Diretor tenta acessar e toma bloqueio
         $this->actingAs($diretor)->get(route('backups.index'))->assertForbidden();
-
-        // Master acessa com sucesso
         $this->actingAs($master)->get(route('backups.index'))->assertOk();
     }
 
     public function test_master_pode_gerar_backup()
     {
-        // Impede que o teste de fato tente rodar o backup pesado no banco e trave
+        Storage::fake('local');
+        Storage::fake('r2');
         Artisan::spy();
 
         $master = User::factory()->create(['role' => 'master']);
@@ -35,8 +37,6 @@ class BackupSystemTest extends TestCase
         $response = $this->actingAs($master)->post(route('backups.store'));
 
         $response->assertRedirect();
-
-        // Verifica se o comando artisan backup:run foi acionado com os parâmetros exatos do Controller
         Artisan::shouldHaveReceived('call')->with('backup:run', [
             '--disable-notifications' => true,
         ]);
@@ -45,9 +45,9 @@ class BackupSystemTest extends TestCase
     public function test_master_pode_importar_backup_zip()
     {
         Storage::fake('local');
+        Storage::fake('r2');
         $master = User::factory()->create(['role' => 'master']);
 
-        // Simula o upload de um arquivo ZIP
         $file = UploadedFile::fake()->create('meu_backup_antigo.zip', 1024, 'application/zip');
 
         $response = $this->actingAs($master)->post(route('backups.import'), [
@@ -57,17 +57,18 @@ class BackupSystemTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
-        // Verifica se o arquivo foi salvo fisicamente no disco fake
         $pasta = config('backup.backup.name', 'Laravel');
         Storage::disk('local')->assertExists($pasta.'/meu_backup_antigo.zip');
     }
 
-    public function test_master_pode_acionar_restauracao_mas_falha_em_zip_falso()
+    public function test_master_pode_acionar_restauracao_com_modo_manutencao()
     {
         Storage::fake('local');
+        Storage::fake('r2');
+        Artisan::spy();
+
         $master = User::factory()->create(['role' => 'master']);
 
-        // Colocamos um arquivo de texto fingindo ser ZIP no storage para testar a blindagem
         $pasta = config('backup.backup.name', 'Laravel');
         Storage::disk('local')->put($pasta.'/fake.zip', 'nao sou um zip real');
 
@@ -77,16 +78,18 @@ class BackupSystemTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        // A lógica do controller vai tentar extrair o ZIP, falhar por ser arquivo corrompido e redirecionar com erro (segurança)
         $response->assertSessionHas('error');
+
+        Artisan::shouldHaveReceived('call')->with('down');
+        Artisan::shouldHaveReceived('call')->with('up');
     }
 
     public function test_master_pode_baixar_backup()
     {
         Storage::fake('local');
+        Storage::fake('r2');
         $master = User::factory()->create(['role' => 'master']);
 
-        // Cria um arquivo fictício para ser baixado
         $pasta = config('backup.backup.name', 'Laravel');
         $caminho = $pasta.'/meu_backup_para_download.zip';
         Storage::disk('local')->put($caminho, 'conteudo_zip_fake');
@@ -96,21 +99,19 @@ class BackupSystemTest extends TestCase
             'path' => $caminho,
         ]));
 
-        // Verifica se o sistema inicia o download do arquivo perfeitamente
         $response->assertDownload('meu_backup_para_download.zip');
     }
 
     public function test_master_pode_excluir_backup()
     {
         Storage::fake('local');
+        Storage::fake('r2');
         $master = User::factory()->create(['role' => 'master']);
 
-        // Cria um arquivo fictício para ser excluído
         $pasta = config('backup.backup.name', 'Laravel');
         $caminho = $pasta.'/backup_para_apagar.zip';
         Storage::disk('local')->put($caminho, 'conteudo_zip_fake');
 
-        // Garante que ele existe antes da exclusão
         Storage::disk('local')->assertExists($caminho);
 
         $response = $this->actingAs($master)->delete(route('backups.destroy'), [
@@ -120,8 +121,6 @@ class BackupSystemTest extends TestCase
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
-
-        // Garante que o arquivo sumiu do disco fisicamente
         Storage::disk('local')->assertMissing($caminho);
     }
 }

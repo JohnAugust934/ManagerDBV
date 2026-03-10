@@ -130,6 +130,14 @@ class BackupController extends Controller
         $path = $request->input('path');
 
         try {
+            // =======================================================
+            // 1. COLOCA O SISTEMA EM MANUTENÇÃO (Bloqueia outros usuários)
+            // =======================================================
+            Artisan::call('down');
+
+            //sleep(20); // <--- ADICIONE ESTA LINHA TEMPORARIAMENTE
+
+            // 2. Traz o arquivo para a área de extração local
             $tempZipPath = storage_path('app/temp_restore.zip');
             if ($disk === 'local') {
                 File::copy(Storage::disk('local')->path($path), $tempZipPath);
@@ -137,6 +145,7 @@ class BackupController extends Controller
                 file_put_contents($tempZipPath, Storage::disk($disk)->get($path));
             }
 
+            // 3. Descompacta o arquivo
             $extractPath = storage_path('app/temp_restore_dir');
             File::deleteDirectory($extractPath);
             File::makeDirectory($extractPath, 0755, true);
@@ -149,6 +158,7 @@ class BackupController extends Controller
                 throw new \Exception('O arquivo selecionado está corrompido ou não é um ZIP válido.');
             }
 
+            // 4. Procura os arquivos essenciais
             $allExtractedFiles = File::allFiles($extractPath);
             $dbRestored = false;
             $filesRestored = 0;
@@ -168,6 +178,7 @@ class BackupController extends Controller
                 }
             }
 
+            // 5. Restauração do Banco de Dados
             if ($sqlFileToRestore) {
                 $connection = config('database.default');
                 $comando = '';
@@ -215,8 +226,14 @@ class BackupController extends Controller
                 $dbRestored = true;
             }
 
+            // 6. Limpeza de temp files
             File::deleteDirectory($extractPath);
             @unlink($tempZipPath);
+
+            // =======================================================
+            // 7. SUCESSO! TIRA O SISTEMA DA MANUTENÇÃO
+            // =======================================================
+            Artisan::call('up');
 
             $statusDB = $dbRestored ? 'Banco de Dados restaurado' : 'Nenhum banco encontrado no backup';
 
@@ -234,13 +251,15 @@ class BackupController extends Controller
 
             Artisan::call('migrate', ['--force' => true]);
 
+            // =======================================================
+            // GARANTIA: SE FALHAR, VOLTA O SISTEMA AO NORMAL PARA NÃO TRAVAR
+            // =======================================================
+            Artisan::call('up');
+
             return back()->with('error', 'Erro na restauração: '.$e->getMessage());
         }
     }
 
-    // ==========================================
-    // DOWNLOAD BLINDADO CONTRA TELA BRANCA
-    // ==========================================
     public function download(Request $request)
     {
         Gate::authorize('master');
@@ -255,8 +274,6 @@ class BackupController extends Controller
             return back()->with('error', 'Arquivo não encontrado.');
         }
 
-        // Limpa o buffer apenas se NÃO estiver rodando testes automatizados
-        // Isso evita a tela branca em produção e o aviso "risky" no PHPUnit
         if (ob_get_level() > 0 && ! app()->runningUnitTests()) {
             ob_end_clean();
         }
