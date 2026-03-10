@@ -54,7 +54,7 @@ class DatabaseSeeder extends Seeder
         // 2. USUÁRIOS DO SISTEMA (POR CARGO)
         // ---------------------------------------------------------
         $cargos = [
-            ['name' => 'Administrador Master', 'email' => 'admin@desbravadores.com', 'role' => 'master', 'club_id' => null, 'is_master' => true],
+            ['name' => 'Administrador Master', 'email' => 'admin@clube.com', 'role' => 'master', 'club_id' => null, 'is_master' => true],
             ['name' => 'Diretor Silva', 'email' => 'diretor@clube.com', 'role' => 'diretor', 'club_id' => $clube->id, 'is_master' => false],
             ['name' => 'Secretária Ana', 'email' => 'secretaria@clube.com', 'role' => 'secretario', 'club_id' => $clube->id, 'is_master' => false],
             ['name' => 'Tesoureiro Carlos', 'email' => 'tesoureiro@clube.com', 'role' => 'tesoureiro', 'club_id' => $clube->id, 'is_master' => false],
