@@ -4,70 +4,67 @@ namespace App\Http\Controllers;
 
 use App\Models\Club;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
 
 class ClubController extends Controller
 {
-    /**
-     * Exibe o formulário de edição do clube.
-     */
-    public function edit(): View
+    public function edit()
     {
-        $club = auth()->user()->club;
-
-        if (!$club) {
-            abort(404, 'Nenhum clube vinculado a este usuário.');
-        }
+        Gate::authorize('secretaria');
+        $club = Club::first(); // Sempre pega o único clube do sistema
 
         return view('club.edit', compact('club'));
     }
 
-    /**
-     * Atualiza os dados do clube.
-     */
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request)
     {
-        $club = auth()->user()->club;
+        Gate::authorize('secretaria');
 
-        $validated = $request->validate([
+        $request->validate([
             'nome' => 'required|string|max:255',
             'cidade' => 'required|string|max:255',
-            'associacao' => 'nullable|string|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'associacao' => 'required|string|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Upload do Logo
-        if ($request->hasFile('logo')) {
-            // Apaga o antigo se existir
-            if ($club->logo && Storage::disk('public')->exists($club->logo)) {
-                Storage::disk('public')->delete($club->logo);
-            }
+        $club = Club::first();
 
-            $path = $request->file('logo')->store('logos', 'public');
-            $validated['logo'] = $path;
+        if (! $club) {
+            // O DIRETOR ESTÁ CRIANDO O CLUBE AGORA!
+            $club = Club::create([
+                'nome' => $request->nome,
+                'cidade' => $request->cidade,
+                'associacao' => $request->associacao,
+            ]);
+
+            // MÁGICA: Vincula o ID deste clube recém criado a todos os usuários órfãos no banco (Master e Diretor)
+            \App\Models\User::whereNull('club_id')->update(['club_id' => $club->id]);
+
+            // Atualiza a sessão atual do Diretor
+            auth()->user()->refresh();
+        } else {
+            $club->update($request->only(['nome', 'cidade', 'associacao']));
         }
 
-        $club->update($validated);
-
-        return back()->with('success', 'Dados do clube atualizados com sucesso!');
-    }
-
-    /**
-     * Remove o brasão do clube.
-     */
-    public function destroyLogo(): RedirectResponse
-    {
-        $club = auth()->user()->club;
-
-        if ($club && $club->logo) {
-            // Remove o arquivo físico
-            if (Storage::disk('public')->exists($club->logo)) {
+        if ($request->hasFile('logo')) {
+            if ($club->logo) {
                 Storage::disk('public')->delete($club->logo);
             }
+            $path = $request->file('logo')->store('logos', 'public');
+            $club->update(['logo' => $path]);
+        }
 
-            // Remove a referência no banco
+        return back()->with('status', 'club-updated')->with('success', 'Informações do clube salvas com sucesso!');
+    }
+
+    public function removeLogo()
+    {
+        Gate::authorize('secretaria');
+        $club = Club::first();
+
+        if ($club && $club->logo) {
+            Storage::disk('public')->delete($club->logo);
             $club->update(['logo' => null]);
         }
 

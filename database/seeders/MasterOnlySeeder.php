@@ -2,14 +2,24 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 class MasterOnlySeeder extends Seeder
 {
     public function run(): void
     {
+        $this->command->info('🌱 Iniciando população do banco de dados...');
+
+        // ---------------------------------------------------------
+        // 0. SEEDERS DE BASE (TABELAS DE APOIO)
+        // ---------------------------------------------------------
+        $this->call([
+            ClassesSeeder::class,        // Popula as Classes Regulares/Avançadas
+            EspecialidadesSeeder::class, // Popula as ~470 Especialidades
+        ]);
+
         User::create([
             'name' => 'Master Admin',
             'email' => 'admin@master.com',

@@ -7,6 +7,7 @@ use App\Models\Club;
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -39,10 +40,11 @@ class RegisteredUserController extends Controller
             return redirect()->route('login')->with('status', '❌ Acesso negado. Este link de convite expirou e não tem mais validade.');
         }
 
+        // Passa o convite para a view exatamente como no seu código original
         return view('auth.register-invite', compact('invitation'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'token' => ['required', 'exists:invitations,token'],
@@ -61,39 +63,33 @@ class RegisteredUserController extends Controller
             return back()->withErrors(['email' => 'Este convite já expirou.']);
         }
 
-        $clubId = $invitation->club_id;
-        $novoClubeCriado = false;
-
-        // SE FOR DIRETOR E NÃO TIVER CLUBE VINCULADO AO CONVITE: CRIA UM NOVO
-        if ($invitation->role === 'diretor' && is_null($clubId)) {
-            $novoClube = Club::create([
-                'nome' => 'Clube de '.$request->name.' (Definir Nome)',
-                'cidade' => 'Definir Cidade',
-            ]);
-            $clubId = $novoClube->id;
-            $novoClubeCriado = true;
-        }
+        // MÁGICA SINGLE-TENANT: Busca o único clube. Se for o primeiro acesso, será null.
+        $club = Club::first();
 
         $user = User::create([
             'name' => $request->name,
             'email' => $invitation->email,
             'password' => Hash::make($request->password),
             'role' => $invitation->role,
-            'club_id' => $clubId,
-            'extra_permissions' => $invitation->extra_permissions,
+            'club_id' => $club?->id, // Vincula automaticamente se o clube já existir
+            'extra_permissions' => $invitation->extra_permissions ?? null, // Mantido do seu original!
             'is_master' => false,
         ]);
 
         // Marca o convite como USADO (registra a data e hora atual)
         $invitation->update(['registered_at' => now()]);
 
+        // Dispara o evento de registro do Laravel (Mantido do seu original!)
         event(new Registered($user));
+
         Auth::login($user);
 
-        if ($novoClubeCriado) {
-            return redirect()->route('club.edit')->with('success', 'Bem-vindo! Por favor, defina o nome e cidade do seu Clube.');
+        // REDIRECIONAMENTO INTELIGENTE (ONBOARDING):
+        // Se não tem clube ainda e ele é o diretor, joga pra tela de criação
+        if (! $club && in_array($user->role, ['diretor', 'master'])) {
+            return redirect()->route('club.edit')->with('success', 'Bem-vindo! Por favor, defina o nome e a cidade do seu Clube para liberar o sistema.');
         }
 
-        return redirect(route('dashboard'));
+        return redirect()->route('dashboard');
     }
 }

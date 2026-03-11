@@ -15,9 +15,10 @@ class InvitationController extends Controller
     public function index()
     {
         Gate::authorize('master');
-        $invitations = Invitation::where('club_id', auth()->user()->club_id)->latest()->get();
+        // Single tenant: mostra todos os convites do sistema
+        $invites = Invitation::latest()->get();
 
-        return view('admin.invites.index', compact('invitations'));
+        return view('admin.invites.index', compact('invites'));
     }
 
     public function create()
@@ -38,39 +39,49 @@ class InvitationController extends Controller
             'email.unique' => 'Este e-mail já está cadastrado no sistema.',
         ]);
 
+        $club = \App\Models\Club::first(); // Busca o único clube do banco (se já existir)
+
+        // REGRA 1: Só pode haver UM diretor no sistema (já cadastrado ou convidado)
+        if ($request->role === 'diretor') {
+            $directorExists = \App\Models\User::where('role', 'diretor')->exists() ||
+                              Invitation::where('role', 'diretor')->whereNull('registered_at')->exists();
+
+            if ($directorExists) {
+                return back()->with('error', 'Ação Bloqueada: Só pode existir UM Diretor no sistema. Já existe um cadastrado ou com convite pendente.');
+            }
+        }
+
+        // REGRA 2: Se o clube ainda não existe, o Master SÓ PODE convidar o Diretor
+        if (! $club && $request->role !== 'diretor' && $request->role !== 'master') {
+            return back()->with('error', 'Ação Bloqueada: O clube ainda não existe. Você deve convidar o DIRETOR primeiro para que ele configure o clube.');
+        }
+
         $token = Str::random(40);
 
         $invitation = Invitation::create([
             'email' => $request->email,
             'token' => $token,
             'role' => $request->role,
-            'club_id' => auth()->user()->club_id,
+            'club_id' => $club?->id, // Fica null se o clube não existir, e se ajusta depois
             'expires_at' => now()->addDays(7),
         ]);
 
         try {
-            // Dispara o e-mail
             Mail::to($request->email)->send(new ClubInvitation($invitation));
         } catch (\Exception $e) {
-            // Se o e-mail falhar, não perde o convite, apenas avisa na tela
             Log::error('Erro ao enviar e-mail de convite: '.$e->getMessage());
 
-            return redirect()->route('invites.index')->with('warning', 'Convite gerado, mas ocorreu um erro ao enviar o e-mail. Você pode copiar o link da tabela e enviar manualmente.');
+            return redirect()->route('invites.index')->with('warning', 'Convite gerado, mas o e-mail não pôde ser enviado (verifique o SMTP). Copie o link e envie manualmente.');
         }
 
-        return redirect()->route('invites.index')->with('success', 'Convite gerado e e-mail enviado com sucesso!');
+        return redirect()->route('invites.index')->with('success', 'Convite gerado e enviado com sucesso!');
     }
 
     public function destroy(Invitation $invite)
     {
         Gate::authorize('master');
-
-        if ($invite->club_id !== auth()->user()->club_id) {
-            abort(403);
-        }
-
         $invite->delete();
 
-        return redirect()->route('invites.index')->with('success', 'Convite cancelado/removido com sucesso!');
+        return redirect()->route('invites.index')->with('success', 'Convite cancelado com sucesso!');
     }
 }

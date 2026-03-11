@@ -3,7 +3,6 @@
 use App\Http\Controllers\AtaController;
 use App\Http\Controllers\AtoController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\ClubController;
@@ -47,46 +46,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // 2. ADMINISTRAÇÃO MASTER (Acesso Total)
+    // 2. ADMINISTRAÇÃO MASTER
     Route::middleware('can:master')->group(function () {
-        // Usuários
-        Route::resource('usuarios', UsuarioController::class)->except(['show']);
+        Route::resource('usuarios', UsuarioController::class);
 
-        // Convites
         Route::prefix('invites')->name('invites.')->group(function () {
             Route::get('/', [InvitationController::class, 'index'])->name('index');
             Route::get('/create', [InvitationController::class, 'create'])->name('create');
             Route::post('/', [InvitationController::class, 'store'])->name('store');
             Route::delete('/{invite}', [InvitationController::class, 'destroy'])->name('destroy');
         });
-
-        // Recuperação de Desastres (Backups)
-        Route::prefix('backups')->name('backups.')->group(function () {
-            Route::get('/', [BackupController::class, 'index'])->name('index');
-            Route::post('/', [BackupController::class, 'store'])->name('store');
-            Route::get('/download', [BackupController::class, 'download'])->name('download');
-            Route::delete('/destroy', [BackupController::class, 'destroy'])->name('destroy');
-            Route::post('/import', [BackupController::class, 'import'])->name('import');
-            Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
-        });
     });
 
-    // 3. SECRETARIA (Gestão de Membros, Clube e Eventos CRUD)
+    // 3. SECRETARIA (Gestão de Membros, Clube e EVENTOS - CRUD)
     Route::middleware('can:secretaria')->group(function () {
         // Configurações do Clube
         Route::get('/clube', [ClubController::class, 'edit'])->name('club.edit');
         Route::patch('/clube', [ClubController::class, 'update'])->name('club.update');
-        Route::delete('/clube/logo', [ClubController::class, 'removeLogo'])->name('club.remove_logo');
+        Route::delete('/clube/logo', [ClubController::class, 'destroyLogo'])->name('club.logo.destroy');
 
         // Documentos Oficiais
         Route::resource('atas', AtaController::class);
         Route::resource('atos', AtoController::class);
 
-        // Gestão de Pessoas
+        // Gestão Completa (CRUD)
         Route::resource('desbravadores', DesbravadorController::class)->parameters(['desbravadores' => 'desbravador']);
         Route::resource('unidades', UnidadeController::class)->except(['index', 'show']);
 
-        // Criação de Eventos
+        // --- EVENTOS (CRIAÇÃO/EDIÇÃO SÓ SECRETARIA) ---
         Route::get('/eventos/create', [EventoController::class, 'create'])->name('eventos.create');
         Route::post('/eventos', [EventoController::class, 'store'])->name('eventos.store');
         Route::get('/eventos/{evento}/edit', [EventoController::class, 'edit'])->name('eventos.edit');
@@ -130,13 +117,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // 7. EVENTOS (VISUALIZAÇÃO E INSCRIÇÃO)
+    // A listagem e o detalhe são públicos para quem tem permissão 'eventos' (todos logados geralmente)
+
     Route::middleware('can:eventos')->group(function () {
         Route::get('/eventos', [EventoController::class, 'index'])->name('eventos.index');
         Route::get('/eventos/{evento}', [EventoController::class, 'show'])->name('eventos.show');
+
+        // Gestão de Inscritos
         Route::post('eventos/{evento}/inscrever', [EventoController::class, 'inscrever'])->name('eventos.inscrever');
+
+        // CORREÇÃO: Movi a rota de lote para cá para garantir acesso igual ao individual
         Route::post('eventos/{evento}/inscrever-lote', [EventoController::class, 'inscreverEmLote'])->name('eventos.inscrever-lote');
+
         Route::delete('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'removerInscricao'])->name('eventos.remover-inscricao');
-        Route::patch('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'atualizarStatus'])->name('eventos.status')->middleware('can:financeiro');
+
+        // Atualizar status (Pago) geralmente é financeiro/diretoria
+        Route::patch('eventos/{evento}/inscricao/{desbravador}', [EventoController::class, 'atualizarStatus'])
+            ->name('eventos.status')
+            ->middleware('can:financeiro');
+
         Route::get('eventos/{evento}/autorizacao/{desbravador}', [EventoController::class, 'gerarAutorizacao'])->name('eventos.autorizacao');
     });
 
@@ -146,10 +145,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/desbravadores', [RankingController::class, 'desbravadores'])->name('desbravadores');
     });
 
-    // 9. RELATÓRIOS
+    // 9. RELATÓRIOS (Acesso exclusivo com permissão 'relatorios')
     Route::prefix('relatorios')->name('relatorios.')->middleware('can:relatorios')->group(function () {
         Route::get('/', [RelatorioController::class, 'index'])->name('index');
         Route::post('/gerar-personalizado', [RelatorioController::class, 'gerarPersonalizado'])->name('custom');
+
         Route::get('/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('autorizacao');
         Route::get('/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('carteirinha');
         Route::get('/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('ficha-medica');
@@ -159,6 +159,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/patrimonio', [RelatorioController::class, 'patrimonio'])->name('patrimonio');
         });
     });
+
+    // 10. ADMIN MASTER (Acesso Total e Gestão)
+    Route::middleware('can:master')->group(function () {
+        Route::resource('usuarios', UsuarioController::class)->except(['show']);
+        Route::resource('invites', InvitationController::class)->except(['show', 'edit', 'update']);
+
+        // NOVAS ROTAS DE BACKUP
+        Route::get('/backups', [App\Http\Controllers\BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups', [App\Http\Controllers\BackupController::class, 'store'])->name('backups.store');
+        Route::get('/backups/download', [App\Http\Controllers\BackupController::class, 'download'])->name('backups.download');
+        Route::delete('/backups/destroy', [App\Http\Controllers\BackupController::class, 'destroy'])->name('backups.destroy');
+
+        // NOVAS ROTAS DE IMPORTAÇÃO E RESTAURAÇÃO
+        Route::post('/backups/import', [App\Http\Controllers\BackupController::class, 'import'])->name('backups.import');
+        Route::post('/backups/restore', [App\Http\Controllers\BackupController::class, 'restore'])->name('backups.restore');
+    });
+
 });
 
 require __DIR__.'/auth.php';

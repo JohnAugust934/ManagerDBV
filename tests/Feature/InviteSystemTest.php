@@ -16,31 +16,23 @@ class InviteSystemTest extends TestCase
 
     public function test_master_pode_criar_convite_e_envia_email()
     {
-        // Finge o sistema de e-mails para não enviar de verdade no teste
         Mail::fake();
 
-        // Cria o clube manualmente
-        $club = Club::create([
-            'nome' => 'Clube Orion',
-            'cidade' => 'São Paulo',
-            'associacao' => 'APL',
-        ]);
-
+        $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'São Paulo', 'associacao' => 'APL']);
         $master = User::factory()->create(['role' => 'master', 'club_id' => $club->id]);
 
         $response = $this->actingAs($master)->post(route('invites.store'), [
             'email' => 'novo@clube.com',
-            'role' => 'diretor',
+            'role' => 'conselheiro',
         ]);
 
         $response->assertRedirect(route('invites.index'));
         $this->assertDatabaseHas('invitations', [
             'email' => 'novo@clube.com',
-            'role' => 'diretor',
+            'role' => 'conselheiro',
             'club_id' => $club->id,
         ]);
 
-        // Verifica se a classe Mailable correta foi chamada para o e-mail correto
         Mail::assertSent(ClubInvitation::class, function ($mail) {
             return $mail->hasTo('novo@clube.com');
         });
@@ -48,11 +40,7 @@ class InviteSystemTest extends TestCase
 
     public function test_usuario_pode_se_registrar_com_convite()
     {
-        $club = Club::create([
-            'nome' => 'Clube Orion',
-            'cidade' => 'São Paulo',
-            'associacao' => 'APL',
-        ]);
+        $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'São Paulo', 'associacao' => 'APL']);
 
         $invite = Invitation::create([
             'email' => 'convidado@clube.com',
@@ -69,7 +57,8 @@ class InviteSystemTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('dashboard', absolute: false));
+        // Removido o 'absolute: false' para evitar o erro 500 do Laravel Router
+        $response->assertRedirect(route('dashboard'));
 
         $this->assertDatabaseHas('users', [
             'email' => 'convidado@clube.com',
@@ -77,7 +66,6 @@ class InviteSystemTest extends TestCase
             'club_id' => $club->id,
         ]);
 
-        // Verifica se o convite foi marcado como USADO (registered_at preenchido)
         $inviteUsado = Invitation::where('email', 'convidado@clube.com')->first();
         $this->assertNotNull($inviteUsado->registered_at);
     }
