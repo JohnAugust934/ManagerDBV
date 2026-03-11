@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Club;
+use App\Mail\ClubInvitation;
 use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class InvitationController extends Controller
@@ -13,17 +15,16 @@ class InvitationController extends Controller
     public function index()
     {
         Gate::authorize('master');
-        $invites = Invitation::with('club')->orderBy('created_at', 'desc')->get();
+        $invitations = Invitation::where('club_id', auth()->user()->club_id)->latest()->get();
 
-        return view('admin.invites.index', compact('invites'));
+        return view('admin.invites.index', compact('invitations'));
     }
 
     public function create()
     {
         Gate::authorize('master');
-        $existingClub = Club::first();
 
-        return view('admin.invites.create', compact('existingClub'));
+        return view('admin.invites.create');
     }
 
     public function store(Request $request)
@@ -31,31 +32,45 @@ class InvitationController extends Controller
         Gate::authorize('master');
 
         $request->validate([
-            'email' => ['required', 'email', 'unique:users,email', 'unique:invitations,email'],
-            'role' => ['required', 'string'],
-            'expires_at' => ['nullable', 'date'],
+            'email' => 'required|email|unique:users,email',
+            'role' => 'required|in:master,diretor,secretario,tesoureiro,instrutor,conselheiro',
+        ], [
+            'email.unique' => 'Este e-mail já está cadastrado no sistema.',
         ]);
 
-        $existingClub = Club::first();
-        $clubId = $existingClub ? $existingClub->id : null;
+        $token = Str::random(40);
 
-        Invitation::create([
+        $invitation = Invitation::create([
             'email' => $request->email,
-            'token' => Str::random(32),
+            'token' => $token,
             'role' => $request->role,
-            'club_id' => $clubId,
-            'expires_at' => $request->expires_at,
-            'extra_permissions' => $request->extra_permissions ?? [],
+            'club_id' => auth()->user()->club_id,
+            'expires_at' => now()->addDays(7),
         ]);
 
-        return redirect()->route('invites.index')->with('success', 'Convite gerado com sucesso!');
+        try {
+            // Dispara o e-mail
+            Mail::to($request->email)->send(new ClubInvitation($invitation));
+        } catch (\Exception $e) {
+            // Se o e-mail falhar, não perde o convite, apenas avisa na tela
+            Log::error('Erro ao enviar e-mail de convite: '.$e->getMessage());
+
+            return redirect()->route('invites.index')->with('warning', 'Convite gerado, mas ocorreu um erro ao enviar o e-mail. Você pode copiar o link da tabela e enviar manualmente.');
+        }
+
+        return redirect()->route('invites.index')->with('success', 'Convite gerado e e-mail enviado com sucesso!');
     }
 
     public function destroy(Invitation $invite)
     {
         Gate::authorize('master');
+
+        if ($invite->club_id !== auth()->user()->club_id) {
+            abort(403);
+        }
+
         $invite->delete();
 
-        return back()->with('success', 'Convite removido.');
+        return redirect()->route('invites.index')->with('success', 'Convite cancelado/removido com sucesso!');
     }
 }

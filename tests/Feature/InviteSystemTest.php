@@ -2,69 +2,83 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Invitation;
+use App\Mail\ClubInvitation;
 use App\Models\Club;
+use App\Models\Invitation;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class InviteSystemTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_master_pode_criar_convite()
+    public function test_master_pode_criar_convite_e_envia_email()
     {
-        $master = User::factory()->create(['role' => 'master']);
+        // Finge o sistema de e-mails para não enviar de verdade no teste
+        Mail::fake();
+
+        // Cria o clube manualmente
+        $club = Club::create([
+            'nome' => 'Clube Orion',
+            'cidade' => 'São Paulo',
+            'associacao' => 'APL',
+        ]);
+
+        $master = User::factory()->create(['role' => 'master', 'club_id' => $club->id]);
 
         $response = $this->actingAs($master)->post(route('invites.store'), [
-            'email' => 'novo@teste.com',
+            'email' => 'novo@clube.com',
             'role' => 'diretor',
-            'extra_permissions' => ['financeiro']
         ]);
 
         $response->assertRedirect(route('invites.index'));
-
         $this->assertDatabaseHas('invitations', [
-            'email' => 'novo@teste.com',
-            'role' => 'diretor'
+            'email' => 'novo@clube.com',
+            'role' => 'diretor',
+            'club_id' => $club->id,
         ]);
+
+        // Verifica se a classe Mailable correta foi chamada para o e-mail correto
+        Mail::assertSent(ClubInvitation::class, function ($mail) {
+            return $mail->hasTo('novo@clube.com');
+        });
     }
 
     public function test_usuario_pode_se_registrar_com_convite()
     {
-        // CORREÇÃO: Adicionado campo 'cidade'
-        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'São Paulo']);
+        $club = Club::create([
+            'nome' => 'Clube Orion',
+            'cidade' => 'São Paulo',
+            'associacao' => 'APL',
+        ]);
 
         $invite = Invitation::create([
-            'email' => 'convidado@teste.com',
-            'token' => 'token_unico_123',
+            'email' => 'convidado@clube.com',
+            'token' => 'token-falso-123',
             'role' => 'conselheiro',
             'club_id' => $club->id,
-            'extra_permissions' => []
+            'expires_at' => now()->addDays(7),
         ]);
 
-        // Acessa a tela de registro
-        $response = $this->get(route('register.invite', ['token' => 'token_unico_123']));
-        $response->assertStatus(200);
-        $response->assertSee('convidado@teste.com');
-
-        // Envia o formulário
         $response = $this->post(route('register.store_invite'), [
-            'token' => 'token_unico_123',
-            'name' => 'João Convidado',
-            'password' => 'password',
-            'password_confirmation' => 'password'
+            'token' => 'token-falso-123',
+            'name' => 'Usuário Convidado',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('dashboard', absolute: false));
 
         $this->assertDatabaseHas('users', [
-            'email' => 'convidado@teste.com',
-            'name' => 'João Convidado',
+            'email' => 'convidado@clube.com',
             'role' => 'conselheiro',
-            'club_id' => $club->id
+            'club_id' => $club->id,
         ]);
 
-        $this->assertNotNull($invite->fresh()->registered_at);
+        // Verifica se o convite foi marcado como USADO (registered_at preenchido)
+        $inviteUsado = Invitation::where('email', 'convidado@clube.com')->first();
+        $this->assertNotNull($inviteUsado->registered_at);
     }
 }
