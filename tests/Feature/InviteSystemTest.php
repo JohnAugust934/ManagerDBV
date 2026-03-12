@@ -33,7 +33,8 @@ class InviteSystemTest extends TestCase
             'club_id' => $club->id,
         ]);
 
-        Mail::assertSent(ClubInvitation::class, function ($mail) {
+        // CORREÇÃO: Mudamos de assertSent para assertQueued
+        Mail::assertQueued(ClubInvitation::class, function ($mail) {
             return $mail->hasTo('novo@clube.com');
         });
     }
