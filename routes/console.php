@@ -11,9 +11,12 @@ Artisan::command('inspire', function () {
 // ==========================================
 // AGENDAMENTO AUTOMÁTICO DE BACKUPS (CRON)
 // ==========================================
+// Agenda para rodar todos os dias às 03:00 (Horário de Brasília)
+Schedule::command('backup:run')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('03:00');
 
-// 1. Limpeza (01:00 AM) - Verifica a retenção e apaga arquivos velhos
-Schedule::command('backup:clean', ['--disable-notifications' => true])->dailyAt('01:00');
-
-// 2. Criação (03:00 AM) - Varre o banco de dados e arquivos e joga na nuvem
-Schedule::command('backup:run', ['--disable-notifications' => true])->dailyAt('03:00');
+// Também agenda a limpeza dos backups antigos
+Schedule::command('backup:clean')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('04:00');

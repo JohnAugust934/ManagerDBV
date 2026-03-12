@@ -125,14 +125,13 @@ class BackupSystemTest extends TestCase
 
     public function test_rotinas_de_backup_estao_agendadas()
     {
-        // Instancia o Agendador do Laravel
         $schedule = app()->make(\Illuminate\Console\Scheduling\Schedule::class);
         $events = collect($schedule->events());
 
-        // Verifica se a rotina de limpeza existe e roda às 01:00 (0 1 * * *)
+        // Verifica se a rotina de limpeza existe e roda às 04:00 (0 4 * * *)
         $backupClean = $events->first(fn ($event) => str_contains($event->command, 'backup:clean'));
         $this->assertNotNull($backupClean, 'O agendamento de limpeza de backups não foi encontrado.');
-        $this->assertEquals('0 1 * * *', $backupClean->expression, 'A limpeza não está agendada para a 01:00 da manhã.');
+        $this->assertEquals('0 4 * * *', $backupClean->expression, 'A limpeza não está agendada para as 04:00 da manhã.');
 
         // Verifica se a rotina de criação existe e roda às 03:00 (0 3 * * *)
         $backupRun = $events->first(fn ($event) => str_contains($event->command, 'backup:run'));

@@ -59,10 +59,13 @@ return [
         ],
         'notifiable' => \Spatie\Backup\Notifications\Notifiable::class,
         'mail' => [
-            'to' => 'your@example.com',
+            // AQUI VOCÊ DEFINE QUEM RECEBE OS AVISOS
+            'to' => 'joaoaugusto934@gmail.com',
+
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-                'name' => env('MAIL_FROM_NAME', 'Example'),
+                // AQUI GARANTIMOS QUE O NOME DO REMETENTE SERÁ O NOME DO SISTEMA
+                'name' => env('APP_NAME', 'DBV Manager'),
             ],
         ],
         'slack' => [
