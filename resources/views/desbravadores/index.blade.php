@@ -1,27 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight flex items-center gap-2">
-                <svg class="w-6 h-6 text-dbv-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                {{ __('Desbravadores') }}
-            </h2>
-
-            <div class="flex items-center gap-2">
-                <a href="{{ route('desbravadores.create') }}"
-                    class="inline-flex items-center justify-center px-4 py-2 bg-dbv-yellow border border-transparent rounded-lg font-bold text-xs text-yellow-900 uppercase tracking-widest hover:bg-yellow-500 active:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition ease-in-out duration-150 shadow-sm w-full sm:w-auto">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Novo Desbravador
-                </a>
-            </div>
-        </div>
+        <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight flex items-center gap-2">
+            <svg class="w-6 h-6 text-dbv-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            {{ __('Desbravadores') }}
+        </h2>
     </x-slot>
 
     <div class="py-6 space-y-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
+
+        <div class="px-4 sm:px-0 flex justify-end">
+            <a href="{{ route('desbravadores.create') }}"
+                class="inline-flex items-center justify-center px-4 py-3 sm:py-2 bg-dbv-yellow border border-transparent rounded-lg font-bold text-sm sm:text-xs text-yellow-900 uppercase tracking-widest hover:bg-yellow-500 active:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition ease-in-out duration-150 shadow-sm w-full sm:w-auto">
+                <svg class="w-5 h-5 sm:w-4 sm:h-4 mr-2 sm:mr-1.5" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Novo Desbravador
+            </a>
+        </div>
 
         @if (session('success'))
             <div
@@ -103,14 +102,14 @@
                 </a>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead
                         class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-slate-900 dark:text-gray-300 border-b border-gray-100 dark:border-slate-700">
                         <tr>
                             <th scope="col" class="px-6 py-4 font-bold">Desbravador</th>
-                            <th scope="col" class="px-6 py-4 font-bold hidden sm:table-cell">Unidade/Classe</th>
-                            <th scope="col" class="px-6 py-4 font-bold hidden md:table-cell">Contato</th>
+                            <th scope="col" class="px-6 py-4 font-bold">Unidade/Classe</th>
+                            <th scope="col" class="px-6 py-4 font-bold">Contato</th>
                             <th scope="col" class="px-6 py-4 font-bold text-center">Status</th>
                             <th scope="col" class="px-6 py-4 font-bold text-right">Ações</th>
                         </tr>
@@ -147,11 +146,8 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="mt-2 sm:hidden text-xs text-gray-500 dark:text-gray-400">
-                                        {{ $dbv->unidade->nome ?? 'Sem Unidade' }}
-                                    </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex flex-col gap-1">
                                         @if ($dbv->unidade)
                                             <span
@@ -166,7 +162,7 @@
                                         </span>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-gray-300">
                                         {{ $dbv->telefone ?? 'Não informado' }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $dbv->email }}
@@ -220,13 +216,89 @@
                                     </svg>
                                     <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Nenhum desbravador
                                         encontrado.</p>
-                                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Tente ajustar os filtros
-                                        ou cadastre um novo.</p>
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            <div class="md:hidden flex flex-col divide-y divide-gray-100 dark:divide-slate-700">
+                @forelse($desbravadores as $dbv)
+                    <div class="p-4 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="flex-shrink-0 h-12 w-12 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center border-2 border-white dark:border-slate-600 shadow-sm overflow-hidden">
+                                    @if ($dbv->foto)
+                                        <img class="h-12 w-12 object-cover"
+                                            src="{{ asset('storage/' . $dbv->foto) }}" alt="">
+                                    @else
+                                        <span
+                                            class="text-gray-500 dark:text-gray-300 font-bold text-sm">{{ substr($dbv->nome, 0, 2) }}</span>
+                                    @endif
+                                </div>
+                                <div>
+                                    <div class="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                                        {{ $dbv->nome }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                                        {{ \Carbon\Carbon::parse($dbv->data_nascimento)->age }} anos •
+                                        {{ $dbv->unidade->nome ?? 'Sem Unidade' }}
+                                    </div>
+                                    <div class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 mt-0.5">
+                                        {{ $dbv->classe->nome ?? 'Sem Classe' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0">
+                                @if ($dbv->ativo)
+                                    <span
+                                        class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                        Ativo
+                                    </span>
+                                @else
+                                    <span
+                                        class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                        Inativo
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 mt-4">
+                            <a href="{{ route('desbravadores.show', $dbv) }}"
+                                class="inline-flex items-center justify-center py-2 px-4 text-xs font-bold text-dbv-blue bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg transition-colors border border-blue-100 dark:border-blue-900/30">
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Detalhes
+                            </a>
+                            <a href="{{ route('desbravadores.edit', $dbv) }}"
+                                class="inline-flex items-center justify-center py-2 px-4 text-xs font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg transition-colors border border-amber-100 dark:border-amber-900/30">
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                Editar
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="px-6 py-12 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Nenhum desbravador encontrado.
+                        </p>
+                    </div>
+                @endforelse
             </div>
 
             @if ($desbravadores->hasPages())
