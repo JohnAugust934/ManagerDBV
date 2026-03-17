@@ -159,6 +159,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/patrimonio', [RelatorioController::class, 'patrimonio'])->name('patrimonio');
         });
     });
+
+    // ✨ NOVA ROTA: ABA SOBRE O SISTEMA
+    Route::view('/sobre', 'sobre')->name('sobre');
 });
 
 require __DIR__.'/auth.php';
