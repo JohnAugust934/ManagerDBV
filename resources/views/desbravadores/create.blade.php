@@ -10,7 +10,6 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
 
-                    {{-- Exibe erros gerais no topo se houver muitos --}}
                     @if ($errors->any())
                         <div
                             class="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-400">
@@ -72,7 +71,7 @@
                                     <x-input-error :messages="$errors->get('unidade_id')" class="mt-2" />
                                 </div>
 
-                                <div>
+                                <div class="col-span-2">
                                     <x-input-label for="classe_atual" :value="__('Classe Atual')" />
                                     <select id="classe_atual" name="classe_atual"
                                         class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -80,11 +79,28 @@
                                         @foreach ($classes as $classe)
                                             <option value="{{ $classe->id }}"
                                                 {{ old('classe_atual') == $classe->id ? 'selected' : '' }}>
-                                                {{ $classe->nome }}
-                                            </option>
+                                                {{ $classe->nome }}</option>
                                         @endforeach
                                     </select>
                                     <x-input-error :messages="$errors->get('classe_atual')" class="mt-2" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold mb-4 text-dbv-blue border-b pb-2">Documentos</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <x-input-label for="cpf" :value="__('CPF *')" />
+                                    <x-text-input id="cpf" class="block mt-1 w-full" type="text" name="cpf"
+                                        :value="old('cpf')" required placeholder="000.000.000-00" />
+                                    <x-input-error :messages="$errors->get('cpf')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="rg" :value="__('RG')" />
+                                    <x-text-input id="rg" class="block mt-1 w-full" type="text" name="rg"
+                                        :value="old('rg')" placeholder="00.000.000-X" />
+                                    <x-input-error :messages="$errors->get('rg')" class="mt-2" />
                                 </div>
                             </div>
                         </div>

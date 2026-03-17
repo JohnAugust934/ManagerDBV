@@ -10,10 +10,7 @@ class DesbravadorFactory extends Factory
 {
     public function definition(): array
     {
-        // Garante que existe uma classe para vincular
         $classe = Classe::inRandomOrder()->first() ?? Classe::factory()->create();
-
-        // Garante que existe uma unidade
         $unidade = Unidade::inRandomOrder()->first() ?? Unidade::factory()->create();
 
         return [
@@ -22,7 +19,7 @@ class DesbravadorFactory extends Factory
             'sexo' => $this->faker->randomElement(['M', 'F']),
             'ativo' => true,
             'unidade_id' => $unidade->id,
-            'classe_atual' => $classe->id, // <--- Agora usa o ID corretamente
+            'classe_atual' => $classe->id,
             'email' => $this->faker->unique()->safeEmail(),
             'telefone' => $this->faker->phoneNumber(),
             'endereco' => $this->faker->address(),
@@ -33,6 +30,8 @@ class DesbravadorFactory extends Factory
             'alergias' => null,
             'medicamentos_continuos' => null,
             'plano_saude' => null,
+            'cpf' => $this->faker->unique()->numerify('###.###.###-##'),
+            'rg' => $this->faker->numerify('##.###.###-X'),
         ];
     }
 }

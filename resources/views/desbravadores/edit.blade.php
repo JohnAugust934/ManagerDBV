@@ -46,7 +46,6 @@
                                     </select>
                                 </div>
 
-                                {{-- CAMPO CLASSE --}}
                                 <div>
                                     <x-input-label for="classe_atual" :value="__('Classe Atual')" />
                                     <select id="classe_atual" name="classe_atual"
@@ -55,8 +54,7 @@
                                         @foreach ($classes as $classe)
                                             <option value="{{ $classe->id }}"
                                                 {{ old('classe_atual', $desbravador->classe_atual) == $classe->id ? 'selected' : '' }}>
-                                                {{ $classe->nome }}
-                                            </option>
+                                                {{ $classe->nome }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -80,6 +78,24 @@
                                             {{ old('sexo', $desbravador->sexo) == 'F' ? 'selected' : '' }}>Feminino
                                         </option>
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                            <h3 class="text-md font-bold mb-3 text-dbv-blue">Documentos</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <x-input-label for="cpf" :value="__('CPF *')" />
+                                    <x-text-input id="cpf" class="block mt-1 w-full" type="text" name="cpf"
+                                        :value="old('cpf', $desbravador->cpf)" required />
+                                    <x-input-error :messages="$errors->get('cpf')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="rg" :value="__('RG')" />
+                                    <x-text-input id="rg" class="block mt-1 w-full" type="text" name="rg"
+                                        :value="old('rg', $desbravador->rg)" />
+                                    <x-input-error :messages="$errors->get('rg')" class="mt-2" />
                                 </div>
                             </div>
                         </div>

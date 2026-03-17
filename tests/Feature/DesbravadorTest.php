@@ -16,40 +16,38 @@ class DesbravadorTest extends TestCase
 
     public function test_pode_criar_um_desbravador_com_campos_obrigatorios()
     {
-        // 1. Preparação
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        // Role 'secretario' (masculino) para passar na Policy/Gate
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
         $unidade = Unidade::factory()->create();
-        $classe = Classe::factory()->create(); // Cria uma classe válida
+        $classe = Classe::factory()->create();
 
-        // 2. Ação
         $response = $this->actingAs($user)->post(route('desbravadores.store'), [
             'nome' => 'João Desbravador',
             'data_nascimento' => '2010-01-01',
             'sexo' => 'M',
+            'cpf' => '123.456.789-00',
+            'rg' => '12.345.678-9',
             'unidade_id' => $unidade->id,
-            'classe_atual' => $classe->id, // Envia o ID da classe
+            'classe_atual' => $classe->id,
             'email' => 'joao@teste.com',
             'nome_responsavel' => 'Mãe do João',
             'telefone_responsavel' => '11999999999',
             'numero_sus' => '12345678900',
             'endereco' => 'Rua Teste, 123',
-            // Campos opcionais não enviados
         ]);
 
-        // 3. Verificação
-        $response->assertSessionHasNoErrors(); // Garante que não houve erro de validação silencioso
+        $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('desbravadores.index'));
 
         $this->assertDatabaseHas('desbravadores', [
             'nome' => 'João Desbravador',
             'classe_atual' => $classe->id,
+            'cpf' => '123.456.789-00',
         ]);
     }
 
-    public function test_nao_pode_criar_sem_sus_ou_responsavel()
+    public function test_nao_pode_criar_sem_sus_ou_responsavel_ou_cpf()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
@@ -62,10 +60,10 @@ class DesbravadorTest extends TestCase
             'sexo' => 'M',
             'unidade_id' => $unidade->id,
             'classe_atual' => $classe->id,
-            // Faltando SUS e Responsável propositalmente
+            // Faltando SUS, Responsável e CPF propositalmente
         ]);
 
-        $response->assertSessionHasErrors(['numero_sus', 'nome_responsavel']);
+        $response->assertSessionHasErrors(['numero_sus', 'nome_responsavel', 'cpf']);
     }
 
     public function test_pode_editar_desbravador()
@@ -73,17 +71,17 @@ class DesbravadorTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        // A factory agora usa ClasseFactory automaticamente, gerando ID válido
         $desbravador = Desbravador::factory()->create();
-
-        $novaClasse = Classe::factory()->create(); // Cria nova classe para troca
+        $novaClasse = Classe::factory()->create();
 
         $response = $this->actingAs($user)->put(route('desbravadores.update', $desbravador), [
             'nome' => 'João Editado',
             'data_nascimento' => $desbravador->data_nascimento->format('Y-m-d'),
             'sexo' => 'M',
+            'cpf' => $desbravador->cpf,
+            'rg' => '99.999.999-X',
             'unidade_id' => $desbravador->unidade_id,
-            'classe_atual' => $novaClasse->id, // Trocando de classe pelo ID
+            'classe_atual' => $novaClasse->id,
             'ativo' => true,
             'email' => $desbravador->email,
             'nome_responsavel' => $desbravador->nome_responsavel,
@@ -99,6 +97,7 @@ class DesbravadorTest extends TestCase
             'id' => $desbravador->id,
             'nome' => 'João Editado',
             'classe_atual' => $novaClasse->id,
+            'rg' => '99.999.999-X',
         ]);
     }
 }

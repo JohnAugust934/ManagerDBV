@@ -12,24 +12,21 @@ class DesbravadorController extends Controller
 {
     public function index(Request $request)
     {
-        // Carrega unidade e classe para otimizar a listagem
         $query = Desbravador::with(['unidade', 'classe'])->orderBy('nome');
 
-        // 1. Filtro da Barra de Busca
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nome', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('cpf', 'like', "%{$search}%");
             });
         }
 
-        // 2. Filtro por Unidade
         if ($request->filled('unidade_id')) {
             $query->where('unidade_id', $request->unidade_id);
         }
 
-        // 3. Filtro de Status
         $status = $request->input('status', 'ativos');
         if ($status === 'ativos') {
             $query->where('ativo', true);
@@ -45,7 +42,7 @@ class DesbravadorController extends Controller
     public function create()
     {
         $unidades = Unidade::orderBy('nome')->get();
-        $classes = Classe::orderBy('ordem')->get(); // Carrega classes para o select
+        $classes = Classe::orderBy('ordem')->get();
 
         return view('desbravadores.create', compact('unidades', 'classes'));
     }
@@ -53,24 +50,19 @@ class DesbravadorController extends Controller
     public function store(Request $request)
     {
         $dados = $request->validate([
-            // Dados do Clube
             'nome' => 'required|string|max:255',
             'data_nascimento' => 'required|date',
             'sexo' => 'required|in:M,F',
+            'cpf' => 'required|string|max:14|unique:desbravadores,cpf',
+            'rg' => 'nullable|string|max:20',
             'unidade_id' => 'required|exists:unidades,id',
-
-            // CORREÇÃO: Valida se é um ID válido de classe
             'classe_atual' => 'nullable|exists:classes,id',
-
-            // Dados Pessoais e Contato
             'email' => 'required|email',
             'telefone' => 'nullable|string',
             'endereco' => 'required|string|max:500',
             'nome_responsavel' => 'required|string|max:255',
             'telefone_responsavel' => 'required|string',
             'numero_sus' => 'required|string|max:50',
-
-            // Dados Médicos
             'tipo_sanguineo' => 'nullable|string|max:3',
             'alergias' => 'nullable|string',
             'medicamentos_continuos' => 'nullable|string',
@@ -86,7 +78,6 @@ class DesbravadorController extends Controller
 
     public function show(Desbravador $desbravador)
     {
-        // Carrega 'classe' para mostrar o nome (ex: "Amigo") na view
         $desbravador->load(['unidade', 'classe', 'especialidades', 'frequencias' => function ($q) {
             $q->orderBy('data', 'desc')->take(5);
         }]);
@@ -97,7 +88,7 @@ class DesbravadorController extends Controller
     public function edit(Desbravador $desbravador)
     {
         $unidades = Unidade::orderBy('nome')->get();
-        $classes = Classe::orderBy('ordem')->get(); // Carrega classes
+        $classes = Classe::orderBy('ordem')->get();
 
         return view('desbravadores.edit', compact('desbravador', 'unidades', 'classes'));
     }
@@ -109,11 +100,10 @@ class DesbravadorController extends Controller
             'ativo' => 'boolean',
             'data_nascimento' => 'required|date',
             'sexo' => 'required|in:M,F',
+            'cpf' => 'required|string|max:14|unique:desbravadores,cpf,'.$desbravador->id,
+            'rg' => 'nullable|string|max:20',
             'unidade_id' => 'required|exists:unidades,id',
-
-            // CORREÇÃO: Validação de ID
             'classe_atual' => 'nullable|exists:classes,id',
-
             'email' => 'required|email',
             'telefone' => 'nullable|string',
             'endereco' => 'required|string',
@@ -126,7 +116,6 @@ class DesbravadorController extends Controller
             'plano_saude' => 'nullable|string',
         ]);
 
-        // Checkbox não enviado = false
         $dados['ativo'] = $request->has('ativo');
 
         $desbravador->update($dados);
@@ -134,7 +123,6 @@ class DesbravadorController extends Controller
         return redirect()->route('desbravadores.show', $desbravador)->with('success', 'Dados atualizados!');
     }
 
-    // ... métodos de especialidades (mantidos iguais)
     public function gerenciarEspecialidades(Desbravador $desbravador)
     {
         $especialidades = Especialidade::orderBy('nome')->get();

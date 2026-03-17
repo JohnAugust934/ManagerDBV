@@ -126,7 +126,7 @@
                         <div>
                             <p class="text-xs text-gray-500 dark:text-gray-400">Classe Atual</p>
                             <p class="font-semibold text-gray-800 dark:text-gray-200">
-                                {{ $desbravador->classe_atual ?? 'Não informada' }}</p>
+                                {{ $desbravador->classe->nome ?? 'Não informada' }}</p>
                         </div>
                     </div>
 
@@ -200,6 +200,26 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mx-4 md:mx-0">
 
             <div class="lg:col-span-1 space-y-6">
+
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                    <h3
+                        class="font-bold text-lg text-gray-800 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-slate-700 pb-2">
+                        Documentos</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase">CPF</span>
+                            <span
+                                class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->cpf }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase">RG</span>
+                            <span
+                                class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->rg ?? 'Não informado' }}</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div
                     class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
                     <h3

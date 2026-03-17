@@ -19,8 +19,10 @@ class Desbravador extends Model
         'nome',
         'data_nascimento',
         'sexo',
+        'cpf',
+        'rg',
         'unidade_id',
-        'classe_atual', // Agora é um ID (Foreign Key)
+        'classe_atual',
         'email',
         'telefone',
         'endereco',
@@ -43,7 +45,6 @@ class Desbravador extends Model
         return $this->belongsTo(Unidade::class);
     }
 
-    // RELACIONAMENTO PRINCIPAL DA CLASSE
     public function classe(): BelongsTo
     {
         return $this->belongsTo(Classe::class, 'classe_atual');
@@ -71,7 +72,6 @@ class Desbravador extends Model
         return $query->where('ativo', true);
     }
 
-    // Relacionamento de requisitos cumpridos
     public function requisitosCumpridos()
     {
         return $this->belongsToMany(Requisito::class, 'desbravador_requisito')
@@ -79,18 +79,13 @@ class Desbravador extends Model
             ->withTimestamps();
     }
 
-    // Helper para checar se completou um requisito específico
     public function completouRequisito($requisitoId)
     {
         return $this->requisitosCumpridos()->where('requisito_id', $requisitoId)->exists();
     }
 
-    /**
-     * Retorna a % de conclusão da classe atual.
-     */
     public function getProgressoClasseAttribute()
     {
-        // Se não tiver classe vinculada, retorna 0
         if (! $this->classe) {
             return 0;
         }
