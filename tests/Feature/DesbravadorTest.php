@@ -100,4 +100,32 @@ class DesbravadorTest extends TestCase
             'rg' => '99.999.999-X',
         ]);
     }
+
+    public function test_pode_filtrar_desbravadores_por_status_ativo_inativo()
+    {
+        $clube = Club::create(['nome' => 'Clube Orion', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        // Cria 1 Ativo e 1 Inativo
+        $ativo = Desbravador::factory()->create(['nome' => 'João Ativo', 'ativo' => true]);
+        $inativo = Desbravador::factory()->create(['nome' => 'Maria Inativa', 'ativo' => false]);
+
+        // Testa a aba "Ativos" (padrão)
+        $response = $this->actingAs($user)->get(route('desbravadores.index'));
+        $response->assertStatus(200);
+        $response->assertSee('João Ativo');
+        $response->assertDontSee('Maria Inativa');
+
+        // Testa a aba "Inativos"
+        $response = $this->actingAs($user)->get(route('desbravadores.index', ['status' => 'inativos']));
+        $response->assertStatus(200);
+        $response->assertSee('Maria Inativa');
+        $response->assertDontSee('João Ativo');
+
+        // Testa a aba "Todos"
+        $response = $this->actingAs($user)->get(route('desbravadores.index', ['status' => 'todos']));
+        $response->assertStatus(200);
+        $response->assertSee('João Ativo');
+        $response->assertSee('Maria Inativa');
+    }
 }
