@@ -9,7 +9,9 @@ class RankingController extends Controller
 {
     public function unidades()
     {
-        $data = Unidade::with(['desbravadores.frequencias'])
+        $ano = now()->year;
+
+        $data = Unidade::with(['desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)])
             ->get()
             ->map(function ($unidade) {
                 $stats = $this->calcularPontos($unidade->desbravadores);
@@ -27,12 +29,14 @@ class RankingController extends Controller
             ->sortByDesc('pontos')
             ->values();
 
-        return $this->renderView($data, 'Ranking das Unidades');
+        return $this->renderView($data, 'Ranking das Unidades', $ano);
     }
 
     public function desbravadores()
     {
-        $data = Desbravador::with(['unidade', 'frequencias'])
+        $ano = now()->year;
+
+        $data = Desbravador::with(['unidade', 'frequencias' => fn ($query) => $query->whereYear('data', $ano)])
             ->where('ativo', true)
             ->get()
             ->map(function ($dbv) {
@@ -52,15 +56,15 @@ class RankingController extends Controller
             ->sortByDesc('pontos')
             ->values();
 
-        return $this->renderView($data, 'Ranking Individual');
+        return $this->renderView($data, 'Ranking Individual', $ano);
     }
 
-    private function renderView($data, $titulo)
+    private function renderView($data, $titulo, $ano)
     {
         $top3 = $data->take(3);
         $demais = $data->skip(3);
 
-        return view('ranking.index', compact('data', 'top3', 'demais', 'titulo'));
+        return view('ranking.index', compact('data', 'top3', 'demais', 'titulo', 'ano'));
     }
 
     private function calcularPontos($desbravadores)

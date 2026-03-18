@@ -149,7 +149,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // 9. RELATÓRIOS
     Route::prefix('relatorios')->name('relatorios.')->middleware('can:relatorios')->group(function () {
         Route::get('/', [RelatorioController::class, 'index'])->name('index');
-        Route::post('/gerar-personalizado', [RelatorioController::class, 'gerarPersonalizado'])->name('custom');
+        Route::match(['get', 'post'], '/gerar-personalizado', [RelatorioController::class, 'gerarPersonalizado'])->name('custom');
         Route::get('/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('autorizacao');
         Route::get('/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('carteirinha');
         Route::get('/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('ficha-medica');

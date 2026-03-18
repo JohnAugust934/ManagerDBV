@@ -251,13 +251,16 @@
                         class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-100 dark:border-slate-700">
                         <button type="button"
                             class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 border border-transparent rounded-lg font-bold text-xs uppercase tracking-widest transition"
-                            onclick="if(confirm('Tem certeza? Isso apagará todo o histórico desse desbravador.')) document.getElementById('delete-form').submit()">
+                            onclick="if(confirm('Excluir este desbravador apagará permanentemente todos os dados e vínculos cadastrados. O recomendado é apenas inativar o cadastro. Deseja excluir mesmo assim?')) document.getElementById('delete-form').submit()">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                             Excluir Cadastro
                         </button>
+                        <p class="w-full sm:w-auto text-center sm:text-left text-xs text-red-600 dark:text-red-300">
+                            Excluir remove tudo em definitivo. O mais seguro para o dia a dia é inativar o cadastro.
+                        </p>
 
                         <div class="flex flex-col-reverse sm:flex-row w-full sm:w-auto gap-3">
                             <a href="{{ route('desbravadores.show', $desbravador) }}"

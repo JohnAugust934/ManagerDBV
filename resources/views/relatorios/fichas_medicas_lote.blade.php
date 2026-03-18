@@ -1,153 +1,64 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
+    <meta charset="utf-8">
     <title>Fichas Médicas em Lote</title>
     <style>
-        body {
-            font-family: sans-serif;
-            font-size: 12px;
-        }
-
-        h1,
-        h2 {
-            text-align: center;
-            text-transform: uppercase;
-            margin: 5px 0;
-        }
-
-        .page-break {
-            page-break-after: always;
-        }
-
-        .box {
-            border: 1px solid #000;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-
-        .label {
-            font-weight: bold;
-            background-color: #eee;
-            padding: 2px 5px;
-            display: inline-block;
-            margin-bottom: 5px;
-        }
-
-        .row {
-            width: 100%;
-            display: table;
-            margin-bottom: 5px;
-        }
-
-        .col {
-            display: table-cell;
-            padding-right: 10px;
-        }
-
-        .alert {
-            color: red;
-            font-weight: bold;
-        }
-
-        .container {
-            margin-bottom: 20px;
-        }
+        @page { margin: 24px; }
+        body { font-family: DejaVu Sans, sans-serif; color: #0f172a; font-size: 11px; line-height: 1.45; }
+        .page-break { page-break-after: always; }
+        .sheet { border: 1px solid #cbd5e1; border-radius: 18px; padding: 16px; }
+        .header { border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px; }
+        .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; color: #0f766e; font-size: 9px; font-weight: 700; }
+        h1 { margin: 6px 0 4px; font-size: 20px; }
+        .meta { color: #64748b; font-size: 10px; }
+        .panel { border: 1px solid #dbe4ee; border-radius: 14px; padding: 12px; background: #f8fafc; margin-bottom: 12px; }
+        .panel h2 { margin: 0 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #0f766e; }
+        .list { list-style: none; margin: 0; padding: 0; }
+        .list li { margin-bottom: 6px; }
+        .alert { border: 1px solid #fecaca; background: #fef2f2; color: #991b1b; border-radius: 10px; padding: 10px; margin-top: 8px; }
     </style>
 </head>
-
 <body>
-
-    @foreach($desbravadores as $desbravador)
-    <div class="container">
-        <h1>Ficha Médica de Emergência</h1>
-        <h2>{{ Auth::user()->club->nome ?? 'Clube de Desbravadores' }}</h2>
-        <hr>
-
-        <div class="box">
-            <div class="label">DADOS PESSOAIS</div>
-            <div class="row">
-                <div class="col"><strong>Nome:</strong> {{ $desbravador->nome }}</div>
-                <div class="col"><strong>Nascimento:</strong> {{ $desbravador->data_nascimento->format('d/m/Y') }} ({{ \Carbon\Carbon::parse($desbravador->data_nascimento)->age }} anos)</div>
-            </div>
-            <div class="row">
-                <div class="col"><strong>Unidade:</strong> {{ $desbravador->unidade->nome ?? '-' }}</div>
-                <div class="col"><strong>Sexo:</strong> {{ $desbravador->sexo == 'M' ? 'Masculino' : 'Feminino' }}</div>
-            </div>
-        </div>
-
-        <div class="box">
-            <div class="label">CONTATO DE EMERGÊNCIA</div>
-            <div class="row">
-                <div class="col"><strong>Responsável Legal:</strong> {{ $desbravador->nome_responsavel }}</div>
-            </div>
-            <div class="row">
-                <div class="col"><strong>Telefone (Principal):</strong> {{ $desbravador->telefone_responsavel }}</div>
-                <div class="col"><strong>Telefone (Desbravador):</strong> {{ $desbravador->telefone ?? '-' }}</div>
-            </div>
-            <div class="row">
-                <div class="col"><strong>Endereço:</strong> {{ $desbravador->endereco }}</div>
-            </div>
-        </div>
-
-        <div class="box" style="border: 2px solid red;">
-            <div class="label" style="background: red; color: white;">INFORMAÇÕES CLÍNICAS</div>
-
-            <div class="row" style="margin-top: 10px;">
-                <div class="col">
-                    <strong>Tipo Sanguíneo:</strong>
-                    <span style="font-size: 16px; font-weight: bold;">{{ $desbravador->tipo_sanguineo ?? 'Não informado' }}</span>
-                </div>
-                <div class="col">
-                    <strong>Cartão SUS:</strong>
-                    <span style="font-size: 14px;">{{ $desbravador->numero_sus ?? '---' }}</span>
+    @foreach ($desbravadores as $desbravador)
+        <div class="sheet">
+            <div class="header">
+                <div class="eyebrow">Ficha Médica de Emergência</div>
+                <h1>{{ $desbravador['nome'] }}</h1>
+                <div class="meta">
+                    Clube: {{ $clubeNome }} |
+                    Unidade: {{ $desbravador['unidade'] }} |
+                    Emitido em {{ $emitidoEm }}
                 </div>
             </div>
 
-            <div style="margin-top: 10px;">
-                <strong>Alergias:</strong><br>
-                @if($desbravador->alergias)
-                <span class="alert">{{ $desbravador->alergias }}</span>
-                @else
-                Nenhuma alergia conhecida.
-                @endif
+            <div class="panel">
+                <h2>Dados Pessoais</h2>
+                <ul class="list">
+                    <li><strong>Nascimento:</strong> {{ $desbravador['data_nascimento'] }} ({{ $desbravador['idade'] }})</li>
+                    <li><strong>Sexo:</strong> {{ $desbravador['sexo'] }}</li>
+                    <li><strong>Classe:</strong> {{ $desbravador['classe'] }}</li>
+                    <li><strong>Responsavel:</strong> {{ $desbravador['nome_responsavel'] }}</li>
+                    <li><strong>Telefone do responsavel:</strong> {{ $desbravador['telefone_responsavel'] }}</li>
+                    <li><strong>Telefone do desbravador:</strong> {{ $desbravador['telefone'] }}</li>
+                </ul>
             </div>
 
-            <div style="margin-top: 10px;">
-                <strong>Medicamentos de Uso Contínuo:</strong><br>
-                @if($desbravador->medicamentos_continuos)
-                <span class="alert">{{ $desbravador->medicamentos_continuos }}</span>
-                @else
-                Nenhum.
-                @endif
-            </div>
-
-            <div style="margin-top: 10px;">
-                <strong>Plano de Saúde:</strong> {{ $desbravador->plano_saude ?? 'Não possui particular' }}
+            <div class="panel">
+                <h2>Informações Clínicas</h2>
+                <ul class="list">
+                    <li><strong>Tipo sanguíneo:</strong> {{ $desbravador['tipo_sanguineo'] }}</li>
+                    <li><strong>Cartão SUS:</strong> {{ $desbravador['numero_sus'] }}</li>
+                    <li><strong>Plano de saúde:</strong> {{ $desbravador['plano_saude'] }}</li>
+                </ul>
+                <div class="alert"><strong>Alergias:</strong> {{ $desbravador['alergias'] }}</div>
+                <div class="alert"><strong>Medicamentos continuos:</strong> {{ $desbravador['medicamentos_continuos'] }}</div>
             </div>
         </div>
 
-        <div class="box">
-            <div class="label">AUTORIZAÇÃO MÉDICA</div>
-            <p style="text-align: justify; font-size: 11px;">
-                Em caso de emergência, se não for possível contatar os responsáveis listados acima, autorizo os líderes do clube ou profissionais de saúde a tomarem as medidas necessárias, incluindo hospitalização, cirurgias e administração de medicamentos.
-            </p>
-            <br><br>
-            <div style="text-align: center;">
-                _________________________________________________________<br>
-                Assinatura do Responsável
-            </div>
-            <div style="text-align: center; margin-top: 5px;">Data: ____/____/________</div>
-        </div>
-    </div>
-
-    {{-- Quebra de página, exceto no último --}}
-    @if(!$loop->last)
-    <div class="page-break"></div>
-    @endif
-
+        @if (! $loop->last)
+            <div class="page-break"></div>
+        @endif
     @endforeach
-
 </body>
-
 </html>

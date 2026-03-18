@@ -22,6 +22,7 @@ class RankingTest extends TestCase
         $response = $this->actingAs($user)->get(route('ranking.unidades'));
         $response->assertStatus(200);
         $response->assertViewHas('titulo', 'Ranking das Unidades');
+        $response->assertViewHas('ano', now()->year);
     }
 
     public function test_usuario_pode_ver_ranking_individual()
@@ -32,6 +33,7 @@ class RankingTest extends TestCase
         $response = $this->actingAs($user)->get(route('ranking.desbravadores'));
         $response->assertStatus(200);
         $response->assertViewHas('titulo', 'Ranking Individual');
+        $response->assertViewHas('ano', now()->year);
     }
 
     public function test_calculo_ranking_individual_correto()
@@ -58,5 +60,41 @@ class RankingTest extends TestCase
 
         $this->assertEquals('Iniciante', $dados->last()->nome);
         $this->assertEquals(10, $dados->last()->pontos);
+    }
+
+    public function test_ranking_considera_apenas_pontos_do_ano_atual()
+    {
+        $clube = Club::create(['nome' => 'Clube Ano', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id]);
+
+        $unidade = Unidade::factory()->create();
+        $dbv = Desbravador::factory()->create([
+            'unidade_id' => $unidade->id,
+            'nome' => 'Pontuacao Atual',
+            'ativo' => true,
+        ]);
+
+        Frequencia::create([
+            'desbravador_id' => $dbv->id,
+            'data' => now(),
+            'presente' => true,
+            'uniforme' => true,
+            'biblia' => true,
+            'pontual' => true,
+        ]);
+
+        Frequencia::create([
+            'desbravador_id' => $dbv->id,
+            'data' => now()->subYear(),
+            'presente' => true,
+            'uniforme' => true,
+            'biblia' => true,
+            'pontual' => true,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('ranking.desbravadores'));
+        $dados = $response->viewData('data');
+
+        $this->assertEquals(30, $dados->first()->pontos);
     }
 }

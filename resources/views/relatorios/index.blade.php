@@ -1,158 +1,251 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            Central de Relatórios
-        </h2>
+        <div class="flex flex-col gap-1">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white">
+                Central de Relatorios
+            </h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+                Relatorios operacionais, analiticos e fichas prontas para impressao no dia a dia do clube.
+            </p>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+    <div class="py-8" x-data="{ tipo: '' }">
+        <div class="mx-auto flex max-w-7xl flex-col gap-8 sm:px-6 lg:px-8">
+            <section class="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
+                <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                    <div class="bg-gradient-to-r from-slate-900 via-sky-900 to-teal-800 px-8 py-8 text-white">
+                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Central de gestao</p>
+                        <h3 class="mt-3 max-w-2xl text-3xl font-black leading-tight">
+                            Uma tela de relatorios pensada para quem usa o sistema toda semana.
+                        </h3>
+                        <p class="mt-3 max-w-2xl text-sm leading-6 text-sky-100/90">
+                            Gere listas, fichas completas, frequencia, inadimplencia, contatos de emergencia,
+                            rankings e relatorios financeiros com filtros praticos e PDFs organizados.
+                        </p>
+                    </div>
 
-            <div>
-                <h3 class="text-lg font-bold text-gray-700 dark:text-gray-300 mb-4">Relatórios Rápidos</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                    <a href="{{ route('relatorios.financeiro') }}" target="_blank" class="block group">
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition border-l-4 border-green-500">
-                            <div class="flex items-center">
-                                <div class="p-3 bg-green-100 rounded-full text-green-600 mr-4">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-900 dark:text-white">Relatório Financeiro</h4>
-                                    <p class="text-sm text-gray-500">Fluxo de caixa completo.</p>
-                                </div>
-                            </div>
+                    <div class="grid gap-4 p-6 md:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Cadastros</p>
+                            <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">
+                                Listas resumidas, fichas completas, fichas medicas e contatos de emergencia.
+                            </p>
                         </div>
-                    </a>
-
-                    <a href="{{ route('relatorios.patrimonio') }}" target="_blank" class="block group">
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition border-l-4 border-blue-500">
-                            <div class="flex items-center">
-                                <div class="p-3 bg-blue-100 rounded-full text-blue-600 mr-4">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-900 dark:text-white">Inventário Patrimonial</h4>
-                                    <p class="text-sm text-gray-500">Itens e bens do clube.</p>
-                                </div>
-                            </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Operacao</p>
+                            <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">
+                                Frequencia mensal, aniversariantes, unidades e acompanhamento da equipe.
+                            </p>
                         </div>
-                    </a>
-
-                    <form action="{{ route('relatorios.custom') }}" method="POST" target="_blank" class="block h-full">
-                        @csrf
-                        <input type="hidden" name="tipo" value="desbravadores">
-                        <input type="hidden" name="status" value="ativos">
-                        <button type="submit" class="w-full h-full bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition border-l-4 border-yellow-500 text-left">
-                            <div class="flex items-center">
-                                <div class="p-3 bg-yellow-100 rounded-full text-yellow-600 mr-4">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-900 dark:text-white">Lista de Ativos</h4>
-                                    <p class="text-sm text-gray-500">Relação rápida de membros.</p>
-                                </div>
-                            </div>
-                        </button>
-                    </form>
-
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Gestao</p>
+                            <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">
+                                Financeiro, patrimonio, ranking e inadimplencia para decisao rapida.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <hr class="border-gray-300 dark:border-gray-700">
-
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm" x-data="{ tipo: 'desbravadores' }">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                    </svg>
-                    Gerador de Relatório Personalizado
-                </h3>
-
-                <form action="{{ route('relatorios.custom') }}" method="POST" target="_blank">
-                    @csrf
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
                         <div>
-                            <x-input-label for="tipo" :value="__('Tipo de Relatório')" />
-                            <select name="tipo" id="tipo" x-model="tipo" class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
-                                <option value="desbravadores">Lista de Desbravadores</option>
-                                <option value="fichas_medicas">Fichas Médicas (Lote)</option>
-                                <option value="caixa">Financeiro (Movimentações)</option>
-                                <option value="unidades">Unidades (Estrutura)</option>
-                            </select>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white">Relatorios Rapidos</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Atalhos para os PDFs mais usados.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid gap-3">
+                        <a href="{{ route('relatorios.financeiro') }}" target="_blank" class="rounded-2xl border border-slate-200 px-4 py-4 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-slate-700 dark:hover:border-emerald-700 dark:hover:bg-emerald-900/10">
+                            <p class="font-semibold text-slate-900 dark:text-white">Relatorio Financeiro Completo</p>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Fluxo total de entradas e saidas.</p>
+                        </a>
+
+                        <a href="{{ route('relatorios.patrimonio') }}" target="_blank" class="rounded-2xl border border-slate-200 px-4 py-4 transition hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:hover:border-sky-700 dark:hover:bg-sky-900/10">
+                            <p class="font-semibold text-slate-900 dark:text-white">Inventario Patrimonial</p>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Bens, quantidades e valor estimado.</p>
+                        </a>
+
+                        <form action="{{ route('relatorios.custom') }}" method="GET" target="_blank">
+                            <input type="hidden" name="tipo" value="fichas_completas">
+                            <input type="hidden" name="status" value="ativos">
+                            <button type="submit" class="w-full rounded-2xl border border-slate-200 px-4 py-4 text-left transition hover:border-amber-300 hover:bg-amber-50 dark:border-slate-700 dark:hover:border-amber-700 dark:hover:bg-amber-900/10">
+                                <p class="font-semibold text-slate-900 dark:text-white">Fichas Completas dos Ativos</p>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Pacote pronto para secretaria e diretoria.</p>
+                            </button>
+                        </form>
+
+                        <form action="{{ route('relatorios.custom') }}" method="GET" target="_blank">
+                            <input type="hidden" name="tipo" value="contatos_emergencia">
+                            <input type="hidden" name="status" value="ativos">
+                            <button type="submit" class="w-full rounded-2xl border border-slate-200 px-4 py-4 text-left transition hover:border-rose-300 hover:bg-rose-50 dark:border-slate-700 dark:hover:border-rose-700 dark:hover:bg-rose-900/10">
+                                <p class="font-semibold text-slate-900 dark:text-white">Contatos de Emergencia</p>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Lista rapida para saidas e eventos externos.</p>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="border-b border-slate-200 px-6 py-5 dark:border-slate-700">
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h3 class="text-xl font-black text-slate-900 dark:text-white">Gerador de Relatorio Personalizado</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Escolha um modelo, aplique filtros e abra o PDF em nova aba.</p>
+                        </div>
+                        <div class="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
+                            Nenhum relatorio pre-selecionado
+                        </div>
+                    </div>
+                </div>
+
+                <form action="{{ route('relatorios.custom') }}" method="GET" target="_blank" class="p-6">
+
+                    <div class="grid gap-6 lg:grid-cols-[1.2fr_0.95fr]">
+                        <div class="space-y-6">
+                            <div>
+                                <x-input-label for="tipo" :value="__('Tipo de Relatorio')" />
+                                <select
+                                    name="tipo"
+                                    id="tipo"
+                                    x-model="tipo"
+                                    class="mt-2 block w-full rounded-2xl border-slate-300 bg-white px-4 py-3 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                    <option value="">Selecione um relatorio</option>
+                                    <option value="desbravadores">Lista de Desbravadores</option>
+                                    <option value="fichas_completas">Fichas Completas dos Desbravadores</option>
+                                    <option value="fichas_medicas">Fichas Medicas em Lote</option>
+                                    <option value="contatos_emergencia">Contatos de Emergencia</option>
+                                    <option value="frequencia">Frequencia Consolidada</option>
+                                    <option value="inadimplencia">Inadimplencia</option>
+                                    <option value="aniversariantes">Aniversariantes</option>
+                                    <option value="unidades">Estrutura das Unidades</option>
+                                    <option value="ranking_unidades">Ranking das Unidades</option>
+                                    <option value="ranking_desbravadores">Ranking Individual</option>
+                                    <option value="financeiro">Financeiro por Filtro</option>
+                                    <option value="patrimonio">Inventario Patrimonial</option>
+                                </select>
+                                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                    Escolha o tipo primeiro para liberar os filtros corretos.
+                                </p>
+                            </div>
+
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Pessoas e cadastro</p>
+                                    <ul class="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-200">
+                                        <li>Lista resumida de desbravadores</li>
+                                        <li>Ficha completa com vinculos e historico</li>
+                                        <li>Fichas medicas e contatos de emergencia</li>
+                                        <li>Aniversariantes do mes</li>
+                                    </ul>
+                                </div>
+
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Visao gerencial</p>
+                                    <ul class="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-200">
+                                        <li>Frequencia mensal consolidada</li>
+                                        <li>Inadimplencia de mensalidades</li>
+                                        <li>Estrutura, ranking e patrimonio</li>
+                                        <li>Financeiro filtrado por periodo</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Filtros</h4>
+                        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900/40">
+                            <h4 class="text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Filtros</h4>
 
-                            <div x-show="tipo === 'desbravadores' || tipo === 'fichas_medicas'">
-                                <div class="mb-3">
-                                    <label class="block text-sm text-gray-700 dark:text-gray-300">Status</label>
-                                    <select name="status" class="w-full rounded-md border-gray-300 text-sm">
-                                        <option value="ativos">Apenas Ativos</option>
-                                        <option value="todos">Todos (Inclui Inativos)</option>
+                            <div x-show="!tipo" class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                                Nenhum relatorio selecionado ainda. Escolha um modelo para habilitar os filtros especificos.
+                            </div>
+
+                            <div x-show="['desbravadores','fichas_completas','fichas_medicas','contatos_emergencia','frequencia','inadimplencia','aniversariantes'].includes(tipo)" x-cloak class="mt-4 space-y-4">
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Status</label>
+                                    <select name="status" class="mt-2 block w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                        <option value="ativos">Somente ativos</option>
+                                        <option value="todos">Todos os cadastrados</option>
+                                        <option value="inativos">Somente inativos</option>
                                     </select>
                                 </div>
+
                                 <div>
-                                    <label class="block text-sm text-gray-700 dark:text-gray-300">Unidade Específica</label>
-                                    <select name="unidade_id" class="w-full rounded-md border-gray-300 text-sm">
-                                        <option value="">Todas</option>
-                                        @foreach(\App\Models\Unidade::all() as $u)
-                                        <option value="{{ $u->id }}">{{ $u->nome }}</option>
+                                    <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Unidade</label>
+                                    <select name="unidade_id" class="mt-2 block w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                        <option value="">Todas as unidades</option>
+                                        @foreach ($unidades as $unidade)
+                                            <option value="{{ $unidade->id }}">{{ $unidade->nome }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                             </div>
 
-                            <div x-show="tipo === 'caixa'" style="display: none;">
-                                <div class="grid grid-cols-2 gap-2 mb-3">
-                                    <div>
-                                        <label class="block text-xs text-gray-500">De</label>
-                                        <input type="date" name="data_inicio" class="w-full rounded-md border-gray-300 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500">Até</label>
-                                        <input type="date" name="data_fim" class="w-full rounded-md border-gray-300 text-sm">
-                                    </div>
+                            <div x-show="tipo === 'frequencia'" x-cloak class="mt-4 grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Mes</label>
+                                    <input type="number" min="1" max="12" name="mes" value="{{ now()->month }}" class="mt-2 block w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                                 </div>
                                 <div>
-                                    <label class="block text-sm text-gray-700 dark:text-gray-300">Tipo</label>
-                                    <select name="tipo_movimentacao" class="w-full rounded-md border-gray-300 text-sm">
-                                        <option value="todos">Entradas e Saídas</option>
-                                        <option value="entrada">Apenas Entradas</option>
-                                        <option value="saida">Apenas Saídas</option>
+                                    <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Ano</label>
+                                    <input type="number" min="2020" max="2100" name="ano" value="{{ now()->year }}" class="mt-2 block w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                </div>
+                            </div>
+
+                            <div x-show="tipo === 'aniversariantes'" x-cloak class="mt-4">
+                                <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Mes de aniversario</label>
+                                <input type="number" min="1" max="12" name="mes_aniversario" value="{{ now()->month }}" class="mt-2 block w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                            </div>
+
+                            <div x-show="tipo === 'financeiro'" x-cloak class="mt-4 space-y-4">
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200">De</label>
+                                        <input type="date" name="data_inicio" class="mt-2 block w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Ate</label>
+                                        <input type="date" name="data_fim" class="mt-2 block w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Tipo de movimentacao</label>
+                                    <select name="tipo_movimentacao" class="mt-2 block w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                        <option value="todos">Entradas e saidas</option>
+                                        <option value="entrada">Somente entradas</option>
+                                        <option value="saida">Somente saidas</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <div x-show="tipo === 'unidades'" style="display: none;">
-                                <p class="text-sm text-gray-500 italic">Lista geral de unidades e seus conselheiros.</p>
+                            <div x-show="['ranking_unidades','ranking_desbravadores','unidades','patrimonio'].includes(tipo)" x-cloak class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/10 dark:text-amber-200">
+                                Esse relatorio usa a base consolidada do sistema para uma visao geral de gestao.
                             </div>
-
                         </div>
                     </div>
 
-                    <div class="flex justify-end">
-                        <x-primary-button>
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    <div class="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                            Os relatorios sao gerados em PDF e abertos em nova aba para impressao ou download.
+                        </p>
+                        <button
+                            type="submit"
+                            :disabled="!tipo"
+                            class="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-sky-600 dark:hover:bg-sky-500 dark:disabled:bg-slate-700">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v10m0 0l-3-3m3 3l3-3M4 19h16" />
                             </svg>
-                            Gerar PDF Personalizado
-                        </x-primary-button>
+                            Gerar Relatorio em PDF
+                        </button>
                     </div>
-
                 </form>
-            </div>
-
+            </section>
         </div>
     </div>
 </x-app-layout>

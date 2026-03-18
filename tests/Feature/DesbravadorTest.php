@@ -5,6 +5,9 @@ namespace Tests\Feature;
 use App\Models\Classe;
 use App\Models\Club;
 use App\Models\Desbravador;
+use App\Models\Especialidade;
+use App\Models\Evento;
+use App\Models\Frequencia;
 use App\Models\Unidade;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -127,5 +130,48 @@ class DesbravadorTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('João Ativo');
         $response->assertSee('Maria Inativa');
+    }
+    public function test_pode_excluir_desbravador_sem_erro_500_e_removendo_vinculos()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        $desbravador = Desbravador::factory()->create();
+        $especialidade = Especialidade::factory()->create();
+        $evento = Evento::factory()->create();
+
+        $desbravador->especialidades()->attach($especialidade->id, ['data_conclusao' => now()->toDateString()]);
+        $desbravador->eventos()->attach($evento->id, ['pago' => true, 'autorizacao_entregue' => true]);
+        Frequencia::create([
+            'desbravador_id' => $desbravador->id,
+            'data' => now()->toDateString(),
+            'presente' => true,
+            'pontual' => true,
+            'biblia' => true,
+            'uniforme' => true,
+        ]);
+
+        $response = $this->actingAs($user)->delete(route('desbravadores.destroy', $desbravador));
+
+        $response->assertRedirect(route('desbravadores.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('desbravadores', ['id' => $desbravador->id]);
+        $this->assertDatabaseMissing('desbravador_especialidade', ['desbravador_id' => $desbravador->id]);
+        $this->assertDatabaseMissing('desbravador_evento', ['desbravador_id' => $desbravador->id]);
+        $this->assertDatabaseMissing('frequencias', ['desbravador_id' => $desbravador->id]);
+    }
+
+    public function test_tela_de_edicao_alerta_que_excluir_apaga_dados_e_recomenda_inativar()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $desbravador = Desbravador::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('desbravadores.edit', $desbravador));
+
+        $response->assertOk();
+        $response->assertSeeText('Excluir remove tudo em definitivo. O mais seguro para o dia a dia é inativar o cadastro.');
+        $response->assertSee('O recomendado é apenas inativar o cadastro. Deseja excluir mesmo assim?', false);
     }
 }

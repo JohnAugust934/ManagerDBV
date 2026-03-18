@@ -7,6 +7,7 @@ use App\Models\Desbravador;
 use App\Models\Especialidade;
 use App\Models\Unidade;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DesbravadorController extends Controller
 {
@@ -121,6 +122,17 @@ class DesbravadorController extends Controller
         $desbravador->update($dados);
 
         return redirect()->route('desbravadores.show', $desbravador)->with('success', 'Dados atualizados!');
+    }
+
+    public function destroy(Desbravador $desbravador)
+    {
+        DB::transaction(function () use ($desbravador) {
+            $desbravador->delete();
+        });
+
+        return redirect()
+            ->route('desbravadores.index')
+            ->with('success', 'Desbravador excluído com sucesso. Todos os dados vinculados foram removidos.');
     }
 
     public function gerenciarEspecialidades(Desbravador $desbravador)
