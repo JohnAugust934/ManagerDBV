@@ -20,3 +20,8 @@ Schedule::command('backup:run')
 Schedule::command('backup:clean')
     ->timezone('America/Sao_Paulo')
     ->dailyAt('04:00');
+
+// Monitora a saúde dos backups após a janela de criação/limpeza
+Schedule::command('backup:monitor')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('04:30');

@@ -1,5 +1,20 @@
 <?php
 
+$backupDestinationDisks = array_values(array_filter(array_map(
+    'trim',
+    explode(',', (string) env('BACKUP_DESTINATION_DISKS', 'local,r2'))
+)));
+
+$backupMonitorDisks = array_values(array_filter(array_map(
+    'trim',
+    explode(',', (string) env('BACKUP_MONITOR_DISKS', implode(',', $backupDestinationDisks ?: ['local'])))
+)));
+
+$backupNotificationMailTo = array_values(array_filter(array_map(
+    'trim',
+    explode(',', (string) env('BACKUP_NOTIFICATIONS_MAIL_TO', env('MAIL_FROM_ADDRESS', '')))
+)));
+
 return [
 
     'backup' => [
@@ -34,16 +49,15 @@ return [
             'compression_level' => 9,
             'filename_prefix' => '',
             'disks' => [
-                'local',
-                'r2', // CLOUDFLARE R2
+                ...($backupDestinationDisks ?: ['local']),
             ],
             'continue_on_failure' => false,
         ],
 
         'temporary_directory' => storage_path('app/backup-temp'),
         'password' => env('BACKUP_ARCHIVE_PASSWORD'),
-        'encryption' => 'default',
-        'verify_backup' => false,
+        'encryption' => env('BACKUP_ARCHIVE_ENCRYPTION', 'default'),
+        'verify_backup' => env('BACKUP_VERIFY', true),
         'tries' => 1,
         'retry_delay' => 0,
     ],
@@ -59,38 +73,36 @@ return [
         ],
         'notifiable' => \Spatie\Backup\Notifications\Notifiable::class,
         'mail' => [
-            // AQUI VOCÊ DEFINE QUEM RECEBE OS AVISOS
-            'to' => 'joaoaugusto934@gmail.com',
+            'to' => $backupNotificationMailTo,
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-                // AQUI GARANTIMOS QUE O NOME DO REMETENTE SERÁ O NOME DO SISTEMA
-                'name' => env('APP_NAME', 'DBV Manager'),
+                'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'DBV Manager')),
             ],
         ],
         'slack' => [
-            'webhook_url' => '',
-            'channel' => null,
-            'username' => null,
-            'icon' => null,
+            'webhook_url' => env('BACKUP_SLACK_WEBHOOK_URL', ''),
+            'channel' => env('BACKUP_SLACK_CHANNEL'),
+            'username' => env('BACKUP_SLACK_USERNAME'),
+            'icon' => env('BACKUP_SLACK_ICON'),
         ],
         'discord' => [
-            'webhook_url' => '',
-            'username' => '',
-            'avatar_url' => '',
+            'webhook_url' => env('BACKUP_DISCORD_WEBHOOK_URL', ''),
+            'username' => env('BACKUP_DISCORD_USERNAME', ''),
+            'avatar_url' => env('BACKUP_DISCORD_AVATAR_URL', ''),
         ],
         'webhook' => [
-            'url' => '',
+            'url' => env('BACKUP_WEBHOOK_URL', ''),
         ],
     ],
 
     'monitor_backups' => [
         [
             'name' => env('APP_NAME', 'laravel-backup'),
-            'disks' => ['local'],
+            'disks' => $backupMonitorDisks ?: ['local'],
             'health_checks' => [
-                \Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays::class => 1,
-                \Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes::class => 5000,
+                \Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays::class => (int) env('BACKUP_MONITOR_MAX_AGE_DAYS', 1),
+                \Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes::class => (int) env('BACKUP_MONITOR_MAX_STORAGE_MB', 5000),
             ],
         ],
     ],

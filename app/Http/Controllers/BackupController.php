@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 
 class BackupController extends Controller
@@ -63,8 +64,7 @@ class BackupController extends Controller
         ini_set('memory_limit', '-1');
 
         try {
-            $exitCode = Artisan::call('backup:run', ['--disable-notifications' => true]);
-            $output = Artisan::output();
+            [$exitCode, $output] = $this->runManualBackup();
 
             if ($exitCode === 0) {
                 return back()->with('success', 'Backup gerado localmente e sincronizado com a Nuvem!');
@@ -103,14 +103,39 @@ class BackupController extends Controller
 
         try {
             $file = $request->file('backup_file');
+            $conteudo = $file->get();
 
             if (strtolower($file->getClientOriginalExtension()) !== 'zip') {
                 return back()->with('error', 'Formato não aceito. O arquivo precisa obrigatoriamente ser um .zip gerado pelo sistema.');
             }
 
-            $backupName = config('backup.backup.name', 'Laravel');
+            $temporaryValidationFile = storage_path('app/tmp-import-'.Str::uuid().'.zip');
+            File::ensureDirectoryExists(dirname($temporaryValidationFile));
+            file_put_contents($temporaryValidationFile, $conteudo);
 
-            $file->storeAs($backupName, $file->getClientOriginalName(), 'local');
+            $zip = new \ZipArchive;
+            $zipCheck = $zip->open($temporaryValidationFile);
+
+            if ($zipCheck !== true) {
+                @unlink($temporaryValidationFile);
+                return back()->with('error', 'O arquivo enviado não é um ZIP válido ou está corrompido.');
+            }
+
+            $zip->close();
+            @unlink($temporaryValidationFile);
+
+            $backupName = trim((string) config('backup.backup.name', 'Laravel'), '/\\');
+            if ($backupName === '') {
+                $backupName = 'Laravel';
+            }
+            $safeFileName = preg_replace('/[^A-Za-z0-9._-]/', '-', pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+            $extension = $file->getClientOriginalExtension();
+            $finalFileName = trim($safeFileName ?: 'backup-importado', '.-').'-'.now()->format('Ymd-His').'.'.$extension;
+            $targetPath = $backupName.'/'.$finalFileName;
+
+            if (! Storage::disk('local')->put($targetPath, $conteudo)) {
+                throw new \RuntimeException('Não foi possível salvar o backup importado no disco local.');
+            }
 
             return back()->with('success', 'Arquivo importado com sucesso! Ele já está disponível na lista abaixo para ser restaurado.');
         } catch (\Exception $e) {
@@ -350,6 +375,30 @@ class BackupController extends Controller
         } finally {
             $zip->close();
         }
+    }
+
+    private function runManualBackup(): array
+    {
+        if (app()->runningUnitTests()) {
+            $exitCode = Artisan::call('backup:run', ['--disable-notifications' => true]);
+
+            return [$exitCode, Artisan::output()];
+        }
+
+        $process = new Process([
+            PHP_BINARY,
+            'artisan',
+            'backup:run',
+            '--disable-notifications',
+        ], base_path(), null, null, null);
+
+        $process->setTimeout(null);
+        $process->run();
+
+        return [
+            $process->getExitCode() ?? 1,
+            trim($process->getOutput().PHP_EOL.$process->getErrorOutput()),
+        ];
     }
 
     private function createEmergencyDatabaseSnapshot(string $snapshotPath): void
