@@ -133,34 +133,50 @@ class EventoController extends Controller
         $valor = filter_var($request->valor, FILTER_VALIDATE_BOOLEAN);
 
         if ($campo === 'pago') {
-            DB::transaction(function () use ($evento, $desbravador, $valor) {
-                // 1. Atualiza Pivot
+            $resultado = DB::transaction(function () use ($evento, $desbravador, $valor) {
+                $pivot = DB::table('desbravador_evento')
+                    ->where('evento_id', $evento->id)
+                    ->where('desbravador_id', $desbravador->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $pivot) {
+                    return null;
+                }
+
+                $statusAtual = (bool) $pivot->pago;
+
+                if ($statusAtual === $valor) {
+                    return [
+                        'novo_status' => $valor,
+                        'status_alterado' => false,
+                        'movimentacao_registrada' => false,
+                    ];
+                }
+
                 $evento->desbravadores()->updateExistingPivot($desbravador->id, ['pago' => $valor]);
 
-                // 2. Lança no Caixa (Se tiver valor > 0)
                 if ($evento->valor > 0) {
-                    if ($valor) {
-                        // Entrada
-                        Caixa::create([
-                            'descricao' => "Evento: {$evento->nome} - {$desbravador->nome}",
-                            'tipo' => 'entrada',
-                            'valor' => $evento->valor,
-                            'data_movimentacao' => now(),
-                        ]);
-                    } else {
-                        // Saída (Estorno)
-                        Caixa::create([
-                            'descricao' => "Estorno Evento: {$evento->nome} - {$desbravador->nome}",
-                            'tipo' => 'saida',
-                            'valor' => $evento->valor,
-                            'data_movimentacao' => now(),
-                        ]);
-                    }
+                    $this->registrarMovimentacaoFinanceiraDoEvento($evento, $desbravador, $valor);
                 }
+
+                return [
+                    'novo_status' => $valor,
+                    'status_alterado' => true,
+                    'movimentacao_registrada' => $evento->valor > 0,
+                ];
             });
 
-            // Retorno JSON para o AJAX
-            return response()->json(['success' => true, 'novo_status' => $valor]);
+            if ($resultado === null) {
+                return response()->json(['error' => 'Inscrição não encontrada para este desbravador.'], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'novo_status' => $resultado['novo_status'],
+                'status_alterado' => $resultado['status_alterado'],
+                'movimentacao_registrada' => $resultado['movimentacao_registrada'],
+            ]);
         }
 
         if ($campo === 'autorizacao_entregue') {
@@ -180,5 +196,18 @@ class EventoController extends Controller
         ]);
 
         return $pdf->stream('autorizacao.pdf');
+    }
+
+    private function registrarMovimentacaoFinanceiraDoEvento(Evento $evento, Desbravador $desbravador, bool $pago): void
+    {
+        Caixa::create([
+            'descricao' => $pago
+                ? "Evento: {$evento->nome} - {$desbravador->nome}"
+                : "Estorno Evento: {$evento->nome} - {$desbravador->nome}",
+            'tipo' => $pago ? 'entrada' : 'saida',
+            'categoria' => 'Evento',
+            'valor' => $evento->valor,
+            'data_movimentacao' => now(),
+        ]);
     }
 }

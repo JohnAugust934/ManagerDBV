@@ -150,7 +150,11 @@ class EventoTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+            ->assertJson([
+                'success' => true,
+                'status_alterado' => true,
+                'movimentacao_registrada' => true,
+            ]);
 
         $this->assertDatabaseHas('desbravador_evento', [
             'evento_id' => $evento->id,
@@ -163,5 +167,110 @@ class EventoTest extends TestCase
             'valor' => 100.00,
             'descricao' => "Evento: {$evento->nome} - {$dbv->nome}",
         ]);
+    }
+
+    public function test_repetir_pagamento_nao_duplica_lancamento_no_caixa()
+    {
+        $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+
+        $unidade = Unidade::factory()->create();
+        $classe = Classe::factory()->create();
+
+        $dbv = Desbravador::factory()->create([
+            'unidade_id' => $unidade->id,
+            'classe_atual' => $classe->id,
+        ]);
+
+        $evento = Evento::factory()->create(['valor' => 100.00]);
+        $evento->desbravadores()->attach($dbv->id, ['pago' => false]);
+
+        $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
+            'campo' => 'pago',
+            'valor' => '1',
+        ])->assertOk();
+
+        $response = $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
+            'campo' => 'pago',
+            'valor' => '1',
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'status_alterado' => false,
+                'movimentacao_registrada' => false,
+            ]);
+
+        $this->assertDatabaseCount('caixas', 1);
+    }
+
+    public function test_estorno_gera_saida_apenas_uma_vez_por_transicao_real()
+    {
+        $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+
+        $unidade = Unidade::factory()->create();
+        $classe = Classe::factory()->create();
+
+        $dbv = Desbravador::factory()->create([
+            'unidade_id' => $unidade->id,
+            'classe_atual' => $classe->id,
+        ]);
+
+        $evento = Evento::factory()->create(['valor' => 80.00]);
+        $evento->desbravadores()->attach($dbv->id, ['pago' => true]);
+
+        $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
+            'campo' => 'pago',
+            'valor' => '0',
+        ])->assertOk()->assertJson([
+            'status_alterado' => true,
+            'movimentacao_registrada' => true,
+        ]);
+
+        $response = $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
+            'campo' => 'pago',
+            'valor' => '0',
+        ]);
+
+        $response->assertOk()->assertJson([
+            'status_alterado' => false,
+            'movimentacao_registrada' => false,
+        ]);
+
+        $this->assertDatabaseHas('caixas', [
+            'tipo' => 'saida',
+            'valor' => 80.00,
+            'descricao' => "Estorno Evento: {$evento->nome} - {$dbv->nome}",
+            'categoria' => 'Evento',
+        ]);
+        $this->assertDatabaseCount('caixas', 1);
+    }
+
+    public function test_nao_permite_atualizar_status_financeiro_sem_inscricao()
+    {
+        $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+
+        $unidade = Unidade::factory()->create();
+        $classe = Classe::factory()->create();
+
+        $dbv = Desbravador::factory()->create([
+            'unidade_id' => $unidade->id,
+            'classe_atual' => $classe->id,
+        ]);
+
+        $evento = Evento::factory()->create(['valor' => 65.00]);
+
+        $response = $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
+            'campo' => 'pago',
+            'valor' => '1',
+        ]);
+
+        $response->assertStatus(404)
+            ->assertJson(['error' => 'Inscrição não encontrada para este desbravador.']);
+
+        $this->assertDatabaseCount('caixas', 0);
     }
 }
