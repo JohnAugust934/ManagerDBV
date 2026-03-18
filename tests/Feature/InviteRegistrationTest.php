@@ -68,4 +68,38 @@ class InviteRegistrationTest extends TestCase
         $this->assertEquals($club->id, $user->club_id);
         $this->assertEquals('conselheiro', $user->role);
     }
+
+    public function test_registration_with_invite_fails_gracefully_when_email_already_exists()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP', 'associacao' => 'APaC']);
+
+        User::factory()->create([
+            'email' => 'duplicado@teste.com',
+            'club_id' => $club->id,
+            'role' => 'conselheiro',
+        ]);
+
+        $invite = Invitation::create([
+            'email' => 'duplicado@teste.com',
+            'token' => 'token-duplicado',
+            'role' => 'conselheiro',
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        $response = $this->from(route('register.invite', ['token' => 'token-duplicado']))
+            ->post(route('register.store_invite'), [
+                'token' => 'token-duplicado',
+                'name' => 'Outro Nome',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+            ]);
+
+        $response->assertRedirect(route('register.invite', ['token' => 'token-duplicado']));
+        $response->assertSessionHasErrors([
+            'email' => 'Já existe um usuário cadastrado com este e-mail.',
+        ]);
+
+        $this->assertNull($invite->fresh()->registered_at);
+        $this->assertEquals(1, User::where('email', 'duplicado@teste.com')->count());
+    }
 }

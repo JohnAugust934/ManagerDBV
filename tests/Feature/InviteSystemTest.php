@@ -70,4 +70,66 @@ class InviteSystemTest extends TestCase
         $inviteUsado = Invitation::where('email', 'convidado@clube.com')->first();
         $this->assertNotNull($inviteUsado->registered_at);
     }
+
+    public function test_master_reaproveita_convite_pendente_sem_duplicar_registro()
+    {
+        Mail::fake();
+
+        $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'São Paulo', 'associacao' => 'APL']);
+        $master = User::factory()->create(['role' => 'master', 'club_id' => $club->id]);
+
+        $conviteExistente = Invitation::create([
+            'email' => 'pendente@clube.com',
+            'token' => 'token-antigo',
+            'role' => 'conselheiro',
+            'club_id' => $club->id,
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $response = $this->actingAs($master)->post(route('invites.store'), [
+            'email' => 'pendente@clube.com',
+            'role' => 'tesoureiro',
+        ]);
+
+        $response->assertRedirect(route('invites.index'));
+        $response->assertSessionHas('success', 'Convite pendente atualizado e reenviado com sucesso!');
+
+        $this->assertDatabaseCount('invitations', 1);
+
+        $conviteAtualizado = $conviteExistente->fresh();
+        $this->assertEquals('tesoureiro', $conviteAtualizado->role);
+        $this->assertNotEquals('token-antigo', $conviteAtualizado->token);
+
+        Mail::assertQueued(ClubInvitation::class, function ($mail) {
+            return $mail->hasTo('pendente@clube.com');
+        });
+    }
+
+    public function test_nao_recria_convite_ja_utilizado()
+    {
+        Mail::fake();
+
+        $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'São Paulo', 'associacao' => 'APL']);
+        $master = User::factory()->create(['role' => 'master', 'club_id' => $club->id]);
+
+        Invitation::create([
+            'email' => 'usado@clube.com',
+            'token' => 'token-usado',
+            'role' => 'conselheiro',
+            'club_id' => $club->id,
+            'expires_at' => now()->addDay(),
+            'registered_at' => now(),
+        ]);
+
+        $response = $this->actingAs($master)->from(route('invites.create'))->post(route('invites.store'), [
+            'email' => 'usado@clube.com',
+            'role' => 'conselheiro',
+        ]);
+
+        $response->assertRedirect(route('invites.create'));
+        $response->assertSessionHas('error', 'Este convite já foi utilizado. Como o e-mail não pode ser reutilizado, faça o gerenciamento diretamente no cadastro de usuários.');
+
+        $this->assertDatabaseCount('invitations', 1);
+        Mail::assertNothingQueued();
+    }
 }

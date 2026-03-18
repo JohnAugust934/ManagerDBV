@@ -10,6 +10,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 
@@ -52,32 +53,50 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $invitation = Invitation::where('token', $request->token)->firstOrFail();
+        $resultado = DB::transaction(function () use ($request) {
+            $invitation = Invitation::where('token', $request->token)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        // Verificação final de segurança no momento de salvar
-        if ($invitation->registered_at) {
-            return back()->withErrors(['email' => 'Este convite já foi utilizado.']);
+            if ($invitation->registered_at) {
+                return ['erro' => 'Este convite já foi utilizado.'];
+            }
+
+            if ($invitation->expires_at && $invitation->expires_at->isPast()) {
+                return ['erro' => 'Este convite já expirou.'];
+            }
+
+            if (User::where('email', $invitation->email)->exists()) {
+                return ['erro' => 'Já existe um usuário cadastrado com este e-mail.'];
+            }
+
+            // MÁGICA SINGLE-TENANT: Busca o único clube. Se for o primeiro acesso, será null.
+            $club = Club::first();
+
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $invitation->email,
+                'password' => Hash::make($request->password),
+                'role' => $invitation->role,
+                'club_id' => $club?->id,
+                'extra_permissions' => $invitation->extra_permissions ?? null,
+                'is_master' => false,
+            ]);
+
+            $invitation->update(['registered_at' => now()]);
+
+            return [
+                'user' => $user,
+                'club' => $club,
+            ];
+        });
+
+        if (isset($resultado['erro'])) {
+            return back()->withErrors(['email' => $resultado['erro']]);
         }
 
-        if ($invitation->expires_at && $invitation->expires_at->isPast()) {
-            return back()->withErrors(['email' => 'Este convite já expirou.']);
-        }
-
-        // MÁGICA SINGLE-TENANT: Busca o único clube. Se for o primeiro acesso, será null.
-        $club = Club::first();
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $invitation->email,
-            'password' => Hash::make($request->password),
-            'role' => $invitation->role,
-            'club_id' => $club?->id, // Vincula automaticamente se o clube já existir
-            'extra_permissions' => $invitation->extra_permissions ?? null, // Mantido do seu original!
-            'is_master' => false,
-        ]);
-
-        // Marca o convite como USADO (registra a data e hora atual)
-        $invitation->update(['registered_at' => now()]);
+        $user = $resultado['user'];
+        $club = $resultado['club'];
 
         // Dispara o evento de registro do Laravel (Mantido do seu original!)
         event(new Registered($user));
