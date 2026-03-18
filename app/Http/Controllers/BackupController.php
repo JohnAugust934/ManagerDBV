@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Process;
 
 class BackupController extends Controller
 {
@@ -128,41 +129,50 @@ class BackupController extends Controller
 
         $disk = $request->input('disk');
         $path = $request->input('path');
+        $allowedDisks = ['local', 'r2'];
+        $tempZipPath = storage_path('app/temp_restore.zip');
+        $extractPath = storage_path('app/temp_restore_dir');
+        $emergencySnapshotPath = storage_path('app/pre_restore_snapshot.sql');
+        $maintenanceEnabled = false;
+        $databaseWasWiped = false;
+        $emergencySnapshotCreated = false;
 
         try {
-            // =======================================================
-            // 1. COLOCA O SISTEMA EM MANUTENÇÃO (Bloqueia outros usuários)
-            // =======================================================
+            if (! in_array($disk, $allowedDisks, true)) {
+                throw new \RuntimeException('Disco de backup inválido.');
+            }
+
+            if (! $path || ! Storage::disk($disk)->exists($path)) {
+                throw new \RuntimeException('Arquivo de backup não encontrado.');
+            }
+
             Artisan::call('down');
+            $maintenanceEnabled = true;
 
-            //sleep(20); // <--- ADICIONE ESTA LINHA TEMPORARIAMENTE
+            File::deleteDirectory($extractPath);
+            @unlink($tempZipPath);
+            @unlink($emergencySnapshotPath);
 
-            // 2. Traz o arquivo para a área de extração local
-            $tempZipPath = storage_path('app/temp_restore.zip');
+            // 1. Traz o arquivo para a área de extração local
             if ($disk === 'local') {
                 File::copy(Storage::disk('local')->path($path), $tempZipPath);
             } else {
                 file_put_contents($tempZipPath, Storage::disk($disk)->get($path));
             }
 
-            // 3. Descompacta o arquivo
-            $extractPath = storage_path('app/temp_restore_dir');
-            File::deleteDirectory($extractPath);
-            File::makeDirectory($extractPath, 0755, true);
+            // 2. Valida e extrai o arquivo sem permitir path traversal
+            $this->extractBackupArchiveSafely($tempZipPath, $extractPath);
 
-            $zip = new \ZipArchive;
-            if ($zip->open($tempZipPath) === true) {
-                $zip->extractTo($extractPath);
-                $zip->close();
-            } else {
-                throw new \Exception('O arquivo selecionado está corrompido ou não é um ZIP válido.');
+            // 3. Procura os arquivos essenciais antes de tocar no banco
+            $allExtractedFiles = File::allFiles($extractPath);
+            if (empty($allExtractedFiles)) {
+                throw new \RuntimeException('O backup está vazio ou não pôde ser lido.');
             }
 
-            // 4. Procura os arquivos essenciais
-            $allExtractedFiles = File::allFiles($extractPath);
-            $dbRestored = false;
             $filesRestored = 0;
             $sqlFileToRestore = null;
+            $sqliteFileToRestore = null;
+            $publicFiles = [];
 
             foreach ($allExtractedFiles as $file) {
                 $filePath = str_replace('\\', '/', $file->getPathname());
@@ -171,71 +181,50 @@ class BackupController extends Controller
                     $sqlFileToRestore = $file->getPathname();
                 }
 
+                if (str_ends_with($filePath, '.sqlite') && str_contains($filePath, '/database/')) {
+                    $sqliteFileToRestore = $file->getPathname();
+                }
+
                 if (str_contains($filePath, '/app/public/')) {
-                    $relativePath = explode('/app/public/', $filePath)[1];
-                    Storage::disk('public')->put($relativePath, File::get($filePath));
-                    $filesRestored++;
+                    $publicFiles[] = $filePath;
                 }
             }
 
-            // 5. Restauração do Banco de Dados
-            if ($sqlFileToRestore) {
-                $connection = config('database.default');
-                $comando = '';
+            $databaseFileToRestore = $sqlFileToRestore ?? $sqliteFileToRestore;
 
-                if ($connection === 'pgsql') {
-                    $url = config('database.connections.pgsql.url');
-                    if (empty($url)) {
-                        $host = config('database.connections.pgsql.host');
-                        $port = config('database.connections.pgsql.port');
-                        $db = config('database.connections.pgsql.database');
-                        $user = config('database.connections.pgsql.username');
-                        $pass = config('database.connections.pgsql.password');
-                        $url = "postgresql://{$user}:{$pass}@{$host}:{$port}/{$db}?sslmode=require";
-                    }
+            if (! $databaseFileToRestore && empty($publicFiles)) {
+                throw new \RuntimeException('O arquivo enviado não contém dados restauráveis do sistema.');
+            }
 
-                    $binPath = config('database.connections.pgsql.dump.dump_binary_path', '');
-                    $psqlCmd = $binPath ? rtrim($binPath, '\\/').DIRECTORY_SEPARATOR.'psql' : 'psql';
-
-                    $comando = '"'.$psqlCmd.'" "'.$url.'" -f "'.$sqlFileToRestore.'" 2>&1';
-
-                } elseif ($connection === 'mysql' || $connection === 'mariadb') {
-                    $host = config('database.connections.mysql.host');
-                    $db = config('database.connections.mysql.database');
-                    $user = config('database.connections.mysql.username');
-                    $pass = config('database.connections.mysql.password');
-
-                    $binPath = config('database.connections.mysql.dump.dump_binary_path', '');
-                    $mysqlCmd = $binPath ? rtrim($binPath, '\\/').DIRECTORY_SEPARATOR.'mysql' : 'mysql';
-
-                    $comando = '"'.$mysqlCmd.'" -h '.escapeshellarg($host).' -u '.escapeshellarg($user).(! empty($pass) ? ' -p'.escapeshellarg($pass) : '').' '.escapeshellarg($db).' < "'.$sqlFileToRestore.'" 2>&1';
-                }
-
+            // 4. Cria snapshot de emergência antes de qualquer mudança destrutiva
+            if ($databaseFileToRestore) {
+                $this->createEmergencyDatabaseSnapshot($emergencySnapshotPath);
+                $emergencySnapshotCreated = true;
                 Artisan::call('db:wipe', ['--force' => true]);
+                $databaseWasWiped = true;
+                $this->restoreDatabaseFromBackup($databaseFileToRestore);
 
-                $output = [];
-                $returnVar = 0;
-                exec($comando, $output, $returnVar);
-
-                if ($returnVar !== 0) {
-                    throw new \Exception('Falha no comando nativo de restauração: '.implode(' ', $output));
+                if (! $sqliteFileToRestore) {
+                    Artisan::call('migrate', ['--force' => true]);
                 }
+            }
 
-                Artisan::call('migrate', ['--force' => true]);
-
-                $dbRestored = true;
+            // 5. Só restaura arquivos públicos depois que o banco estiver consistente
+            foreach ($publicFiles as $filePath) {
+                $relativePath = explode('/app/public/', $filePath, 2)[1];
+                Storage::disk('public')->put($relativePath, File::get($filePath));
+                $filesRestored++;
             }
 
             // 6. Limpeza de temp files
             File::deleteDirectory($extractPath);
             @unlink($tempZipPath);
+            @unlink($emergencySnapshotPath);
 
-            // =======================================================
-            // 7. SUCESSO! TIRA O SISTEMA DA MANUTENÇÃO
-            // =======================================================
             Artisan::call('up');
+            $maintenanceEnabled = false;
 
-            $statusDB = $dbRestored ? 'Banco de Dados restaurado' : 'Nenhum banco encontrado no backup';
+            $statusDB = $databaseFileToRestore ? 'Banco de Dados restaurado' : 'Nenhum banco encontrado no backup';
 
             auth()->logout();
             $request->session()->invalidate();
@@ -244,17 +233,25 @@ class BackupController extends Controller
             return redirect('/login')->with('success', "Restauração Finalizada! [{$statusDB}] e [{$filesRestored} imagens restauradas]. Faça login com os dados da época do backup.");
 
         } catch (\Exception $e) {
+            if ($databaseWasWiped && $emergencySnapshotCreated) {
+                try {
+                    $this->restoreDatabaseFromEmergencySnapshot($emergencySnapshotPath);
+                    Artisan::call('migrate', ['--force' => true]);
+                    Log::warning('Restauração do backup falhou, mas o banco anterior foi recuperado a partir do snapshot de emergência.');
+                } catch (\Exception $rollbackException) {
+                    Log::critical('Falha ao recuperar snapshot de emergência após erro na restauração: '.$rollbackException->getMessage());
+                }
+            }
+
             Log::error('Falha Crítica na Restauração: '.$e->getMessage());
 
-            File::deleteDirectory(storage_path('app/temp_restore_dir'));
-            @unlink(storage_path('app/temp_restore.zip'));
+            File::deleteDirectory($extractPath);
+            @unlink($tempZipPath);
+            @unlink($emergencySnapshotPath);
 
-            Artisan::call('migrate', ['--force' => true]);
-
-            // =======================================================
-            // GARANTIA: SE FALHAR, VOLTA O SISTEMA AO NORMAL PARA NÃO TRAVAR
-            // =======================================================
-            Artisan::call('up');
+            if ($maintenanceEnabled) {
+                Artisan::call('up');
+            }
 
             return back()->with('error', 'Erro na restauração: '.$e->getMessage());
         }
@@ -299,5 +296,271 @@ class BackupController extends Controller
         }
 
         return back()->with('error', 'Arquivo não encontrado.');
+    }
+
+    private function extractBackupArchiveSafely(string $zipPath, string $extractPath): void
+    {
+        File::makeDirectory($extractPath, 0755, true, true);
+
+        $zip = new \ZipArchive;
+        $result = $zip->open($zipPath);
+
+        if ($result !== true) {
+            throw new \RuntimeException('O arquivo selecionado está corrompido ou não é um ZIP válido.');
+        }
+
+        try {
+            if ($zip->numFiles === 0) {
+                throw new \RuntimeException('O arquivo ZIP está vazio.');
+            }
+
+            for ($index = 0; $index < $zip->numFiles; $index++) {
+                $entryName = str_replace('\\', '/', $zip->getNameIndex($index));
+                $normalizedEntry = ltrim($entryName, '/');
+
+                if ($normalizedEntry === '' || str_contains($normalizedEntry, '../') || preg_match('/^[A-Za-z]:\//', $normalizedEntry)) {
+                    throw new \RuntimeException('O backup contém caminhos inválidos e foi bloqueado por segurança.');
+                }
+
+                $destinationPath = $extractPath.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $normalizedEntry);
+
+                if (str_ends_with($entryName, '/')) {
+                    File::makeDirectory($destinationPath, 0755, true, true);
+
+                    continue;
+                }
+
+                File::makeDirectory(dirname($destinationPath), 0755, true, true);
+
+                $stream = $zip->getStream($entryName);
+                if (! $stream) {
+                    throw new \RuntimeException("Não foi possível ler o item '{$entryName}' do backup.");
+                }
+
+                $target = fopen($destinationPath, 'wb');
+                if ($target === false) {
+                    fclose($stream);
+                    throw new \RuntimeException("Não foi possível preparar o destino de extração para '{$entryName}'.");
+                }
+
+                stream_copy_to_stream($stream, $target);
+                fclose($stream);
+                fclose($target);
+            }
+        } finally {
+            $zip->close();
+        }
+    }
+
+    private function createEmergencyDatabaseSnapshot(string $snapshotPath): void
+    {
+        $connection = config('database.default');
+
+        if ($connection === 'pgsql') {
+            $this->dumpPostgresDatabase($snapshotPath);
+
+            return;
+        }
+
+        if ($connection === 'mysql' || $connection === 'mariadb') {
+            $this->dumpMysqlDatabase($snapshotPath);
+
+            return;
+        }
+
+        if ($connection === 'sqlite') {
+            $databasePath = config('database.connections.sqlite.database');
+
+            if (! $databasePath || ! File::exists($databasePath)) {
+                throw new \RuntimeException('Não foi possível localizar o banco SQLite para criar o snapshot de emergência.');
+            }
+
+            File::copy($databasePath, $snapshotPath.'.sqlite');
+
+            return;
+        }
+
+        throw new \RuntimeException("Snapshot de emergência não suportado para a conexão '{$connection}'.");
+    }
+
+    private function restoreDatabaseFromEmergencySnapshot(string $snapshotPath): void
+    {
+        $connection = config('database.default');
+
+        if ($connection === 'sqlite') {
+            $databasePath = config('database.connections.sqlite.database');
+            $sqliteSnapshot = $snapshotPath.'.sqlite';
+
+            if (! File::exists($sqliteSnapshot)) {
+                throw new \RuntimeException('Snapshot SQLite de emergência não encontrado.');
+            }
+
+            File::copy($sqliteSnapshot, $databasePath);
+
+            return;
+        }
+
+        $this->restoreDatabaseFromBackup($snapshotPath);
+    }
+
+    private function restoreDatabaseFromBackup(string $databaseBackupPath): void
+    {
+        $connection = config('database.default');
+
+        if ($connection === 'pgsql') {
+            $this->runDatabaseProcess($this->buildPostgresRestoreProcess($databaseBackupPath));
+
+            return;
+        }
+
+        if ($connection === 'mysql' || $connection === 'mariadb') {
+            $this->runDatabaseProcess($this->buildMysqlRestoreProcess($databaseBackupPath));
+
+            return;
+        }
+
+        if ($connection === 'sqlite') {
+            $this->restoreSqliteDatabase($databaseBackupPath);
+
+            return;
+        }
+
+        throw new \RuntimeException("Restauração de banco não suportada para a conexão '{$connection}'.");
+    }
+
+    private function dumpPostgresDatabase(string $snapshotPath): void
+    {
+        $config = config('database.connections.pgsql');
+        $binary = $this->resolveDatabaseBinary($config['dump']['dump_binary_path'] ?? '', 'pg_dump');
+
+        $command = [
+            $binary,
+            '--file='.$snapshotPath,
+            '--format=p',
+            '--clean',
+            '--if-exists',
+        ];
+
+        if (! empty($config['host'])) {
+            $command[] = '--host='.$config['host'];
+        }
+
+        if (! empty($config['port'])) {
+            $command[] = '--port='.$config['port'];
+        }
+
+        if (! empty($config['username'])) {
+            $command[] = '--username='.$config['username'];
+        }
+
+        $command[] = $config['database'];
+
+        $this->runDatabaseProcess(new Process($command, null, [
+            'PGPASSWORD' => (string) ($config['password'] ?? ''),
+        ]));
+    }
+
+    private function dumpMysqlDatabase(string $snapshotPath): void
+    {
+        $config = config('database.connections.mysql');
+        $binary = $this->resolveDatabaseBinary($config['dump']['dump_binary_path'] ?? '', 'mysqldump');
+
+        $command = [
+            $binary,
+            '--result-file='.$snapshotPath,
+            '--single-transaction',
+            '--skip-lock-tables',
+            '--host='.$config['host'],
+            '--port='.$config['port'],
+            '--user='.$config['username'],
+            $config['database'],
+        ];
+
+        $this->runDatabaseProcess(new Process($command, null, [
+            'MYSQL_PWD' => (string) ($config['password'] ?? ''),
+        ]));
+    }
+
+    private function buildPostgresRestoreProcess(string $sqlFilePath): Process
+    {
+        $config = config('database.connections.pgsql');
+        $binary = $this->resolveDatabaseBinary($config['dump']['dump_binary_path'] ?? '', 'psql');
+
+        $command = [
+            $binary,
+            '--set',
+            'ON_ERROR_STOP=1',
+        ];
+
+        if (! empty($config['host'])) {
+            $command[] = '--host='.$config['host'];
+        }
+
+        if (! empty($config['port'])) {
+            $command[] = '--port='.$config['port'];
+        }
+
+        if (! empty($config['username'])) {
+            $command[] = '--username='.$config['username'];
+        }
+
+        $command[] = '--dbname='.$config['database'];
+        $command[] = '--file='.$sqlFilePath;
+
+        return new Process($command, null, [
+            'PGPASSWORD' => (string) ($config['password'] ?? ''),
+        ]);
+    }
+
+    private function buildMysqlRestoreProcess(string $sqlFilePath): Process
+    {
+        $config = config('database.connections.mysql');
+        $binary = $this->resolveDatabaseBinary($config['dump']['dump_binary_path'] ?? '', 'mysql');
+
+        return new Process([
+            $binary,
+            '--host='.$config['host'],
+            '--port='.$config['port'],
+            '--user='.$config['username'],
+            $config['database'],
+        ], null, [
+            'MYSQL_PWD' => (string) ($config['password'] ?? ''),
+        ], File::get($sqlFilePath));
+    }
+
+    private function restoreSqliteDatabase(string $databaseBackupPath): void
+    {
+        $databasePath = config('database.connections.sqlite.database');
+
+        if (! $databasePath || $databasePath === ':memory:') {
+            throw new \RuntimeException('A restauração SQLite exige um arquivo físico de banco de dados.');
+        }
+
+        if (! File::exists($databaseBackupPath)) {
+            throw new \RuntimeException('Arquivo SQLite do backup não encontrado.');
+        }
+
+        File::ensureDirectoryExists(dirname($databasePath));
+        File::copy($databaseBackupPath, $databasePath);
+    }
+
+    private function runDatabaseProcess(Process $process): void
+    {
+        $process->setTimeout((float) config('database.connections.'.config('database.default').'.dump.timeout', 300));
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            $output = trim($process->getErrorOutput().' '.$process->getOutput());
+            throw new \RuntimeException('Falha no comando nativo de restauração: '.$output);
+        }
+    }
+
+    private function resolveDatabaseBinary(string $binaryPath, string $binaryName): string
+    {
+        if ($binaryPath === '') {
+            return $binaryName;
+        }
+
+        return rtrim($binaryPath, '\\/').DIRECTORY_SEPARATOR.$binaryName;
     }
 }

@@ -81,6 +81,8 @@ class BackupSystemTest extends TestCase
 
         Artisan::shouldHaveReceived('call')->with('down');
         Artisan::shouldHaveReceived('call')->with('up');
+        Artisan::shouldNotHaveReceived('call', ['db:wipe', ['--force' => true]]);
+        Artisan::shouldNotHaveReceived('call', ['migrate', ['--force' => true]]);
     }
 
     public function test_master_pode_baixar_backup()
