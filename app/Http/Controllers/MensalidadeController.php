@@ -8,6 +8,7 @@ use App\Models\Mensalidade;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class MensalidadeController extends Controller
 {
@@ -16,6 +17,8 @@ class MensalidadeController extends Controller
      */
     public function index(Request $request)
     {
+        Gate::authorize('financeiro');
+
         $mes = $request->input('mes', date('m'));
         $ano = $request->input('ano', date('Y'));
 
@@ -55,6 +58,8 @@ class MensalidadeController extends Controller
      */
     public function gerarMassivo(Request $request)
     {
+        Gate::authorize('financeiro');
+
         $request->validate([
             'mes' => 'required|integer|min:1|max:12',
             'ano' => 'required|integer|min:2020',
@@ -92,6 +97,8 @@ class MensalidadeController extends Controller
      */
     public function pagar($id)
     {
+        Gate::authorize('financeiro');
+
         $mensalidade = Mensalidade::with('desbravador')->findOrFail($id);
 
         if ($mensalidade->status === 'pago') {

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Club;
 use App\Models\Desbravador;
 use App\Models\Frequencia;
+use App\Models\RankingSnapshot;
 use App\Models\Unidade;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,7 +18,7 @@ class RankingTest extends TestCase
     public function test_usuario_pode_ver_ranking_unidades()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id]);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
         $response = $this->actingAs($user)->get(route('ranking.unidades'));
         $response->assertStatus(200);
@@ -28,7 +29,7 @@ class RankingTest extends TestCase
     public function test_usuario_pode_ver_ranking_individual()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id]);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
         $response = $this->actingAs($user)->get(route('ranking.desbravadores'));
         $response->assertStatus(200);
@@ -39,7 +40,7 @@ class RankingTest extends TestCase
     public function test_calculo_ranking_individual_correto()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id]);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
         $unidade = Unidade::factory()->create();
 
@@ -65,7 +66,7 @@ class RankingTest extends TestCase
     public function test_ranking_considera_apenas_pontos_do_ano_atual()
     {
         $clube = Club::create(['nome' => 'Clube Ano', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id]);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
         $unidade = Unidade::factory()->create();
         $dbv = Desbravador::factory()->create([
@@ -96,5 +97,38 @@ class RankingTest extends TestCase
         $dados = $response->viewData('data');
 
         $this->assertEquals(30, $dados->first()->pontos);
+    }
+
+    public function test_snapshot_anual_do_ranking_pode_ser_gerado_para_auditoria()
+    {
+        $unidade = Unidade::factory()->create();
+        $desbravador = Desbravador::factory()->create([
+            'unidade_id' => $unidade->id,
+            'ativo' => true,
+        ]);
+
+        Frequencia::create([
+            'desbravador_id' => $desbravador->id,
+            'data' => now()->subYear(),
+            'presente' => true,
+            'pontual' => true,
+            'biblia' => true,
+            'uniforme' => true,
+        ]);
+
+        $this->artisan('ranking:snapshot '.now()->subYear()->year)
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('ranking_snapshots', [
+            'year' => now()->subYear()->year,
+            'scope' => 'unidades',
+        ]);
+
+        $snapshot = RankingSnapshot::where('year', now()->subYear()->year)
+            ->where('scope', 'desbravadores')
+            ->firstOrFail();
+
+        $this->assertNotEmpty($snapshot->entries);
+        $this->assertSame($desbravador->nome, $snapshot->entries[0]['name']);
     }
 }

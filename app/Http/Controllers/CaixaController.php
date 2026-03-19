@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Caixa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class CaixaController extends Controller
 {
     public function index()
     {
+        Gate::authorize('financeiro');
+
         // Otimização: Se houver relacionamentos futuros (ex: 'criado_por', 'categoria'),
         // adicione dentro do array with([]) para evitar queries N+1.
         $query = Caixa::query()->with([]);
@@ -28,11 +31,15 @@ class CaixaController extends Controller
 
     public function create()
     {
+        Gate::authorize('financeiro');
+
         return view('financeiro.caixa.create');
     }
 
     public function store(Request $request)
     {
+        Gate::authorize('financeiro');
+
         $validado = $request->validate([
             'descricao' => 'required|string|max:255',
             'valor' => 'required|numeric|min:0.01',

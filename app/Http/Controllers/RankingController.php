@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Desbravador;
 use App\Models\Unidade;
+use Illuminate\Support\Facades\Gate;
 
 class RankingController extends Controller
 {
     public function unidades()
     {
+        Gate::authorize('relatorios');
+
         $ano = now()->year;
 
         $data = Unidade::with(['desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)])
@@ -34,6 +37,8 @@ class RankingController extends Controller
 
     public function desbravadores()
     {
+        Gate::authorize('relatorios');
+
         $ano = now()->year;
 
         $data = Desbravador::with(['unidade', 'frequencias' => fn ($query) => $query->whereYear('data', $ano)])

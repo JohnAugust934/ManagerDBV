@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Patrimonio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class PatrimonioController extends Controller
 {
     public function index(Request $request)
     {
+        Gate::authorize('financeiro');
+
         $search = $request->input('search');
 
         // Query Base
@@ -48,11 +51,15 @@ class PatrimonioController extends Controller
 
     public function create()
     {
+        Gate::authorize('financeiro');
+
         return view('patrimonio.create');
     }
 
     public function store(Request $request)
     {
+        Gate::authorize('financeiro');
+
         $validated = $request->validate([
             'item' => 'required|string|max:255', // Corrigido de 'nome'
             'quantidade' => 'required|integer|min:1',
@@ -71,11 +78,15 @@ class PatrimonioController extends Controller
 
     public function edit(Patrimonio $patrimonio)
     {
+        Gate::authorize('financeiro');
+
         return view('patrimonio.edit', compact('patrimonio'));
     }
 
     public function update(Request $request, Patrimonio $patrimonio)
     {
+        Gate::authorize('financeiro');
+
         $validated = $request->validate([
             'item' => 'required|string|max:255',
             'quantidade' => 'required|integer|min:1',
@@ -94,6 +105,8 @@ class PatrimonioController extends Controller
 
     public function destroy(Patrimonio $patrimonio)
     {
+        Gate::authorize('financeiro');
+
         $patrimonio->delete();
 
         return redirect()->route('patrimonio.index')

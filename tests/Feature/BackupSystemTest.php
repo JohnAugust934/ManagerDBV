@@ -152,12 +152,10 @@ class BackupSystemTest extends TestCase
         $schedule = app()->make(\Illuminate\Console\Scheduling\Schedule::class);
         $events = collect($schedule->events());
 
-        // Verifica se a rotina de limpeza existe e roda às 04:00 (0 4 * * *)
         $backupClean = $events->first(fn ($event) => str_contains($event->command, 'backup:clean'));
         $this->assertNotNull($backupClean, 'O agendamento de limpeza de backups não foi encontrado.');
         $this->assertEquals('0 4 * * *', $backupClean->expression, 'A limpeza não está agendada para as 04:00 da manhã.');
 
-        // Verifica se a rotina de criação existe e roda às 03:00 (0 3 * * *)
         $backupRun = $events->first(fn ($event) => str_contains($event->command, 'backup:run'));
         $this->assertNotNull($backupRun, 'O agendamento de criação de backup não foi encontrado.');
         $this->assertEquals('0 3 * * *', $backupRun->expression, 'O backup não está agendado para as 03:00 da manhã.');
@@ -165,6 +163,12 @@ class BackupSystemTest extends TestCase
         $backupMonitor = $events->first(fn ($event) => str_contains($event->command, 'backup:monitor'));
         $this->assertNotNull($backupMonitor, 'O agendamento de monitoramento de backups não foi encontrado.');
         $this->assertEquals('30 4 * * *', $backupMonitor->expression, 'O monitoramento não está agendado para as 04:30 da manhã.');
+
+        $queueMonitor = $events->first(fn ($event) => str_contains($event->command, 'queue:monitor'));
+        $this->assertNotNull($queueMonitor, 'O monitoramento de fila não foi encontrado.');
+
+        $rankingSnapshot = $events->first(fn ($event) => str_contains($event->command, 'ranking:snapshot'));
+        $this->assertNotNull($rankingSnapshot, 'O snapshot anual do ranking não foi encontrado.');
     }
 
     public function test_configuracao_de_backup_usa_defaults_seguros_e_monitora_local_e_r2()

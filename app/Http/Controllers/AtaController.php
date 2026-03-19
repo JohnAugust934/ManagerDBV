@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Ata;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class AtaController extends Controller
 {
     public function index(Request $request)
     {
+        Gate::authorize('secretaria');
+
         $query = Ata::orderBy('data_reuniao', 'desc');
 
         if ($request->filled('search')) {
@@ -24,11 +27,15 @@ class AtaController extends Controller
 
     public function create()
     {
+        Gate::authorize('secretaria');
+
         return view('secretaria.atas.create');
     }
 
     public function store(Request $request)
     {
+        Gate::authorize('secretaria');
+
         $dados = $request->validate([
             'titulo' => 'required|string|max:255', // Adicionado Título ou Pauta Principal
             'data_reuniao' => 'required|date',
@@ -46,16 +53,22 @@ class AtaController extends Controller
 
     public function show(Ata $ata)
     {
+        Gate::authorize('secretaria');
+
         return view('secretaria.atas.show', compact('ata'));
     }
 
     public function edit(Ata $ata)
     {
+        Gate::authorize('secretaria');
+
         return view('secretaria.atas.edit', compact('ata'));
     }
 
     public function update(Request $request, Ata $ata)
     {
+        Gate::authorize('secretaria');
+
         $dados = $request->validate([
             'titulo' => 'required|string|max:255',
             'data_reuniao' => 'required|date',

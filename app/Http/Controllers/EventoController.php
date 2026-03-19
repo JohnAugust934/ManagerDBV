@@ -8,12 +8,15 @@ use App\Models\Evento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class EventoController extends Controller
 {
     // ... index, create, store, edit, update (MANTIDOS IGUAIS) ...
     public function index()
     {
+        Gate::authorize('eventos');
+
         $eventos = Evento::withCount('desbravadores')->orderBy('data_inicio', 'desc')->paginate(9);
 
         return view('eventos.index', compact('eventos'));
@@ -21,11 +24,15 @@ class EventoController extends Controller
 
     public function create()
     {
+        Gate::authorize('secretaria');
+
         return view('eventos.create');
     }
 
     public function store(Request $request)
     {
+        Gate::authorize('secretaria');
+
         $dados = $request->validate([
             'nome' => 'required|string|max:255',
             'local' => 'required|string|max:255',
@@ -41,6 +48,8 @@ class EventoController extends Controller
 
     public function show(Evento $evento)
     {
+        Gate::authorize('eventos');
+
         $evento->load(['desbravadores.unidade']);
 
         // CORREÇÃO: Carrega quem NÃO está inscrito para o select
@@ -55,11 +64,15 @@ class EventoController extends Controller
 
     public function edit(Evento $evento)
     {
+        Gate::authorize('secretaria');
+
         return view('eventos.edit', compact('evento'));
     }
 
     public function update(Request $request, Evento $evento)
     {
+        Gate::authorize('secretaria');
+
         $dados = $request->validate([
             'nome' => 'required|string|max:255',
             'local' => 'required|string|max:255',
@@ -77,6 +90,8 @@ class EventoController extends Controller
 
     public function destroy(Evento $evento)
     {
+        Gate::authorize('secretaria');
+
         if ($evento->desbravadores()->count() > 0) {
             return back()->with('error', 'Não é possível excluir evento com inscritos. Remova as inscrições primeiro.');
         }
@@ -89,6 +104,8 @@ class EventoController extends Controller
 
     public function inscrever(Request $request, Evento $evento)
     {
+        Gate::authorize('eventos');
+
         $request->validate(['desbravador_id' => 'required|exists:desbravadores,id']);
 
         if (! $evento->desbravadores()->where('desbravador_id', $request->desbravador_id)->exists()) {
@@ -103,6 +120,8 @@ class EventoController extends Controller
     // NOVO: Inscrição em Lote
     public function inscreverEmLote(Request $request, Evento $evento)
     {
+        Gate::authorize('eventos');
+
         $request->validate(['desbravadores' => 'required|array']);
 
         $count = 0;
@@ -118,6 +137,8 @@ class EventoController extends Controller
 
     public function removerInscricao(Evento $evento, Desbravador $desbravador)
     {
+        Gate::authorize('eventos');
+
         // Se estava pago, deveríamos estornar do caixa?
         // Por simplicidade, assumimos que o tesoureiro ajusta manual se necessário, ou removemos aqui.
         // Vamos apenas remover a inscrição.
@@ -129,6 +150,8 @@ class EventoController extends Controller
     // ATUALIZADO: AJAX + Integração com Caixa
     public function atualizarStatus(Request $request, Evento $evento, Desbravador $desbravador)
     {
+        Gate::authorize('financeiro');
+
         $campo = $request->campo;
         $valor = filter_var($request->valor, FILTER_VALIDATE_BOOLEAN);
 
@@ -190,6 +213,8 @@ class EventoController extends Controller
 
     public function gerarAutorizacao(Evento $evento, Desbravador $desbravador)
     {
+        Gate::authorize('eventos');
+
         $pdf = Pdf::loadView('relatorios.autorizacao', [
             'desbravador' => $desbravador,
             'evento' => $evento,
