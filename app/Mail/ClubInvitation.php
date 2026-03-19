@@ -29,7 +29,7 @@ class ClubInvitation extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Convite para se juntar ao DBV Manager',
+            subject: 'Convite para acessar o '.config('app.name'),
         );
     }
 

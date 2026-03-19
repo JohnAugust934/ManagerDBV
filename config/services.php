@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'telegram' => [
+        'enabled' => env('TELEGRAM_NOTIFICATIONS_ENABLED', false),
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
+        'parse_mode' => env('TELEGRAM_PARSE_MODE', 'HTML'),
+        'timeout' => (int) env('TELEGRAM_TIMEOUT', 10),
+        'admin_notifications' => env('TELEGRAM_ADMIN_NOTIFICATIONS', true),
+        'error_notifications' => env('TELEGRAM_ERROR_NOTIFICATIONS', true),
+    ],
+
 ];

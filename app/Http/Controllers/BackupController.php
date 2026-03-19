@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\TelegramNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -67,9 +68,19 @@ class BackupController extends Controller
             [$exitCode, $output] = $this->runManualBackup();
 
             if ($exitCode === 0) {
+                $this->notifyAdminAction('Backup manual executado', [
+                    'Responsavel' => auth()->user()?->name,
+                    'Origem' => 'Tela de backups',
+                ], 'success');
+
                 return back()->with('success', 'Backup gerado localmente e sincronizado com a Nuvem!');
             } else {
                 Log::error('Erro do Backup Web: '.$output);
+                $this->notifyAdminAction('Falha no backup manual', [
+                    'Responsavel' => auth()->user()?->name,
+                    'Origem' => 'Tela de backups',
+                    'Erro' => $output,
+                ], 'error');
                 if (str_contains($output, 'could not generate restrict key')) {
                     return back()->with('warning', '⚠️ Bloqueio Local (Windows): O servidor web não tem permissão para rodar o pg_dump. Na produção (Linux) funcionará normalmente. Localmente, use o terminal.');
                 }
@@ -81,6 +92,11 @@ class BackupController extends Controller
             }
         } catch (\Exception $e) {
             Log::error('Exceção Crítica no Backup: '.$e->getMessage());
+            $this->notifyAdminAction('Erro interno ao gerar backup manual', [
+                'Responsavel' => auth()->user()?->name,
+                'Origem' => 'Tela de backups',
+                'Erro' => $e->getMessage(),
+            ], 'error');
 
             return back()->with('error', 'Erro interno no servidor ao tentar gerar o backup.');
         }
@@ -137,9 +153,18 @@ class BackupController extends Controller
                 throw new \RuntimeException('Não foi possível salvar o backup importado no disco local.');
             }
 
+            $this->notifyAdminAction('Backup importado manualmente', [
+                'Responsavel' => auth()->user()?->name,
+                'Arquivo' => $finalFileName,
+            ], 'success');
+
             return back()->with('success', 'Arquivo importado com sucesso! Ele já está disponível na lista abaixo para ser restaurado.');
         } catch (\Exception $e) {
             Log::error('Erro ao importar backup: '.$e->getMessage());
+            $this->notifyAdminAction('Falha ao importar backup', [
+                'Responsavel' => auth()->user()?->name,
+                'Erro' => $e->getMessage(),
+            ], 'error');
 
             return back()->with('error', 'Falha ao salvar o arquivo enviado: '.$e->getMessage());
         }
@@ -250,10 +275,19 @@ class BackupController extends Controller
             $maintenanceEnabled = false;
 
             $statusDB = $databaseFileToRestore ? 'Banco de Dados restaurado' : 'Nenhum banco encontrado no backup';
+            $responsavel = auth()->user()?->name;
 
             auth()->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
+            $this->notifyAdminAction('Restauracao de backup concluida', [
+                'Responsavel' => $responsavel,
+                'Disco' => $disk,
+                'Arquivo' => basename($path),
+                'Banco' => $statusDB,
+                'Arquivos restaurados' => $filesRestored,
+            ], 'warning');
 
             return redirect('/login')->with('success', "Restauração Finalizada! [{$statusDB}] e [{$filesRestored} imagens restauradas]. Faça login com os dados da época do backup.");
 
@@ -277,6 +311,13 @@ class BackupController extends Controller
             if ($maintenanceEnabled) {
                 Artisan::call('up');
             }
+
+            $this->notifyAdminAction('Falha na restauracao de backup', [
+                'Responsavel' => auth()->user()?->name,
+                'Disco' => $disk,
+                'Arquivo' => basename((string) $path),
+                'Erro' => $e->getMessage(),
+            ], 'error');
 
             return back()->with('error', 'Erro na restauração: '.$e->getMessage());
         }
@@ -316,6 +357,11 @@ class BackupController extends Controller
 
         if (Storage::disk($disk)->exists($path)) {
             Storage::disk($disk)->delete($path);
+            $this->notifyAdminAction('Backup excluido manualmente', [
+                'Responsavel' => auth()->user()?->name,
+                'Disco' => $disk,
+                'Arquivo' => basename($path),
+            ], 'warning');
 
             return back()->with('success', 'Backup excluído permanentemente.');
         }
@@ -611,5 +657,10 @@ class BackupController extends Controller
         }
 
         return rtrim($binaryPath, '\\/').DIRECTORY_SEPARATOR.$binaryName;
+    }
+
+    private function notifyAdminAction(string $title, array $details = [], string $status = 'info'): void
+    {
+        app(TelegramNotifier::class)->notifyAdministrativeAction($title, $details, $status);
     }
 }

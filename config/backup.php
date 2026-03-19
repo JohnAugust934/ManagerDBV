@@ -15,6 +15,8 @@ $backupNotificationMailTo = array_values(array_filter(array_map(
     explode(',', (string) env('BACKUP_NOTIFICATIONS_MAIL_TO', env('MAIL_FROM_ADDRESS', '')))
 )));
 
+$backupMailNotificationsEnabled = filter_var(env('BACKUP_MAIL_NOTIFICATIONS', false), FILTER_VALIDATE_BOOL);
+
 return [
 
     'backup' => [
@@ -64,12 +66,12 @@ return [
 
     'notifications' => [
         'notifications' => [
-            \Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification::class => ['mail'],
+            \Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification::class => $backupMailNotificationsEnabled ? ['mail'] : [],
+            \Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification::class => $backupMailNotificationsEnabled ? ['mail'] : [],
+            \Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification::class => $backupMailNotificationsEnabled ? ['mail'] : [],
+            \Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification::class => $backupMailNotificationsEnabled ? ['mail'] : [],
+            \Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification::class => $backupMailNotificationsEnabled ? ['mail'] : [],
+            \Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification::class => $backupMailNotificationsEnabled ? ['mail'] : [],
         ],
         'notifiable' => \Spatie\Backup\Notifications\Notifiable::class,
         'mail' => [

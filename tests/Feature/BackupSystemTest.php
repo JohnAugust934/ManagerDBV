@@ -175,6 +175,7 @@ class BackupSystemTest extends TestCase
         $this->assertSame('default', config('backup.backup.encryption'));
         $this->assertIsArray(config('backup.notifications.mail.to'));
         $this->assertNotEmpty(config('backup.notifications.mail.to'));
+        $this->assertSame([], config('backup.notifications.notifications.'.\Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification::class));
     }
 
     public function test_configuracao_de_backup_pode_ser_personalizada_por_variaveis_de_ambiente()
@@ -182,6 +183,7 @@ class BackupSystemTest extends TestCase
         $this->setBackupEnv('BACKUP_DESTINATION_DISKS', 'local');
         $this->setBackupEnv('BACKUP_MONITOR_DISKS', 'r2');
         $this->setBackupEnv('BACKUP_NOTIFICATIONS_MAIL_TO', 'ops@clube.com,admin@clube.com');
+        $this->setBackupEnv('BACKUP_MAIL_NOTIFICATIONS', 'true');
         $this->setBackupEnv('BACKUP_VERIFY', 'false');
         $this->setBackupEnv('BACKUP_ARCHIVE_ENCRYPTION', 'aes256');
         $this->setBackupEnv('BACKUP_MONITOR_MAX_AGE_DAYS', '3');
@@ -192,6 +194,7 @@ class BackupSystemTest extends TestCase
         $this->assertSame(['local'], $config['backup']['destination']['disks']);
         $this->assertSame(['r2'], $config['monitor_backups'][0]['disks']);
         $this->assertSame(['ops@clube.com', 'admin@clube.com'], $config['notifications']['mail']['to']);
+        $this->assertSame(['mail'], $config['notifications']['notifications'][\Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification::class]);
         $this->assertFalse($config['backup']['verify_backup']);
         $this->assertSame('aes256', $config['backup']['encryption']);
         $this->assertSame(3, $config['monitor_backups'][0]['health_checks'][\Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays::class]);
@@ -200,6 +203,7 @@ class BackupSystemTest extends TestCase
         $this->setBackupEnv('BACKUP_DESTINATION_DISKS', null);
         $this->setBackupEnv('BACKUP_MONITOR_DISKS', null);
         $this->setBackupEnv('BACKUP_NOTIFICATIONS_MAIL_TO', null);
+        $this->setBackupEnv('BACKUP_MAIL_NOTIFICATIONS', null);
         $this->setBackupEnv('BACKUP_VERIFY', null);
         $this->setBackupEnv('BACKUP_ARCHIVE_ENCRYPTION', null);
         $this->setBackupEnv('BACKUP_MONITOR_MAX_AGE_DAYS', null);

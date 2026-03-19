@@ -33,7 +33,7 @@
                         <div
                             class="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-mono text-sm border border-blue-100 dark:border-blue-800 shadow-sm">
                             <span class="font-bold mr-2">Versão Atual:</span>
-                            v1.1.0-beta
+                            v1.2.0-beta
                         </div>
                     </div>
 

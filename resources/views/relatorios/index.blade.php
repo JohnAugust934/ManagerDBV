@@ -4,9 +4,6 @@
             <h2 class="text-2xl font-black text-slate-900 dark:text-white">
                 Central de Relatorios
             </h2>
-            <p class="text-sm text-slate-600 dark:text-slate-400">
-                Relatorios operacionais, analiticos e fichas prontas para impressao no dia a dia do clube.
-            </p>
         </div>
     </x-slot>
 
