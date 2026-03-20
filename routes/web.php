@@ -79,6 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/clube/logo', [ClubController::class, 'removeLogo'])->name('club.remove_logo');
 
         // Documentos Oficiais
+        Route::get('atas/{ata}/imprimir', [AtaController::class, 'print'])->name('atas.print');
         Route::resource('atas', AtaController::class);
         Route::resource('atos', AtoController::class);
 

@@ -1,7 +1,19 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{
     darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
-    sidebarOpen: false
+    sidebarOpen: false,
+    sidebarPinned: localStorage.getItem('sidebarPinned') !== 'false',
+    sidebarHover: false,
+    desktopSidebarExpanded() {
+        return this.sidebarPinned || this.sidebarHover;
+    },
+    toggleSidebarPinned() {
+        this.sidebarPinned = !this.sidebarPinned;
+        localStorage.setItem('sidebarPinned', this.sidebarPinned ? 'true' : 'false');
+        if (this.sidebarPinned) {
+            this.sidebarHover = false;
+        }
+    }
 }" x-init="$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'))"
     :class="{ 'dark': darkMode }">
 
@@ -26,6 +38,58 @@
             document.documentElement.classList.remove('dark')
         }
     </script>
+    <style>
+        @media (min-width: 768px) {
+            aside.sidebar-collapsed .sidebar-brand,
+            aside.sidebar-collapsed .sidebar-heading,
+            aside.sidebar-collapsed .sidebar-chevron,
+            aside.sidebar-collapsed .sidebar-footer-text {
+                opacity: 0;
+                width: 0;
+                overflow: hidden;
+                pointer-events: none;
+            }
+
+            aside.sidebar-collapsed .sidebar-submenu {
+                display: none;
+            }
+
+            aside.sidebar-collapsed nav a,
+            aside.sidebar-collapsed nav button {
+                justify-content: center;
+                font-size: 0;
+                line-height: 0;
+                transform: none !important;
+            }
+
+            aside.sidebar-collapsed nav svg,
+            aside.sidebar-collapsed .sidebar-footer svg {
+                margin-right: 0 !important;
+            }
+
+            aside.sidebar-collapsed .sidebar-footer {
+                justify-content: center;
+                gap: 0;
+            }
+
+            aside.sidebar-collapsed .sidebar-footer > div:first-child {
+                display: none;
+            }
+
+            aside.sidebar-collapsed .sidebar-footer form {
+                margin: 0 auto;
+            }
+
+            aside.sidebar-collapsed .sidebar-footer button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2.5rem;
+                height: 2.5rem;
+                padding: 0;
+            }
+        }
+    </style>
 </head>
 
 <body
@@ -40,8 +104,10 @@
             class="fixed inset-0 z-40 bg-gray-900/80 backdrop-blur-sm md:hidden" x-cloak></div>
 
         <aside
-            class="fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-dbv-blue to-blue-950 dark:from-slate-900 dark:to-black text-white transition-transform duration-300 transform shadow-2xl flex flex-col md:static md:translate-x-0 border-r border-blue-800/50 dark:border-slate-800/80"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            class="fixed inset-y-0 left-0 z-50 bg-gradient-to-b from-dbv-blue to-blue-950 dark:from-slate-900 dark:to-black text-white transition-all duration-300 transform shadow-2xl flex flex-col md:static md:translate-x-0 border-r border-blue-800/50 dark:border-slate-800/80"
+            :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', desktopSidebarExpanded() ? 'sidebar-expanded md:w-64' : 'sidebar-collapsed md:w-20']"
+            @mouseenter="if (window.innerWidth >= 768 && !sidebarPinned) sidebarHover = true"
+            @mouseleave="if (window.innerWidth >= 768) sidebarHover = false">
 
             <div
                 class="flex items-center px-5 h-20 bg-black/10 border-b border-white/5 gap-4 shrink-0 relative overflow-hidden">
@@ -57,7 +123,7 @@
                     </div>
                 @endif
 
-                <div class="flex flex-col overflow-hidden relative z-10">
+                <div class="sidebar-brand flex flex-col overflow-hidden relative z-10 transition-all duration-200">
                     <a href="{{ route('dashboard') }}"
                         class="font-black tracking-wide text-[15px] text-white truncate leading-tight hover:text-dbv-yellow transition-colors">
                         {{ Auth::user()->club->nome ?? 'MANAGER' }}
@@ -66,13 +132,22 @@
                         {{ Auth::user()->role === 'master' ? 'Master Admin' : 'Sistema de Gestão' }}
                     </span>
                 </div>
+                <button type="button" @click="toggleSidebarPinned()"
+                    class="hidden md:inline-flex items-center justify-center ml-auto h-9 w-9 rounded-xl border border-white/10 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white transition relative z-10"
+                    :title="sidebarPinned ? 'Recolher menu lateral' : 'Fixar menu lateral aberto'">
+                    <svg class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" :class="desktopSidebarExpanded() ? '' : 'rotate-180'">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
             </div>
 
             <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
 
                 @php
                     $linkClass =
-                        'group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 relative';
+                        'group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 relative overflow-hidden whitespace-nowrap';
                     $activeClass =
                         'bg-gradient-to-r from-dbv-red to-red-600 text-white shadow-md shadow-red-900/20 translate-x-1';
                     $inactiveClass = 'text-blue-100/70 hover:bg-white/10 hover:text-white hover:translate-x-1';
@@ -81,7 +156,7 @@
                 @endphp
 
                 {{-- ================= GERAL ================= --}}
-                <p class="px-3 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">Geral</p>
+                <p class="sidebar-heading px-3 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">Geral</p>
 
                 <a href="{{ route('dashboard') }}"
                     class="{{ $linkClass }} {{ request()->routeIs('dashboard') ? $activeClass : $inactiveClass }}">
@@ -117,14 +192,14 @@
                             Ranking
                         </div>
                         <svg :class="open ? 'rotate-180' : ''"
-                            class="w-4 h-4 transition-transform duration-300 text-blue-400/70" fill="none"
+                            class="sidebar-chevron w-4 h-4 transition-transform duration-300 text-blue-400/70" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
                     <div x-show="open" x-transition:enter="transition ease-out duration-200"
                         x-transition:enter-start="opacity-0 -translate-y-2"
-                        x-transition:enter-end="opacity-100 translate-y-0" x-cloak class="pl-11 pr-3 mt-1 space-y-1">
+                        x-transition:enter-end="opacity-100 translate-y-0" x-cloak class="sidebar-submenu pl-11 pr-3 mt-1 space-y-1">
                         <a href="{{ route('ranking.unidades') }}"
                             class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('ranking.unidades') ? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Por
                             Unidade</a>
@@ -136,7 +211,7 @@
 
                 {{-- ================= SECRETARIA ================= --}}
                 @can('secretaria')
-                    <p class="px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">
+                    <p class="sidebar-heading px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">
                         Secretaria</p>
 
                     <a href="{{ route('club.edit') }}"
@@ -171,7 +246,7 @@
                                 Documentos
                             </div>
                             <svg :class="open ? 'rotate-180' : ''"
-                                class="w-4 h-4 transition-transform duration-300 text-blue-400/70" fill="none"
+                                class="sidebar-chevron w-4 h-4 transition-transform duration-300 text-blue-400/70" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 9l-7 7-7-7" />
@@ -179,7 +254,7 @@
                         </button>
                         <div x-show="open" x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 -translate-y-2"
-                            x-transition:enter-end="opacity-100 translate-y-0" x-cloak class="pl-11 pr-3 mt-1 space-y-1">
+                            x-transition:enter-end="opacity-100 translate-y-0" x-cloak class="sidebar-submenu pl-11 pr-3 mt-1 space-y-1">
                             <a href="{{ route('atas.index') }}"
                                 class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('atas*') ? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Atas</a>
                             <a href="{{ route('atos.index') }}"
@@ -191,7 +266,7 @@
 
                 {{-- ================= EVENTOS ================= --}}
                 @can('eventos')
-                    <p class="px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">Agenda
+                    <p class="sidebar-heading px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">Agenda
                     </p>
                     <a href="{{ route('eventos.index') }}"
                         class="{{ $linkClass }} {{ request()->routeIs('eventos*') ? $activeClass : $inactiveClass }}">
@@ -206,7 +281,7 @@
 
                 {{-- ================= PEDAGÓGICO ================= --}}
                 @can('pedagogico')
-                    <p class="px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">
+                    <p class="sidebar-heading px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">
                         Pedagógico</p>
 
                     <a href="{{ route('classes.index') }}"
@@ -243,7 +318,7 @@
                                 Frequência
                             </div>
                             <svg :class="open ? 'rotate-180' : ''"
-                                class="w-4 h-4 transition-transform duration-300 text-blue-400/70" fill="none"
+                                class="sidebar-chevron w-4 h-4 transition-transform duration-300 text-blue-400/70" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 9l-7 7-7-7" />
@@ -251,7 +326,7 @@
                         </button>
                         <div x-show="open" x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 -translate-y-2"
-                            x-transition:enter-end="opacity-100 translate-y-0" x-cloak class="pl-11 pr-3 mt-1 space-y-1">
+                            x-transition:enter-end="opacity-100 translate-y-0" x-cloak class="sidebar-submenu pl-11 pr-3 mt-1 space-y-1">
                             <a href="{{ route('frequencia.index') }}"
                                 class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.index') ? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Histórico
                                 Mensal</a>
@@ -264,7 +339,7 @@
 
                 {{-- ================= FINANCEIRO ================= --}}
                 @can('financeiro')
-                    <p class="px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">
+                    <p class="sidebar-heading px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">
                         Financeiro</p>
 
                     <a href="{{ route('caixa.index') }}"
@@ -300,7 +375,7 @@
 
                 {{-- ================= RELATÓRIOS & SISTEMA ================= --}}
                 @can('relatorios')
-                    <p class="px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">
+                    <p class="sidebar-heading px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">
                         Relatórios</p>
                     <a href="{{ route('relatorios.index') }}"
                         class="{{ $linkClass }} {{ request()->routeIs('relatorios.index') ? $activeClass : $inactiveClass }}">
@@ -313,7 +388,7 @@
                     </a>
                 @endcan
 
-                <p class="px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">Sistema
+                <p class="sidebar-heading px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">Sistema
                 </p>
                 <a href="{{ route('sobre') }}"
                     class="{{ $linkClass }} {{ request()->routeIs('sobre') ? $activeClass : $inactiveClass }}">
@@ -328,7 +403,7 @@
                 {{-- ================= ADMIN MASTER ================= --}}
                 @can('master')
                     <div class="mt-8 pt-4 border-t border-white/10">
-                        <p class="px-3 text-[10px] font-extrabold text-red-400/80 uppercase tracking-widest mb-2">Admin
+                        <p class="sidebar-heading px-3 text-[10px] font-extrabold text-red-400/80 uppercase tracking-widest mb-2">Admin
                             Master</p>
 
                         <a href="{{ route('usuarios.index') }}"
@@ -354,12 +429,12 @@
 
             <div
                 class="border-t border-white/10 bg-black/20 p-4 shrink-0 relative overflow-hidden group hover:bg-black/30 transition-colors">
-                <div class="flex items-center gap-3 relative z-10">
+                <div class="sidebar-footer flex items-center gap-3 relative z-10">
                     <div
                         class="w-10 h-10 rounded-full bg-gradient-to-tr from-dbv-red to-red-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border border-white/20 ring-2 ring-transparent group-hover:ring-white/20 transition-all">
                         {{ substr(Auth::user()->name, 0, 1) }}
                     </div>
-                    <div class="flex-1 overflow-hidden">
+                    <div class="sidebar-footer-text flex-1 overflow-hidden transition-all duration-200">
                         <p class="text-sm font-bold text-white truncate">{{ Str::limit(Auth::user()->name, 15) }}</p>
                         <a href="{{ route('profile.edit') }}"
                             class="text-[11px] font-semibold text-blue-300/80 hover:text-white transition-colors uppercase tracking-wider block mt-0.5">Editar

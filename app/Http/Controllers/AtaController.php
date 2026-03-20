@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ata;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -58,6 +59,20 @@ class AtaController extends Controller
         return view('secretaria.atas.show', compact('ata'));
     }
 
+    public function print(Ata $ata)
+    {
+        Gate::authorize('secretaria');
+
+        $pdf = Pdf::loadView('relatorios.ata', [
+            'ata' => $ata,
+            'clubeNome' => auth()->user()?->club?->nome ?? 'Clube de Desbravadores',
+            'responsavelNome' => auth()->user()?->name ?? 'Sistema',
+            'emitidoEm' => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4');
+
+        return $pdf->stream('ata_'.$ata->id.'.pdf');
+    }
+
     public function edit(Ata $ata)
     {
         Gate::authorize('secretaria');
@@ -82,5 +97,14 @@ class AtaController extends Controller
         $ata->update($dados);
 
         return redirect()->route('atas.show', $ata)->with('success', 'Ata atualizada!');
+    }
+
+    public function destroy(Ata $ata)
+    {
+        Gate::authorize('secretaria');
+
+        $ata->delete();
+
+        return redirect()->route('atas.index')->with('success', 'Ata excluída com sucesso!');
     }
 }

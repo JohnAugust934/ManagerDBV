@@ -2,11 +2,11 @@
     <x-slot name="header">
         <div class="flex items-center justify-between w-full h-full gap-4">
             <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
-                {{ __('Atos Oficiais') }}
+                Atos Oficiais
             </h2>
 
             <a href="{{ route('atos.create') }}"
-                class="hidden md:inline-flex items-center justify-center px-4 py-2 bg-dbv-red border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none transition shadow-md shrink-0">
+                class="hidden md:inline-flex items-center justify-center px-4 py-2 bg-dbv-red border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition shadow-md shrink-0">
                 Novo Ato
             </a>
         </div>
@@ -22,50 +22,55 @@
 
         <div class="px-4 md:px-0">
             @if ($atos->isEmpty())
-                <div
-                    class="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-700">
+                <div class="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-700">
                     <p class="text-gray-500 dark:text-gray-400">Nenhum ato oficial registrado.</p>
                 </div>
             @else
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                             <thead class="bg-gray-50 dark:bg-slate-700/50">
                                 <tr>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Número</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Tipo</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Descrição</th>
-                                    <th
-                                        class="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Data</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Número</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descrição</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
+                                    <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
                                 @foreach ($atos as $ato)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
-                                        <td
-                                            class="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-gray-900 dark:text-white">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-gray-900 dark:text-white">
                                             #{{ $ato->numero }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                class="px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                            <span class="px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                                 {{ $ato->tipo }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                                            {{ Str::limit($ato->descricao, 50) }}
+                                            {{ Str::limit($ato->descricao, 90) }}
                                         </td>
-                                        <td
-                                            class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                            {{ \Carbon\Carbon::parse($ato->data)->format('d/m/Y') }}
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            {{ $ato->data?->format('d/m/Y') }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            <div class="inline-flex items-center gap-2">
+                                                <a href="{{ route('atos.edit', $ato) }}"
+                                                    class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-widest bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40">
+                                                    Editar
+                                                </a>
+                                                <form action="{{ route('atos.destroy', $ato) }}" method="POST"
+                                                    onsubmit="return confirm('Excluir este ato apagará o registro permanentemente. Deseja continuar?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit"
+                                                        class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-widest bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40">
+                                                        Excluir
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

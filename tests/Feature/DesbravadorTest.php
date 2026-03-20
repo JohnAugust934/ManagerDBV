@@ -174,4 +174,16 @@ class DesbravadorTest extends TestCase
         $response->assertSeeText('Excluir remove tudo em definitivo. O mais seguro para o dia a dia é inativar o cadastro.');
         $response->assertSee('O recomendado é apenas inativar o cadastro. Deseja excluir mesmo assim?', false);
     }
+    public function test_lista_de_desbravadores_nao_repete_alerta_de_sucesso()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        $response = $this->actingAs($user)
+            ->withSession(['success' => 'Cadastro salvo com sucesso!'])
+            ->get(route('desbravadores.index'));
+
+        $response->assertOk();
+        $response->assertDontSee('bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500', false);
+    }
 }

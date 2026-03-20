@@ -22,23 +22,6 @@
             </a>
         </div>
 
-        @if (session('success'))
-            <div
-                class="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm mx-4 sm:mx-0">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ session('success') }}</p>
-                    </div>
-                </div>
-            </div>
-        @endif
-
         <div
             class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden mx-4 sm:mx-0">
             <div class="p-4 md:p-6 border-b border-gray-100 dark:border-slate-700">

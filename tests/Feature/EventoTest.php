@@ -8,6 +8,8 @@ use App\Models\Desbravador;
 use App\Models\Evento;
 use App\Models\Unidade;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Barryvdh\DomPDF\PDF as DomPdfWrapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -272,5 +274,52 @@ class EventoTest extends TestCase
             ->assertJson(['error' => 'Inscrição não encontrada para este desbravador.']);
 
         $this->assertDatabaseCount('caixas', 0);
+    }
+    public function test_pode_gerar_autorizacao_de_evento_com_dados_do_desbravador()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+
+        $unidade = Unidade::factory()->create(['nome' => 'Lobos']);
+        $classe = Classe::factory()->create(['nome' => 'Companheiro']);
+
+        $dbv = Desbravador::factory()->create([
+            'nome' => 'Daniel Silva',
+            'unidade_id' => $unidade->id,
+            'classe_atual' => $classe->id,
+            'nome_responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '11999999999',
+            'cpf' => '123.456.789-00',
+            'numero_sus' => '123456789',
+            'alergias' => 'Nenhuma',
+            'plano_saude' => 'Plano Teste',
+        ]);
+
+        $evento = Evento::factory()->create([
+            'nome' => 'Acampamento de Outono',
+            'local' => 'Sitio Esperanca',
+        ]);
+
+        $pdfWrapper = \Mockery::mock(DomPdfWrapper::class);
+        $pdfWrapper->shouldReceive('stream')
+            ->once()
+            ->with('autorizacao.pdf')
+            ->andReturn(response('pdf', 200, ['content-type' => 'application/pdf']));
+
+        Pdf::shouldReceive('loadView')
+            ->once()
+            ->withArgs(function (string $view, array $data) use ($dbv, $evento) {
+                $this->assertSame('relatorios.autorizacao', $view);
+                $this->assertSame($dbv->id, $data['desbravador']->id);
+                $this->assertSame($evento->id, $data['evento']->id);
+
+                return true;
+            })
+            ->andReturn($pdfWrapper);
+
+        $response = $this->actingAs($user)->get(route('eventos.autorizacao', [$evento, $dbv]));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
     }
 }

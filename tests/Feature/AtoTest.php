@@ -47,4 +47,42 @@ class AtoTest extends TestCase
             'descricao' => 'Fica nomeado fulano de tal para o cargo de conselheiro.',
         ]);
     }
+
+    public function test_usuario_pode_editar_um_ato_administrativo()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $ato = Ato::factory()->create([
+            'numero' => '001/2026',
+            'tipo' => 'Nomeacao',
+            'descricao' => 'Texto original',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('atos.update', $ato), [
+            'numero' => '002/2026',
+            'tipo' => 'Voto',
+            'data' => now()->format('Y-m-d'),
+            'descricao' => 'Texto atualizado do ato.',
+        ]);
+
+        $response->assertRedirect(route('atos.index'));
+        $this->assertDatabaseHas('atos', [
+            'id' => $ato->id,
+            'numero' => '002/2026',
+            'tipo' => 'Voto',
+            'descricao' => 'Texto atualizado do ato.',
+        ]);
+    }
+
+    public function test_usuario_pode_excluir_um_ato_administrativo()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $ato = Ato::factory()->create();
+
+        $response = $this->actingAs($user)->delete(route('atos.destroy', $ato));
+
+        $response->assertRedirect(route('atos.index'));
+        $this->assertDatabaseMissing('atos', ['id' => $ato->id]);
+    }
 }
