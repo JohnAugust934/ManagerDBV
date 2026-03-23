@@ -10,9 +10,14 @@ $backupMonitorDisks = array_values(array_filter(array_map(
     explode(',', (string) env('BACKUP_MONITOR_DISKS', implode(',', $backupDestinationDisks ?: ['local'])))
 )));
 
+$backupNotificationMailFallback = env('MAIL_FROM_ADDRESS', 'hello@example.com');
+if (! is_string($backupNotificationMailFallback) || trim($backupNotificationMailFallback) === '') {
+    $backupNotificationMailFallback = 'hello@example.com';
+}
+
 $backupNotificationMailTo = array_values(array_filter(array_map(
     'trim',
-    explode(',', (string) env('BACKUP_NOTIFICATIONS_MAIL_TO', env('MAIL_FROM_ADDRESS', '')))
+    explode(',', (string) env('BACKUP_NOTIFICATIONS_MAIL_TO', $backupNotificationMailFallback))
 )));
 
 $backupMailNotificationsEnabled = filter_var(env('BACKUP_MAIL_NOTIFICATIONS', false), FILTER_VALIDATE_BOOL);

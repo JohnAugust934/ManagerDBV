@@ -177,9 +177,10 @@ class BackupController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '-1');
 
-        $disk = $request->input('disk');
-        $path = $request->input('path');
-        $allowedDisks = ['local', 'r2'];
+        [$disk, $path] = $this->normalizeBackupSelection(
+            (string) $request->input('disk', ''),
+            (string) $request->input('path', '')
+        );
         $tempZipPath = storage_path('app/temp_restore.zip');
         $extractPath = storage_path('app/temp_restore_dir');
         $emergencySnapshotPath = storage_path('app/pre_restore_snapshot.sql');
@@ -188,13 +189,7 @@ class BackupController extends Controller
         $emergencySnapshotCreated = false;
 
         try {
-            if (! in_array($disk, $allowedDisks, true)) {
-                throw new \RuntimeException('Disco de backup inválido.');
-            }
-
-            if (! $path || ! Storage::disk($disk)->exists($path)) {
-                throw new \RuntimeException('Arquivo de backup não encontrado.');
-            }
+            $this->assertBackupFileExists($disk, $path);
 
             Artisan::call('down');
             $maintenanceEnabled = true;
@@ -204,11 +199,7 @@ class BackupController extends Controller
             @unlink($emergencySnapshotPath);
 
             // 1. Traz o arquivo para a área de extração local
-            if ($disk === 'local') {
-                File::copy(Storage::disk('local')->path($path), $tempZipPath);
-            } else {
-                file_put_contents($tempZipPath, Storage::disk($disk)->get($path));
-            }
+            $this->copyDiskFileToLocalTemp($disk, $path, $tempZipPath);
 
             // 2. Valida e extrai o arquivo sem permitir path traversal
             $this->extractBackupArchiveSafely($tempZipPath, $extractPath);
@@ -262,7 +253,16 @@ class BackupController extends Controller
             // 5. Só restaura arquivos públicos depois que o banco estiver consistente
             foreach ($publicFiles as $filePath) {
                 $relativePath = explode('/app/public/', $filePath, 2)[1];
-                Storage::disk('public')->put($relativePath, File::get($filePath));
+                $stream = fopen($filePath, 'rb');
+                if ($stream === false) {
+                    throw new \RuntimeException("Não foi possível ler o arquivo extraído '{$relativePath}'.");
+                }
+
+                try {
+                    Storage::disk('public')->put($relativePath, $stream);
+                } finally {
+                    fclose($stream);
+                }
                 $filesRestored++;
             }
 
@@ -330,12 +330,11 @@ class BackupController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '-1');
 
-        $disk = $request->query('disk');
-        $path = $request->query('path');
-
-        if (! Storage::disk($disk)->exists($path)) {
-            return back()->with('error', 'Arquivo não encontrado.');
-        }
+        [$disk, $path] = $this->normalizeBackupSelection(
+            (string) $request->query('disk', ''),
+            (string) $request->query('path', '')
+        );
+        $this->assertBackupFileExists($disk, $path);
 
         if (ob_get_level() > 0 && ! app()->runningUnitTests()) {
             ob_end_clean();
@@ -352,8 +351,10 @@ class BackupController extends Controller
     public function destroy(Request $request)
     {
         Gate::authorize('master');
-        $disk = $request->input('disk');
-        $path = $request->input('path');
+        [$disk, $path] = $this->normalizeBackupSelection(
+            (string) $request->input('disk', ''),
+            (string) $request->input('path', '')
+        );
 
         if (Storage::disk($disk)->exists($path)) {
             Storage::disk($disk)->delete($path);
@@ -612,7 +613,16 @@ class BackupController extends Controller
         $config = config('database.connections.mysql');
         $binary = $this->resolveDatabaseBinary($config['dump']['dump_binary_path'] ?? '', 'mysql');
 
-        return new Process([
+        if (! File::exists($sqlFilePath)) {
+            throw new \RuntimeException('Arquivo SQL do backup não encontrado para restauração MySQL.');
+        }
+
+        $input = fopen($sqlFilePath, 'rb');
+        if ($input === false) {
+            throw new \RuntimeException('Não foi possível abrir o arquivo SQL para restauração MySQL.');
+        }
+
+        $process = new Process([
             $binary,
             '--host='.$config['host'],
             '--port='.$config['port'],
@@ -620,7 +630,11 @@ class BackupController extends Controller
             $config['database'],
         ], null, [
             'MYSQL_PWD' => (string) ($config['password'] ?? ''),
-        ], File::get($sqlFilePath));
+        ]);
+
+        $process->setInput($input);
+
+        return $process;
     }
 
     private function restoreSqliteDatabase(string $databaseBackupPath): void
@@ -642,11 +656,18 @@ class BackupController extends Controller
     private function runDatabaseProcess(Process $process): void
     {
         $process->setTimeout((float) config('database.connections.'.config('database.default').'.dump.timeout', 300));
-        $process->run();
+        try {
+            $process->run();
 
-        if (! $process->isSuccessful()) {
-            $output = trim($process->getErrorOutput().' '.$process->getOutput());
-            throw new \RuntimeException('Falha no comando nativo de restauração: '.$output);
+            if (! $process->isSuccessful()) {
+                $output = trim($process->getErrorOutput().' '.$process->getOutput());
+                throw new \RuntimeException('Falha no comando nativo de restauração: '.$output);
+            }
+        } finally {
+            $input = $process->getInput();
+            if (is_resource($input)) {
+                fclose($input);
+            }
         }
     }
 
@@ -657,6 +678,58 @@ class BackupController extends Controller
         }
 
         return rtrim($binaryPath, '\\/').DIRECTORY_SEPARATOR.$binaryName;
+    }
+
+    private function normalizeBackupSelection(string $disk, string $path): array
+    {
+        $allowedDisks = ['local', 'r2'];
+
+        if (! in_array($disk, $allowedDisks, true)) {
+            throw new \RuntimeException('Disco de backup inválido.');
+        }
+
+        $normalizedPath = str_replace('\\', '/', ltrim($path, '/\\'));
+        if ($normalizedPath === '' || ! str_ends_with(strtolower($normalizedPath), '.zip')) {
+            throw new \RuntimeException('Arquivo de backup inválido.');
+        }
+
+        $backupRoot = trim((string) config('backup.backup.name', 'Laravel'), '/\\');
+        $backupRoot = $backupRoot === '' ? 'Laravel' : str_replace('\\', '/', $backupRoot);
+        $expectedPrefix = $backupRoot.'/';
+
+        if (! str_starts_with($normalizedPath, $expectedPrefix)) {
+            throw new \RuntimeException('Arquivo fora do diretório de backups permitido.');
+        }
+
+        return [$disk, $normalizedPath];
+    }
+
+    private function assertBackupFileExists(string $disk, string $path): void
+    {
+        if (! Storage::disk($disk)->exists($path)) {
+            throw new \RuntimeException('Arquivo de backup não encontrado.');
+        }
+    }
+
+    private function copyDiskFileToLocalTemp(string $disk, string $path, string $tempZipPath): void
+    {
+        $source = Storage::disk($disk)->readStream($path);
+        if (! is_resource($source)) {
+            throw new \RuntimeException('Não foi possível abrir o backup para restauração.');
+        }
+
+        $target = fopen($tempZipPath, 'wb');
+        if ($target === false) {
+            fclose($source);
+            throw new \RuntimeException('Não foi possível preparar o arquivo temporário de restauração.');
+        }
+
+        try {
+            stream_copy_to_stream($source, $target);
+        } finally {
+            fclose($source);
+            fclose($target);
+        }
     }
 
     private function notifyAdminAction(string $title, array $details = [], string $status = 'info'): void
