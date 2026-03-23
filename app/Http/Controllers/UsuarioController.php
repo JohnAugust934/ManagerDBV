@@ -10,6 +10,13 @@ use Illuminate\Validation\Rules;
 
 class UsuarioController extends Controller
 {
+    public function create()
+    {
+        Gate::authorize('master');
+
+        return view('usuarios.create');
+    }
+
     public function index()
     {
         Gate::authorize('master');
@@ -24,6 +31,31 @@ class UsuarioController extends Controller
         }
 
         return view('usuarios.index', compact('users'));
+    }
+
+    public function store(Request $request)
+    {
+        Gate::authorize('master');
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', 'string'],
+            'extra_permissions' => ['nullable', 'array'],
+            'extra_permissions.*' => ['string'],
+        ]);
+
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+            'club_id' => auth()->user()->club_id,
+            'extra_permissions' => $validated['extra_permissions'] ?? [],
+        ]);
+
+        return redirect()->route('usuarios.index')->with('success', 'Usuário criado com sucesso!');
     }
 
     public function edit(User $usuario)

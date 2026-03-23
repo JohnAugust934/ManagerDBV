@@ -36,7 +36,6 @@ Route::get('/', function () {
 // --- REGISTRO VIA CONVITE ---
 Route::get('/register-invite', [RegisteredUserController::class, 'create'])->name('register.invite');
 Route::post('/register-invite', [RegisteredUserController::class, 'store'])->name('register.store_invite');
-
 // --- ÁREA RESTRITA ---
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -160,6 +159,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/patrimonio', [RelatorioController::class, 'patrimonio'])->name('patrimonio');
         });
     });
+
+    // Manual do sistema
+    Route::view('/manual-sistema', 'manual-sistema')->name('manual.sistema');
 
     // ✨ NOVA ROTA: ABA SOBRE O SISTEMA
     Route::view('/sobre', 'sobre')->name('sobre');

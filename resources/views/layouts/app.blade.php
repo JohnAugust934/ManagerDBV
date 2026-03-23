@@ -39,6 +39,13 @@
         }
     </script>
     <style>
+        .manual-capture *,
+        .manual-capture *::before,
+        .manual-capture *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+
         @media (min-width: 768px) {
             aside.sidebar-collapsed .sidebar-brand,
             aside.sidebar-collapsed .sidebar-heading,
@@ -93,7 +100,7 @@
 </head>
 
 <body
-    class="font-sans antialiased bg-gray-50 text-gray-900 dark:bg-dbv-dark-bg dark:text-gray-100 transition-colors duration-300">
+    class="font-sans antialiased bg-gray-50 text-gray-900 dark:bg-dbv-dark-bg dark:text-gray-100 transition-colors duration-300 {{ request()->boolean('manual_capture') ? 'manual-capture' : '' }}">
 
     <div class="flex h-screen overflow-hidden">
 
@@ -390,6 +397,15 @@
 
                 <p class="sidebar-heading px-3 mt-8 text-[10px] font-extrabold text-blue-400/60 uppercase tracking-widest mb-2">Sistema
                 </p>
+                <a href="{{ route('manual.sistema') }}"
+                    class="{{ $linkClass }} {{ request()->routeIs('manual.sistema') ? $activeClass : $inactiveClass }}">
+                    <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('manual.sistema') ? $iconActiveClass : $iconInactiveClass }}"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    Manual do Sistema
+                </a>
                 <a href="{{ route('sobre') }}"
                     class="{{ $linkClass }} {{ request()->routeIs('sobre') ? $activeClass : $inactiveClass }}">
                     <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('sobre') ? $iconActiveClass : $iconInactiveClass }}"
