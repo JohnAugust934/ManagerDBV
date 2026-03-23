@@ -15,9 +15,14 @@ if (! is_string($backupNotificationMailFallback) || trim($backupNotificationMail
     $backupNotificationMailFallback = 'hello@example.com';
 }
 
+$backupNotificationMailRaw = env('BACKUP_NOTIFICATIONS_MAIL_TO');
+if (! is_string($backupNotificationMailRaw) || trim($backupNotificationMailRaw) === '') {
+    $backupNotificationMailRaw = $backupNotificationMailFallback;
+}
+
 $backupNotificationMailTo = array_values(array_filter(array_map(
     'trim',
-    explode(',', (string) env('BACKUP_NOTIFICATIONS_MAIL_TO', $backupNotificationMailFallback))
+    explode(',', $backupNotificationMailRaw)
 )));
 
 $backupMailNotificationsEnabled = filter_var(env('BACKUP_MAIL_NOTIFICATIONS', false), FILTER_VALIDATE_BOOL);
