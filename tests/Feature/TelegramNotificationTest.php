@@ -22,6 +22,8 @@ class TelegramNotificationTest extends TestCase
             'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default' => 'array',
         ]);
 
         app(TelegramNotifier::class)->notifyAdministrativeAction('Backup manual executado', [
@@ -46,6 +48,8 @@ class TelegramNotificationTest extends TestCase
             'services.telegram.bot_token' => 'bot-token',
             'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default' => 'array',
         ]);
 
         app(TelegramNotifier::class)->notifyBackupEvent(new BackupWasSuccessful('local', 'DBV Manager'));
@@ -66,6 +70,8 @@ class TelegramNotificationTest extends TestCase
             'services.telegram.bot_token' => 'bot-token',
             'services.telegram.chat_id' => '123456',
             'services.telegram.error_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default' => 'array',
         ]);
 
         app(TelegramNotifier::class)->notifyException(new \RuntimeException('Falha critica no sistema'));
@@ -84,9 +90,77 @@ class TelegramNotificationTest extends TestCase
             'services.telegram.enabled' => false,
             'services.telegram.bot_token' => null,
             'services.telegram.chat_id' => null,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default' => 'array',
         ]);
 
         app(TelegramNotifier::class)->notifyAdministrativeAction('Teste');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_notificador_deduplica_erros_iguais_durante_janela_de_protecao()
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
+            'services.telegram.error_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 300,
+            'services.telegram.suppress_transient_db_errors' => false,
+            'cache.default' => 'array',
+        ]);
+
+        $exception = new \RuntimeException('Falha critica no sistema');
+
+        app(TelegramNotifier::class)->notifyException($exception);
+        app(TelegramNotifier::class)->notifyException($exception);
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_notificador_pode_desabilitar_deduplicacao_de_erros()
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
+            'services.telegram.error_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'services.telegram.suppress_transient_db_errors' => false,
+            'cache.default' => 'array',
+        ]);
+
+        $exception = new \RuntimeException('Falha critica no sistema');
+
+        app(TelegramNotifier::class)->notifyException($exception);
+        app(TelegramNotifier::class)->notifyException($exception);
+
+        Http::assertSentCount(2);
+    }
+
+    public function test_notificador_suprime_erro_transitorio_de_banco_na_janela_configurada()
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
+            'services.telegram.error_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'services.telegram.suppress_transient_db_errors' => true,
+            'services.telegram.transient_db_suppress_windows' => '00:00-23:59',
+            'cache.default' => 'array',
+        ]);
+
+        app(TelegramNotifier::class)->notifyException(
+            new \PDOException('SQLSTATE[HY000] [2002] Connection refused')
+        );
 
         Http::assertNothingSent();
     }

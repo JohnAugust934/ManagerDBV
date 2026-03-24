@@ -43,6 +43,9 @@ return [
         'timeout' => (int) env('TELEGRAM_TIMEOUT', 10),
         'admin_notifications' => env('TELEGRAM_ADMIN_NOTIFICATIONS', true),
         'error_notifications' => env('TELEGRAM_ERROR_NOTIFICATIONS', true),
+        'error_dedup_seconds' => (int) env('TELEGRAM_ERROR_DEDUP_SECONDS', 300),
+        'suppress_transient_db_errors' => env('TELEGRAM_SUPPRESS_TRANSIENT_DB_ERRORS', true),
+        'transient_db_suppress_windows' => env('TELEGRAM_TRANSIENT_DB_SUPPRESS_WINDOWS', '02:45-04:45'),
     ],
 
 ];

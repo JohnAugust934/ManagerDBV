@@ -153,22 +153,35 @@ class BackupSystemTest extends TestCase
         $events = collect($schedule->events());
 
         $backupClean = $events->first(fn ($event) => str_contains($event->command, 'backup:clean'));
-        $this->assertNotNull($backupClean, 'O agendamento de limpeza de backups não foi encontrado.');
-        $this->assertEquals('0 4 * * *', $backupClean->expression, 'A limpeza não está agendada para as 04:00 da manhã.');
+        $this->assertNotNull($backupClean, 'O agendamento de limpeza de backups nao foi encontrado.');
+        $this->assertEquals('0 4 * * *', $backupClean->expression, 'A limpeza nao esta agendada para as 04:00 da manha.');
+        $this->assertTrue($backupClean->withoutOverlapping, 'O backup:clean deveria evitar sobreposicao.');
+        $this->assertTrue($backupClean->onOneServer, 'O backup:clean deveria rodar em apenas um servidor.');
 
         $backupRun = $events->first(fn ($event) => str_contains($event->command, 'backup:run'));
-        $this->assertNotNull($backupRun, 'O agendamento de criação de backup não foi encontrado.');
-        $this->assertEquals('0 3 * * *', $backupRun->expression, 'O backup não está agendado para as 03:00 da manhã.');
+        $this->assertNotNull($backupRun, 'O agendamento de criacao de backup nao foi encontrado.');
+        $this->assertEquals('0 3 * * *', $backupRun->expression, 'O backup nao esta agendado para as 03:00 da manha.');
+        $this->assertTrue($backupRun->withoutOverlapping, 'O backup:run deveria evitar sobreposicao.');
+        $this->assertTrue($backupRun->onOneServer, 'O backup:run deveria rodar em apenas um servidor.');
 
         $backupMonitor = $events->first(fn ($event) => str_contains($event->command, 'backup:monitor'));
-        $this->assertNotNull($backupMonitor, 'O agendamento de monitoramento de backups não foi encontrado.');
-        $this->assertEquals('30 4 * * *', $backupMonitor->expression, 'O monitoramento não está agendado para as 04:30 da manhã.');
+        $this->assertNotNull($backupMonitor, 'O agendamento de monitoramento de backups nao foi encontrado.');
+        $this->assertEquals('30 4 * * *', $backupMonitor->expression, 'O monitoramento nao esta agendado para as 04:30 da manha.');
+        $this->assertTrue($backupMonitor->withoutOverlapping, 'O backup:monitor deveria evitar sobreposicao.');
+        $this->assertTrue($backupMonitor->onOneServer, 'O backup:monitor deveria rodar em apenas um servidor.');
 
         $queueMonitor = $events->first(fn ($event) => str_contains($event->command, 'queue:monitor'));
-        $this->assertNotNull($queueMonitor, 'O monitoramento de fila não foi encontrado.');
+        $this->assertNotNull($queueMonitor, 'O monitoramento de fila nao foi encontrado.');
+        $this->assertTrue($queueMonitor->withoutOverlapping, 'O queue:monitor deveria evitar sobreposicao.');
+        $this->assertTrue($queueMonitor->onOneServer, 'O queue:monitor deveria rodar em apenas um servidor.');
+
+        $eventReflection = new \ReflectionClass($queueMonitor);
+        $rejectsProperty = $eventReflection->getProperty('rejects');
+        $rejectsProperty->setAccessible(true);
+        $this->assertGreaterThan(0, count($rejectsProperty->getValue($queueMonitor)), 'O queue:monitor deveria respeitar janela de pausa do backup.');
 
         $rankingSnapshot = $events->first(fn ($event) => str_contains($event->command, 'ranking:snapshot'));
-        $this->assertNotNull($rankingSnapshot, 'O snapshot anual do ranking não foi encontrado.');
+        $this->assertNotNull($rankingSnapshot, 'O snapshot anual do ranking nao foi encontrado.');
     }
 
     public function test_configuracao_de_backup_usa_defaults_seguros_e_monitora_local_e_r2()
@@ -228,3 +241,4 @@ class BackupSystemTest extends TestCase
         $_SERVER[$key] = $value;
     }
 }
+

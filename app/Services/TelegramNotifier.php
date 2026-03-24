@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\OperationalWindow;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -9,6 +10,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use Spatie\Backup\Events\BackupHasFailed;
@@ -125,9 +127,17 @@ class TelegramNotifier
             return;
         }
 
+        if ($this->shouldSuppressTransientDatabaseException($exception)) {
+            return;
+        }
+
         $statusCode = $exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 500;
         $url = request()?->fullUrl();
         $method = request()?->method();
+
+        if (! $this->shouldSendExceptionNotification($exception, $statusCode, $method, $url)) {
+            return;
+        }
 
         $this->send(implode("\n", [
             '<b>🚨 Erro no sistema</b>',
@@ -198,6 +208,79 @@ class TelegramNotifier
         return 'https://api.telegram.org/bot'.config('services.telegram.bot_token').'/sendMessage';
     }
 
+    private function shouldSendExceptionNotification(
+        Throwable $exception,
+        int $statusCode,
+        ?string $method,
+        ?string $url
+    ): bool {
+        $dedupSeconds = max(0, (int) config('services.telegram.error_dedup_seconds', 300));
+        if ($dedupSeconds === 0) {
+            return true;
+        }
+
+        $fingerprint = implode('|', [
+            app()->environment(),
+            (string) $statusCode,
+            $exception::class,
+            $this->limit($exception->getMessage(), 300),
+            (string) $method,
+            (string) $url,
+            $exception->getFile(),
+            (string) $exception->getLine(),
+        ]);
+
+        $key = 'telegram:error:dedup:'.sha1($fingerprint);
+
+        return Cache::add($key, now()->timestamp, $dedupSeconds);
+    }
+
+    private function shouldSuppressTransientDatabaseException(Throwable $exception): bool
+    {
+        if (! (bool) config('services.telegram.suppress_transient_db_errors', true)) {
+            return false;
+        }
+
+        if (! $this->isTransientDatabaseConnectivityException($exception)) {
+            return false;
+        }
+
+        $windows = (string) config('services.telegram.transient_db_suppress_windows', '02:45-04:45');
+        if (trim($windows) === '') {
+            return false;
+        }
+
+        return OperationalWindow::isNowInAnyWindow($windows, (string) config('app.timezone', 'UTC'));
+    }
+
+    private function isTransientDatabaseConnectivityException(Throwable $exception): bool
+    {
+        $needlePatterns = [
+            'sqlstate[hy000] [2002] connection refused',
+            'sqlstate[hy000] [2002] no such file or directory',
+            'sqlstate[hy000] [2006] mysql server has gone away',
+            'sqlstate[08006]',
+            'sqlstate[08001]',
+            'could not connect to server',
+            'server has gone away',
+        ];
+
+        $current = $exception;
+        while ($current !== null) {
+            $message = strtolower($current->getMessage());
+
+            foreach ($needlePatterns as $pattern) {
+                if (str_contains($message, $pattern)) {
+                    return true;
+                }
+            }
+
+            $current = $current->getPrevious();
+        }
+
+        return false;
+    }
+
     private function timestamp(): string
     {
         return Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
@@ -235,3 +318,6 @@ class TelegramNotifier
         return (string) $value;
     }
 }
+
+
+
