@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
@@ -47,12 +47,12 @@
         <tr>
             <td>
                 <span class="label">Data da reuniao</span>
-                <span class="value">{{ $ata->data_reuniao?->format('d/m/Y') ?? 'Nao informado' }}</span>
+                <span class="value">{{ $ata->data_reuniao?->format('d/m/Y')?? 'Não informado' }}</span>
             </td>
             <td>
                 <span class="label">Horario</span>
                 <span class="value">
-                    {{ optional($ata->hora_inicio)->format('H:i') ?? 'Nao informado' }}
+                    {{ optional($ata->hora_inicio)->format('H:i')?? 'Não informado' }}
                     @if ($ata->hora_fim)
                         as {{ optional($ata->hora_fim)->format('H:i') }}
                     @endif
@@ -60,7 +60,7 @@
             </td>
             <td>
                 <span class="label">Local</span>
-                <span class="value">{{ $ata->local ?: 'Nao informado' }}</span>
+                <span class="value">{{ $ata->local?: 'Não informado' }}</span>
             </td>
         </tr>
     </table>
@@ -76,7 +76,7 @@
                     </td>
                     <td>
                         <span class="field-label">Participantes</span>
-                        <span class="field-value">{{ $ata->participantes ?: 'Nao informado' }}</span>
+                        <span class="field-value">{{ $ata->participantes?: 'Não informado' }}</span>
                     </td>
                 </tr>
             </table>
@@ -106,3 +106,4 @@
     <div class="footer">Sistema de Gestao Desbravadores Manager</div>
 </body>
 </html>
+

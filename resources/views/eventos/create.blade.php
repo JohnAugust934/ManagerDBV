@@ -9,8 +9,8 @@
         </h2>
     </x-slot>
 
-    <div class="py-8 bg-gray-50 dark:bg-dbv-dark-bg min-h-screen">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="ui-page min-h-full">
+        <div class="max-w-4xl mx-auto">
 
             <div
                 class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -127,7 +127,7 @@
                             <div class="md:col-span-2">
                                 <x-input-label for="descricao" :value="__('Descrição / O que levar (Opcional)')" />
                                 <textarea id="descricao" name="descricao" rows="3"
-                                    class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-dbv-blue focus:ring-dbv-blue rounded-md shadow-sm resize-none"
+                                    class="ui-input mt-1 resize-none"
                                     placeholder="Lista de materiais, uniforme exigido, etc.">{{ old('descricao') }}</textarea>
                                 <x-input-error :messages="$errors->get('descricao')" class="mt-2" />
                             </div>
@@ -137,12 +137,12 @@
                         <div
                             class="pt-6 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-4">
                             <a href="{{ route('eventos.index') }}"
-                                class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition shadow-sm">
+                                class="ui-btn-secondary">
                                 Cancelar
                             </a>
 
                             <button type="submit"
-                                class="px-6 py-2 bg-dbv-blue hover:bg-blue-800 text-white rounded-lg font-bold shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-0.5 active:translate-y-0">
+                                class="ui-btn-primary">
                                 Salvar Evento
                             </button>
                         </div>

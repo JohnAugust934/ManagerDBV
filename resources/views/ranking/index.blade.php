@@ -1,11 +1,11 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
             🏆 {{ $titulo }}
         </h2>
     </x-slot>
 
-    <div class="py-8 space-y-8">
+    <div class="ui-page space-y-8">
 
         @if ($top3->count() > 0)
             <div class="flex justify-center items-end gap-2 md:gap-8 min-h-[320px] px-2 mb-12">
@@ -192,3 +192,5 @@
 
     </div>
 </x-app-layout>
+
+

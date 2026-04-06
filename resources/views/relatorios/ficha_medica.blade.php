@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
@@ -23,8 +23,8 @@
         <div class="eyebrow">Ficha Médica de Emergência</div>
         <h1>{{ $desbravador->nome }}</h1>
         <div class="meta">
-            Clube: {{ Auth::user()->club->nome ?? 'Clube de Desbravadores' }} |
-            Unidade: {{ $desbravador->unidade->nome ?? 'Sem unidade' }} |
+            Clube: {{ Auth::user()->club->nome?? 'Clube de Desbravadores' }} |
+            Unidade: {{ $desbravador->unidade->nome?? 'Sem unidade' }} |
             Emitido em {{ now()->format('d/m/Y H:i') }}
         </div>
     </div>
@@ -32,29 +32,29 @@
     <div class="panel">
         <h2>Dados Pessoais</h2>
         <ul class="list">
-            <li><strong>Nascimento:</strong> {{ $desbravador->data_nascimento?->format('d/m/Y') ?? '-' }} ({{ $desbravador->data_nascimento?->age ?? '-' }} anos)</li>
-            <li><strong>Sexo:</strong> {{ $desbravador->sexo === 'M' ? 'Masculino' : ($desbravador->sexo === 'F' ? 'Feminino' : '-') }}</li>
-            <li><strong>Classe:</strong> {{ $desbravador->classe->nome ?? 'Não definida' }}</li>
-            <li><strong>Responsável:</strong> {{ $desbravador->nome_responsavel ?: '-' }}</li>
-            <li><strong>Telefone do responsável:</strong> {{ $desbravador->telefone_responsavel ?: '-' }}</li>
-            <li><strong>Telefone do desbravador:</strong> {{ $desbravador->telefone ?: '-' }}</li>
-            <li><strong>Endereço:</strong> {{ $desbravador->endereco ?: '-' }}</li>
+            <li><strong>Nascimento:</strong> {{ $desbravador->data_nascimento?->format('d/m/Y')?? '-' }} ({{ $desbravador->data_nascimento?->age?? '-' }} anos)</li>
+            <li><strong>Sexo:</strong> {{ $desbravador->sexo === 'M'? 'Masculino' : ($desbravador->sexo === 'F'? 'Feminino' : '-') }}</li>
+            <li><strong>Classe:</strong> {{ $desbravador->classe->nome?? 'Não definida' }}</li>
+            <li><strong>Responsável:</strong> {{ $desbravador->nome_responsavel?: '-' }}</li>
+            <li><strong>Telefone do responsável:</strong> {{ $desbravador->telefone_responsavel?: '-' }}</li>
+            <li><strong>Telefone do desbravador:</strong> {{ $desbravador->telefone?: '-' }}</li>
+            <li><strong>Endereço:</strong> {{ $desbravador->endereco?: '-' }}</li>
         </ul>
     </div>
 
     <div class="panel">
         <h2>Informações Clínicas</h2>
         <ul class="list">
-            <li><strong>Tipo sanguíneo:</strong> {{ $desbravador->tipo_sanguineo ?: '-' }}</li>
-            <li><strong>Cartão SUS:</strong> {{ $desbravador->numero_sus ?: '-' }}</li>
-            <li><strong>Plano de saúde:</strong> {{ $desbravador->plano_saude ?: 'Não informado' }}</li>
+            <li><strong>Tipo sanguíneo:</strong> {{ $desbravador->tipo_sanguineo?: '-' }}</li>
+            <li><strong>Cartão SUS:</strong> {{ $desbravador->numero_sus?: '-' }}</li>
+            <li><strong>Plano de saude:</strong> {{ $desbravador->plano_saude?: 'Não informado' }}</li>
         </ul>
 
         <div class="alert">
-            <strong>Alergias:</strong> {{ $desbravador->alergias ?: 'Nenhuma alergia registrada.' }}
+            <strong>Alergias:</strong> {{ $desbravador->alergias?: 'Nenhuma alergia registrada.' }}
         </div>
         <div class="alert">
-            <strong>Medicamentos contínuos:</strong> {{ $desbravador->medicamentos_continuos ?: 'Nenhum medicamento registrado.' }}
+            <strong>Medicamentos contínuos:</strong> {{ $desbravador->medicamentos_continuos?: 'Nenhum medicamento registrado.' }}
         </div>
     </div>
 
@@ -71,3 +71,5 @@
     </div>
 </body>
 </html>
+
+

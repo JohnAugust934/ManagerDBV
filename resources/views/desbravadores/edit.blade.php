@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight flex items-center gap-2">
             <svg class="w-6 h-6 text-dbv-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@
                         <div class="flex items-center justify-center">
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="ativo" value="1"
-                                    {{ old('ativo', $desbravador->ativo) ? 'checked' : '' }} class="sr-only peer">
+                                    {{ old('ativo', $desbravador->ativo)? 'checked' : '' }} class="sr-only peer">
                                 <div
                                     class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-500 peer-checked:bg-green-500">
                                 </div>
@@ -102,10 +102,10 @@
                                     class="block mt-1 w-full border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-300 focus:border-dbv-blue focus:ring-dbv-blue rounded-md shadow-sm"
                                     required>
                                     <option value="M"
-                                        {{ old('sexo', $desbravador->sexo) == 'M' ? 'selected' : '' }}>Masculino
+                                        {{ old('sexo', $desbravador->sexo) == 'M'? 'selected' : '' }}>Masculino
                                     </option>
                                     <option value="F"
-                                        {{ old('sexo', $desbravador->sexo) == 'F' ? 'selected' : '' }}>Feminino</option>
+                                        {{ old('sexo', $desbravador->sexo) == 'F'? 'selected' : '' }}>Feminino</option>
                                 </select>
                             </div>
 
@@ -117,7 +117,7 @@
                                     <option value="">Selecione...</option>
                                     @foreach ($unidades as $unidade)
                                         <option value="{{ $unidade->id }}"
-                                            {{ old('unidade_id', $desbravador->unidade_id) == $unidade->id ? 'selected' : '' }}>
+                                            {{ old('unidade_id', $desbravador->unidade_id) == $unidade->id? 'selected' : '' }}>
                                             {{ $unidade->nome }}</option>
                                     @endforeach
                                 </select>
@@ -130,7 +130,7 @@
                                     <option value="">Selecione...</option>
                                     @foreach ($classes as $classe)
                                         <option value="{{ $classe->id }}"
-                                            {{ old('classe_atual', $desbravador->classe_atual) == $classe->id ? 'selected' : '' }}>
+                                            {{ old('classe_atual', $desbravador->classe_atual) == $classe->id? 'selected' : '' }}>
                                             {{ $classe->nome }}</option>
                                     @endforeach
                                 </select>
@@ -224,7 +224,7 @@
                                     <option value="">Não sei</option>
                                     @foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $tipo)
                                         <option value="{{ $tipo }}"
-                                            {{ old('tipo_sanguineo', $desbravador->tipo_sanguineo) == $tipo ? 'selected' : '' }}>
+                                            {{ old('tipo_sanguineo', $desbravador->tipo_sanguineo) == $tipo? 'selected' : '' }}>
                                             {{ $tipo }}</option>
                                     @endforeach
                                 </select>
@@ -250,9 +250,9 @@
                     <div
                         class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-100 dark:border-slate-700">
                         <button type="button"
-                            class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 border border-transparent rounded-lg font-bold text-xs uppercase tracking-widest transition"
+                            class="ui-btn-danger w-full sm:w-auto"
                             onclick="if(confirm('Excluir este desbravador apagará permanentemente todos os dados e vínculos cadastrados. O recomendado é apenas inativar o cadastro. Deseja excluir mesmo assim?')) document.getElementById('delete-form').submit()">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -264,12 +264,12 @@
 
                         <div class="flex flex-col-reverse sm:flex-row w-full sm:w-auto gap-3">
                             <a href="{{ route('desbravadores.show', $desbravador) }}"
-                                class="w-full sm:w-auto text-center px-4 py-3 sm:py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition">
+                                class="ui-btn-secondary w-full sm:w-auto">
                                 {{ __('Cancelar') }}
                             </a>
                             <button type="submit"
-                                class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 bg-dbv-blue border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-800 active:bg-blue-900 transition shadow-sm">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="ui-btn-primary w-full sm:w-auto">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M5 13l4 4L19 7" />
                                 </svg>
@@ -289,3 +289,4 @@
         </div>
     </div>
 </x-app-layout>
+

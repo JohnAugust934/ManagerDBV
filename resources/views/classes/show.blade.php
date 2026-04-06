@@ -1,27 +1,16 @@
-<x-app-layout>
+﻿<x-app-layout>
     {{-- Injetando dados no cabeçalho do Layout Principal --}}
     <x-slot name="header">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-                <a href="{{ route('classes.index') }}"
-                    class="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 transition"
-                    title="Voltar">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                </a>
+        <div class="flex items-center gap-4">
+            <div class="w-3 h-10 rounded-full shadow-sm" style="background-color: {{ $classe->cor }}"></div>
 
-                <div class="w-3 h-10 rounded-full shadow-sm" style="background-color: {{ $classe->cor }}"></div>
-
-                <div>
-                    <h2 class="font-bold text-xl text-gray-800 dark:text-gray-100 leading-tight">
-                        {{ $classe->nome }}
-                    </h2>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $desbravadores->count() }} alunos matriculados
-                    </p>
-                </div>
+            <div>
+                <h2 class="font-bold text-xl text-gray-800 dark:text-gray-100 leading-tight">
+                    {{ $classe->nome }}
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ $desbravadores->count() }} alunos matriculados
+                </p>
             </div>
         </div>
     </x-slot>
@@ -30,12 +19,23 @@
     <div x-data="classManager({{ $classe->id }}, {{ $desbravadores->toJson() }})" class="min-h-screen pb-20">
 
         <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="px-0 flex justify-start">
+                <a href="{{ route('classes.index') }}"
+                    class="ui-btn-secondary w-full sm:w-auto"
+                    title="Voltar">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Voltar
+                </a>
+            </div>
 
             {{-- TABS DE NAVEGAÇÃO --}}
             <div class="border-b border-gray-200 dark:border-gray-700">
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                     <button @click="activeTab = 'alunos'"
-                        :class="activeTab === 'alunos' ?
+                        :class="activeTab === 'alunos'?
                             'border-dbv-blue text-dbv-blue dark:text-blue-400 dark:border-blue-400' :
                             'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2">
@@ -48,7 +48,7 @@
                     </button>
 
                     <button @click="activeTab = 'lote'"
-                        :class="activeTab === 'lote' ?
+                        :class="activeTab === 'lote'?
                             'border-dbv-blue text-dbv-blue dark:text-blue-400 dark:border-blue-400' :
                             'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2">
@@ -63,21 +63,11 @@
             </div>
 
             {{-- CONTEÚDO TAB 1: ALUNOS --}}
-            <div x-show="activeTab === 'alunos'" class="animate-fade-in">
+            <div x-show="activeTab === 'alunos'" class="ui-animate-fade-up">
                 @if ($desbravadores->isEmpty())
-                    <div
-                        class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-dashed border-gray-300 dark:border-gray-700">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
-                            </path>
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nenhum aluno nesta classe
-                        </h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Verifique a data de nascimento dos
-                            desbravadores.</p>
-                    </div>
+                    <x-empty-state
+                        title="Nenhum aluno nesta classe"
+                        description="Verifique a classificacao etaria e a vinculacao de classe dos desbravadores." />
                 @else
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         @foreach ($desbravadores as $dbv)
@@ -96,7 +86,7 @@
 
                                     <div
                                         class="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                                        <div class="bg-{{ $classe->cor == '#3B82F6' ? 'blue' : 'green' }}-500 h-2.5 rounded-full transition-all duration-500"
+                                        <div class="bg-{{ $classe->cor == '#3B82F6'? 'blue' : 'green' }}-500 h-2.5 rounded-full transition-all duration-500"
                                             style="width: {{ $dbv->progresso_percentual }}%; background-color: {{ $classe->cor }}">
                                         </div>
                                     </div>
@@ -117,7 +107,7 @@
 
             {{-- CONTEÚDO TAB 2: LOTE --}}
             <div x-show="activeTab === 'lote'" x-cloak
-                class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 animate-fade-in">
+                class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 ui-animate-fade-up">
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selecione o Requisito
                         da Aula de Hoje:</label>
@@ -140,7 +130,7 @@
                     </div>
 
                     @if ($desbravadores->isEmpty())
-                        <p class="text-center text-gray-500 py-4">Sem alunos nesta classe.</p>
+                        <x-empty-state title="Sem alunos nesta classe" description="Inclua alunos nesta classe para registrar requisitos em lote." />
                     @else
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                             <template x-for="student in students" :key="student.id">
@@ -158,13 +148,10 @@
                     @endif
                 </div>
 
-                <div x-show="!selectedRequisitoId" class="text-center py-10 text-gray-400">
-                    <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Selecione um requisito acima para começar.
+                <div x-show="!selectedRequisitoId">
+                    <x-empty-state
+                        title="Nenhum requisito selecionado"
+                        description="Selecione um requisito acima para iniciar a aula em lote." />
                 </div>
             </div>
 
@@ -313,3 +300,6 @@
         }
     </script>
 </x-app-layout>
+
+
+

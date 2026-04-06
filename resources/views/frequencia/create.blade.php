@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-200 leading-tight">
             {{ __('Registro de Chamada e Pontuação') }}
@@ -6,9 +6,9 @@
     </x-slot>
 
     {{-- Adicionamos o Alpine.js x-data aqui para gerenciar o filtro instantâneo --}}
-    <div class="py-12" x-data="{ filtroUnidade: '' }">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="ui-page" x-data="{ filtroUnidade: '' }">
+        <div>
+            <div class="ui-card overflow-hidden">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
 
                     <form action="{{ route('frequencia.store') }}" method="POST">
@@ -21,7 +21,7 @@
                                 <x-input-label for="data" :value="__('Data da Reunião')"
                                     class="font-bold text-dbv-blue dark:text-blue-300" />
                                 <input type="date" name="data" id="data" value="{{ date('Y-m-d') }}" required
-                                    class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 focus:border-dbv-blue focus:ring-dbv-blue rounded-md shadow-sm transition-colors">
+                                    class="ui-input mt-1">
                             </div>
 
                             {{-- Novo Filtro de Unidade --}}
@@ -29,7 +29,7 @@
                                 <x-input-label for="filtro" :value="__('Filtrar por Unidade')"
                                     class="font-bold text-dbv-blue dark:text-blue-300" />
                                 <select id="filtro" x-model="filtroUnidade"
-                                    class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 focus:border-dbv-blue focus:ring-dbv-blue rounded-md shadow-sm transition-colors cursor-pointer">
+                                    class="ui-input mt-1 cursor-pointer">
                                     <option value="">Todas as Unidades (Visão Geral)</option>
                                     @foreach ($unidades as $u)
                                         <option value="{{ $u->id }}">{{ $u->nome }}</option>
@@ -139,3 +139,5 @@
         </div>
     </div>
 </x-app-layout>
+
+

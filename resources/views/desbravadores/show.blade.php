@@ -1,37 +1,19 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between w-full h-full gap-4">
-            <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
-                {{ __('Perfil do Desbravador') }}
-            </h2>
-
-            <div class="hidden md:flex items-center gap-2 shrink-0">
-                <a href="{{ route('desbravadores.index') }}"
-                    class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none transition shadow-sm">
-                    Voltar
-                </a>
-                <a href="{{ route('desbravadores.edit', $desbravador) }}"
-                    class="inline-flex items-center justify-center px-4 py-2 bg-dbv-yellow border border-transparent rounded-lg font-bold text-xs text-yellow-900 uppercase tracking-widest hover:bg-yellow-500 active:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition ease-in-out duration-150 shadow-sm">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Editar
-                </a>
-            </div>
-        </div>
+        <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
+            {{ __('Perfil do Desbravador') }}
+        </h2>
     </x-slot>
 
     <div class="py-6 space-y-6">
-
-        <div class="grid grid-cols-2 gap-3 md:hidden px-4">
+        <div class="px-4 sm:px-0 flex flex-col sm:flex-row sm:justify-end gap-2">
             <a href="{{ route('desbravadores.index') }}"
-                class="flex items-center justify-center py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl font-bold text-sm text-gray-700 dark:text-gray-300 shadow-sm">
+                class="ui-btn-secondary w-full sm:w-auto">
                 Voltar
             </a>
             <a href="{{ route('desbravadores.edit', $desbravador) }}"
-                class="flex items-center justify-center py-3 bg-dbv-yellow border border-transparent rounded-xl font-bold text-sm text-yellow-900 shadow-sm">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="ui-btn-primary w-full sm:w-auto">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
@@ -60,8 +42,8 @@
                             </div>
                         @endif
 
-                        <div class="absolute bottom-2 right-2 w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 {{ $desbravador->ativo ? 'bg-green-500' : 'bg-red-500' }}"
-                            title="{{ $desbravador->ativo ? 'Ativo' : 'Inativo' }}"></div>
+                        <div class="absolute bottom-2 right-2 w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 {{ $desbravador->ativo? 'bg-green-500' : 'bg-red-500' }}"
+                            title="{{ $desbravador->ativo? 'Ativo' : 'Inativo' }}"></div>
                     </div>
 
                     <div class="flex-1 min-w-0 pb-2">
@@ -73,7 +55,7 @@
                                     class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-1">
                                     <span
                                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
-                                        {{ $desbravador->cargo ?? 'Desbravador' }}
+                                        {{ $desbravador->cargo?? 'Desbravador' }}
                                     </span>
                                     <span>&bull;</span>
                                     <span>{{ \Carbon\Carbon::parse($desbravador->data_nascimento)->age }} anos</span>
@@ -126,7 +108,7 @@
                         <div>
                             <p class="text-xs text-gray-500 dark:text-gray-400">Classe Atual</p>
                             <p class="font-semibold text-gray-800 dark:text-gray-200">
-                                {{ $desbravador->classe->nome ?? 'Não informada' }}</p>
+                                {{ $desbravador->classe->nome?? 'Não informada' }}</p>
                         </div>
                     </div>
 
@@ -141,8 +123,8 @@
                             <p class="text-xs text-gray-500 dark:text-gray-400">Presença (Últimas 5)</p>
                             <div class="flex gap-1 mt-1">
                                 @forelse($desbravador->frequencias as $freq)
-                                    <div class="w-2.5 h-2.5 rounded-full {{ $freq->presente ? 'bg-green-500' : 'bg-red-400' }}"
-                                        title="{{ \Carbon\Carbon::parse($freq->data)->format('d/m') }}: {{ $freq->presente ? 'Presente' : 'Falta' }}">
+                                    <div class="w-2.5 h-2.5 rounded-full {{ $freq->presente? 'bg-green-500' : 'bg-red-400' }}"
+                                        title="{{ \Carbon\Carbon::parse($freq->data)->format('d/m') }}: {{ $freq->presente? 'Presente' : 'Falta' }}">
                                     </div>
                                 @empty
                                     <span class="text-xs text-gray-400">-</span>
@@ -161,7 +143,7 @@
                         <div>
                             <p class="text-xs text-gray-500 dark:text-gray-400">Tipo Sanguíneo</p>
                             <p class="font-bold text-gray-800 dark:text-gray-200">
-                                {{ $desbravador->tipo_sanguineo ?? 'N/A' }}</p>
+                                {{ $desbravador->tipo_sanguineo?? 'N/A' }}</p>
                         </div>
                     </div>
                 </div>
@@ -215,7 +197,7 @@
                         <div>
                             <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase">RG</span>
                             <span
-                                class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->rg ?? 'Não informado' }}</span>
+                                class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->rg?? 'Não informado' }}</span>
                         </div>
                     </div>
                 </div>
@@ -236,7 +218,7 @@
                             <div class="break-all">
                                 <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase">Email</span>
                                 <span
-                                    class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->email ?? 'Não informado' }}</span>
+                                    class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->email?? 'Não informado' }}</span>
                             </div>
                         </li>
                         <li class="flex items-start gap-3">
@@ -248,7 +230,7 @@
                             <div>
                                 <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase">Telefone</span>
                                 <span
-                                    class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->telefone ?? 'Não informado' }}</span>
+                                    class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->telefone?? 'Não informado' }}</span>
                             </div>
                         </li>
                         <li class="flex items-start gap-3">
@@ -320,7 +302,7 @@
                             <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase">Plano de
                                 Saúde</span>
                             <span
-                                class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->plano_saude ?? 'Particular / SUS' }}</span>
+                                class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $desbravador->plano_saude?? 'Particular / SUS' }}</span>
                         </div>
                     </div>
                 </div>
@@ -366,3 +348,4 @@
 
     </div>
 </x-app-layout>
+

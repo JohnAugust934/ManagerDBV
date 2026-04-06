@@ -1,30 +1,23 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between w-full h-full gap-4">
-            <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
-                Atos Oficiais
-            </h2>
-
-            <a href="{{ route('atos.create') }}"
-                class="hidden md:inline-flex items-center justify-center px-4 py-2 bg-dbv-red border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition shadow-md shrink-0">
-                Novo Ato
-            </a>
-        </div>
+        <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
+            Atos Oficiais
+        </h2>
     </x-slot>
 
-    <div class="py-6 space-y-6">
-        <div class="md:hidden px-4">
+    <div class="ui-page space-y-6">
+        <div class="px-4 sm:px-0 flex justify-end">
             <a href="{{ route('atos.create') }}"
-                class="w-full flex items-center justify-center px-4 py-3 bg-dbv-red border border-transparent rounded-xl font-bold text-sm text-white uppercase tracking-widest hover:bg-red-700 shadow-md transition">
+                class="ui-btn-primary w-full sm:w-auto">
                 Novo Ato
             </a>
         </div>
 
         <div class="px-4 md:px-0">
             @if ($atos->isEmpty())
-                <div class="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-700">
-                    <p class="text-gray-500 dark:text-gray-400">Nenhum ato oficial registrado.</p>
-                </div>
+                <x-empty-state
+                    title="Nenhum ato oficial registrado"
+                    description="Publique o primeiro ato para iniciar o historico oficial da secretaria." />
             @else
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                     <div class="overflow-x-auto">
@@ -82,3 +75,6 @@
         </div>
     </div>
 </x-app-layout>
+
+
+

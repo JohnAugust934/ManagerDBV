@@ -1,12 +1,12 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
             {{ __('Inventário de Patrimônio') }}
         </h2>
     </x-slot>
 
-    <div class="py-6 md:py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="ui-page space-y-8">
+        <div class="space-y-8">
 
             {{-- 1. Dashboard de Resumo (KPIs) --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -35,7 +35,7 @@
                 {{-- Precisa Atenção --}}
                 <div
                     class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border-l-4 border-red-400 dark:border-red-500">
-                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Inservíveis/Ruins</p>
+                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Inserviveis/Ruins</p>
                     <h3 class="text-2xl font-bold text-red-500 dark:text-red-400 mt-1">{{ $itensRuins }}</h3>
                 </div>
             </div>
@@ -53,13 +53,13 @@
                         </svg>
                     </div>
                     <input type="text" name="search" value="{{ $search }}"
-                        placeholder="Buscar item, local ou observação..."
-                        class="pl-10 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 focus:border-dbv-blue focus:ring focus:ring-dbv-blue focus:ring-opacity-50 sm:text-sm transition-shadow h-10">
+                        placeholder="Buscar item, local ou observacao..."
+                        class="ui-input pl-10 h-10">
                 </form>
 
                 {{-- Botão Novo --}}
                 <a href="{{ route('patrimonio.create') }}"
-                    class="w-full md:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-dbv-blue dark:bg-blue-600 border border-transparent rounded-lg font-bold text-sm text-white uppercase tracking-widest hover:bg-blue-800 dark:hover:bg-blue-500 shadow-md transform hover:-translate-y-0.5 transition-all">
+                    class="ui-btn-primary w-full sm:w-auto">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -118,7 +118,7 @@
                                                     <div class="text-sm font-bold text-gray-900 dark:text-white">
                                                         {{ $item->item }}</div>
                                                     <div class="text-xs text-gray-500 dark:text-gray-400">Aq:
-                                                        {{ $item->data_aquisicao ? \Carbon\Carbon::parse($item->data_aquisicao)->format('d/m/Y') : '-' }}
+                                                        {{ $item->data_aquisicao? \Carbon\Carbon::parse($item->data_aquisicao)->format('d/m/Y') : '-' }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -133,16 +133,16 @@
                                                 $colors = [
                                                     'novo' => 'bg-green-100 text-green-800 border-green-200',
                                                     'bom' => 'bg-blue-100 text-blue-800 border-blue-200',
-                                                    'ótimo' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                                    '?timo' => 'bg-blue-100 text-blue-800 border-blue-200',
                                                     'regular' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
                                                     'ruim' => 'bg-orange-100 text-orange-800 border-orange-200',
-                                                    'pessimo' => 'bg-red-100 text-red-800 border-red-200',
+                                                    'péssimo' => 'bg-red-100 text-red-800 border-red-200',
                                                     'péssimo' => 'bg-red-100 text-red-800 border-red-200',
                                                     'inservível' => 'bg-red-100 text-red-800 border-red-200',
-                                                    'inservivel' => 'bg-red-100 text-red-800 border-red-200',
+                                                    'inservível' => 'bg-red-100 text-red-800 border-red-200',
                                                 ];
                                                 $statusClass =
-                                                    $colors[$estado] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                                                    $colors[$estado]?? 'bg-gray-100 text-gray-800 border-gray-200';
                                             @endphp
                                             <span
                                                 class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border {{ $statusClass }}">
@@ -151,7 +151,7 @@
                                         </td>
                                         <td
                                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $item->local_armazenamento ?? '-' }}
+                                            {{ $item->local_armazenamento?? '-' }}
                                         </td>
                                         <td
                                             class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900 dark:text-white">
@@ -237,16 +237,16 @@
                                                 $colorsMobile = [
                                                     'novo' => 'bg-green-100 text-green-800',
                                                     'bom' => 'bg-blue-100 text-blue-800',
-                                                    'ótimo' => 'bg-blue-100 text-blue-800',
+                                                    '?timo' => 'bg-blue-100 text-blue-800',
                                                     'regular' => 'bg-yellow-100 text-yellow-800',
                                                     'ruim' => 'bg-orange-100 text-orange-800',
-                                                    'pessimo' => 'bg-red-100 text-red-800',
+                                                    'péssimo' => 'bg-red-100 text-red-800',
                                                     'péssimo' => 'bg-red-100 text-red-800',
                                                     'inservível' => 'bg-red-100 text-red-800',
-                                                    'inservivel' => 'bg-red-100 text-red-800',
+                                                    'inservível' => 'bg-red-100 text-red-800',
                                                 ];
                                                 $statusClassMobile =
-                                                    $colorsMobile[$estado] ?? 'bg-gray-100 text-gray-800';
+                                                    $colorsMobile[$estado]?? 'bg-gray-100 text-gray-800';
                                             @endphp
                                             <span
                                                 class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold {{ $statusClassMobile }}">
@@ -283,7 +283,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
-                                            {{ $item->local_armazenamento ?? 'Não informado' }}
+                                            {{ $item->local_armazenamento?? 'Não informado' }}
                                         </span>
                                     </div>
                                 </div>
@@ -326,36 +326,16 @@
                         {{ $patrimonios->links() }}
                     </div>
                 @else
-                    {{-- Empty State --}}
-                    <div class="text-center py-16 px-4">
-                        <div class="mx-auto h-24 w-24 text-gray-300 dark:text-gray-600 mb-4">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
-                                </path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Nenhum item encontrado</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-                            @if ($search)
-                                Não encontramos nada com o termo "<strong>{{ $search }}</strong>". Tente outra
-                                palavra.
-                            @else
-                                O inventário do clube está vazio. Comece adicionando os bens e equipamentos.
-                            @endif
-                        </p>
-                        <div class="mt-6">
-                            <a href="{{ route('patrimonio.create') }}"
-                                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-dbv-blue hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
-                                <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd"
-                                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                Adicionar Primeiro Item
-                            </a>
-                        </div>
+                    <div class="p-6">
+                        <x-empty-state
+                            title="Nenhum item encontrado"
+                            description="{{ $search? 'Não encontramos resultados para o termo informado. Ajuste a busca e tente novamente.' : 'O inventário do clube ainda est? vazio. Comece adicionando os bens e equipamentos.' }}">
+                            <x-slot:action>
+                                <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary">
+                                    Adicionar Primeiro Item
+                                </a>
+                            </x-slot:action>
+                        </x-empty-state>
                     </div>
                 @endif
             </div>
@@ -363,3 +343,6 @@
         </div>
     </div>
 </x-app-layout>
+
+
+

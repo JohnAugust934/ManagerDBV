@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 
 <head>
@@ -119,7 +119,7 @@
     <div class="card">
         <div class="header">
             <h1>Clube de Desbravadores</h1>
-            <h2>{{ Auth::user()->club->nome ?? 'Nome do Clube' }}</h2>
+            <h2>{{ Auth::user()->club->nome?? 'Nome do Clube' }}</h2>
         </div>
 
         <div class="content">
@@ -131,7 +131,7 @@
                 <div class="value">{{ Str::limit($desbravador->nome, 25) }}</div>
 
                 <div class="label">Unidade</div>
-                <div class="value">{{ $desbravador->unidade->nome ?? 'Sem Unidade' }}</div>
+                <div class="value">{{ $desbravador->unidade->nome?? 'Sem Unidade' }}</div>
 
                 <table width="100%">
                     <tr>
@@ -141,7 +141,7 @@
                         </td>
                         <td>
                             <div class="label">Tipo Sang.</div>
-                            <div class="value">{{ $desbravador->tipo_sanguineo ?? '-' }}</div>
+                            <div class="value">{{ $desbravador->tipo_sanguineo?? '-' }}</div>
                         </td>
                     </tr>
                 </table>
@@ -160,9 +160,9 @@
         <div style="font-size: 10px;">
             <p><strong>Responsável:</strong> {{ Str::limit($desbravador->nome_responsavel, 30) }}</p>
             <p><strong>Telefone:</strong> {{ $desbravador->telefone_responsavel }}</p>
-            <p><strong>SUS:</strong> {{ $desbravador->numero_sus ?? 'Não informado' }}</p>
-            <p><strong>Plano de Saúde:</strong> {{ $desbravador->plano_saude ?? 'Não possui' }}</p>
-            <p><strong>Alergias:</strong> {{ Str::limit($desbravador->alergias ?? 'Nenhuma', 40) }}</p>
+            <p><strong>SUS:</strong> {{ $desbravador->numero_sus?? 'Não informado' }}</p>
+            <p><strong>Plano de Saúde:</strong> {{ $desbravador->plano_saude?? 'Não possui' }}</p>
+            <p><strong>Alergias:</strong> {{ Str::limit($desbravador->alergias?? 'Nenhuma', 40) }}</p>
         </div>
         <div class="footer">
             Válido para o ano de {{ date('Y') }}
@@ -172,3 +172,4 @@
 </body>
 
 </html>
+

@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight flex items-center gap-2">
             <svg class="w-6 h-6 text-dbv-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,7 +27,7 @@
                         </div>
                         <h1 class="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">ManagerDBV
                         </h1>
-                        <p class="text-gray-500 dark:text-gray-400 text-lg mb-4">Sistema de Gestão para Clubes de
+                        <p class="text-gray-500 dark:text-gray-400 text-lg mb-4">Sistema de Gestao para Clubes de
                             Desbravadores</p>
 
                         <div
@@ -57,7 +57,7 @@
                                 class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-slate-700 mb-6 flex-1 shadow-sm">
                                 <p
                                     class="text-xs font-bold text-dbv-blue dark:text-blue-400 mb-1 uppercase tracking-wider">
-                                    ⚠️ Importante para Chamados:</p>
+                                    ⚠ï¸ Importante para Chamados:</p>
                                 <p class="text-gray-600 dark:text-gray-400 text-xs leading-relaxed">
                                     Na descrição, detalhe o máximo que puder. Informe em <strong>qual tela
                                         estava</strong>, <strong>qual botão clicou</strong> e o <strong>que
@@ -119,3 +119,5 @@
         </div>
     </div>
 </x-app-layout>
+
+

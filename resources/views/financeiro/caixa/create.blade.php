@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
             {{ __('Nova Movimentação') }}
@@ -9,7 +9,7 @@
         Alpine Data: 
         Gerencia o estado do formulário e as listas de categorias dinâmicas.
     --}}
-    <div class="py-6 md:py-12" x-data="{
+    <div class="ui-page" x-data="{
         tipo: '{{ old('tipo', 'saida') }}',
         valor: '{{ old('valor') }}',
         descricao: '{{ old('descricao') }}',
@@ -48,7 +48,7 @@
             this.$refs.form.submit();
         }
     }">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto">
 
             <div
                 class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -125,7 +125,7 @@
                                 </div>
                                 <input id="valor" name="valor" type="number" step="0.01" min="0.01"
                                     x-model="valor"
-                                    class="pl-10 block w-full text-2xl font-bold text-gray-900 dark:text-white border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-dbv-blue focus:border-dbv-blue dark:bg-gray-900"
+                                    class="ui-input pl-10 text-2xl font-bold"
                                     placeholder="0,00" required />
                             </div>
                             <x-input-error class="mt-2" :messages="$errors->get('valor')" />
@@ -139,7 +139,7 @@
                                 <x-input-label for="categoria" value="Categoria *" />
                                 <div class="relative mt-1">
                                     <select id="categoria" name="categoria" x-model="categoria"
-                                        class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-dbv-blue focus:ring-dbv-blue rounded-lg shadow-sm"
+                                        class="ui-input"
                                         required>
                                         <option value="" disabled selected>Selecione uma opção</option>
                                         <template x-for="opcao in categoriasAtuais" :key="opcao">
@@ -190,7 +190,7 @@
                             {{-- Botão que abre o Modal --}}
                             <button type="button"
                                 x-on:click="if(valor && descricao && categoria) { showModal = true } else { alert('Preencha todos os campos obrigatórios') }"
-                                class="inline-flex items-center px-6 py-3 bg-dbv-blue dark:bg-blue-600 border border-transparent rounded-xl font-bold text-white uppercase tracking-widest hover:bg-blue-800 dark:hover:bg-blue-500 focus:bg-blue-800 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-lg">
+                                class="ui-btn-primary">
                                 Registrar
                             </button>
                         </div>
@@ -244,7 +244,7 @@
                                         class="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                                         <span>Tipo:</span>
                                         <span class="font-bold uppercase"
-                                            :class="tipo === 'entrada' ? 'text-green-600' : 'text-red-600'"
+                                            :class="tipo === 'entrada'? 'text-green-600' : 'text-red-600'"
                                             x-text="tipo"></span>
                                     </div>
 
@@ -289,3 +289,5 @@
 
     </div>
 </x-app-layout>
+
+

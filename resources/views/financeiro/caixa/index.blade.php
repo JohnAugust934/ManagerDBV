@@ -1,12 +1,12 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
             {{ __('Fluxo de Caixa') }}
         </h2>
     </x-slot>
 
-    <div class="py-6 md:py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="ui-page space-y-8">
+        <div class="space-y-8">
 
             {{-- 1. Resumo Financeiro (Widgets) --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -17,7 +17,7 @@
                     <div class="relative z-10">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Saldo Atual</p>
                         <h3
-                            class="text-3xl font-bold {{ $saldoAtual >= 0 ? 'text-gray-800 dark:text-white' : 'text-red-500' }}">
+                            class="text-3xl font-bold {{ $saldoAtual >= 0? 'text-gray-800 dark:text-white' : 'text-red-500' }}">
                             R$ {{ number_format($saldoAtual, 2, ',', '.') }}
                         </h3>
                     </div>
@@ -81,7 +81,7 @@
                 </div>
 
                 <a href="{{ route('caixa.create') }}"
-                    class="w-full sm:w-auto bg-dbv-blue dark:bg-blue-600 hover:bg-blue-800 dark:hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 group">
+                    class="ui-btn-primary w-full sm:w-auto flex items-center justify-center group">
                     <div class="bg-white/20 p-1 rounded-full group-hover:bg-white/30 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -153,8 +153,8 @@
                                             @endif
                                         </td>
                                         <td
-                                            class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold {{ $lancamento->tipo === 'entrada' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                            {{ $lancamento->tipo === 'entrada' ? '+' : '-' }} R$
+                                            class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold {{ $lancamento->tipo === 'entrada'? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                            {{ $lancamento->tipo === 'entrada'? '+' : '-' }} R$
                                             {{ number_format($lancamento->valor, 2, ',', '.') }}
                                         </td>
                                     </tr>
@@ -222,8 +222,8 @@
                                 {{-- Valor --}}
                                 <div class="flex-shrink-0 text-right pl-3">
                                     <span
-                                        class="block text-sm font-bold {{ $lancamento->tipo === 'entrada' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                        {{ $lancamento->tipo === 'entrada' ? '+' : '-' }} R$
+                                        class="block text-sm font-bold {{ $lancamento->tipo === 'entrada'? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                        {{ $lancamento->tipo === 'entrada'? '+' : '-' }} R$
                                         {{ number_format($lancamento->valor, 2, ',', '.') }}
                                     </span>
                                 </div>
@@ -236,25 +236,14 @@
                         {{ $lancamentos->links() }}
                     </div>
                 @else
-                    {{-- Empty State (Sem dados) --}}
-                    <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
-                        <div
-                            class="w-20 h-20 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                            <svg class="w-10 h-10 text-gray-300 dark:text-gray-500" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">O caixa está vazio</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mt-2 mb-8 leading-relaxed">
-                            Ainda não há lançamentos registrados para este clube. Que tal começar agora?
-                        </p>
-                        {{-- Botão Duplicado no Empty State para facilitar --}}
-                        <a href="{{ route('caixa.create') }}"
-                            class="inline-flex items-center text-dbv-blue dark:text-blue-400 font-semibold hover:underline">
-                            Registrar primeiro lançamento &rarr;
-                        </a>
+                    <div class="p-6">
+                        <x-empty-state
+                            title="O caixa est? vazio"
+                            description="Ainda não ha lancamentos registrados para este clube. Que tal comecar agora?">
+                            <x-slot:action>
+                                <a href="{{ route('caixa.create') }}" class="ui-btn-primary">Registrar Primeiro Lancamento</a>
+                            </x-slot:action>
+                        </x-empty-state>
                     </div>
                 @endif
             </div>
@@ -262,3 +251,6 @@
         </div>
     </div>
 </x-app-layout>
+
+
+

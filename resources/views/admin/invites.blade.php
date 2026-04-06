@@ -1,72 +1,68 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Gestão Master - Convites') }}
+        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
+            {{ __('Gestao Master - Convites') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="ui-page space-y-6">
+        <div class="ui-card p-6">
+            <h3 class="ui-title text-lg mb-4">Gerar Novo Convite (Diretor)</h3>
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Gerar Novo Convite (Diretor)</h3>
-
-                @if(session('success'))
-                <div class="mb-4 p-4 text-green-700 bg-green-100 rounded-lg">
+            @if(session('success'))
+                <div class="mb-4 p-4 rounded-xl bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                     {{ session('success') }}
                 </div>
-                @endif
+            @endif
 
-                <form action="{{ route('master.invites.store') }}" method="POST" class="flex gap-4 items-end">
-                    @csrf
-                    <div class="flex-grow">
-                        <x-input-label for="email" value="E-mail do Diretor" />
-                        <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" required />
-                    </div>
-                    <x-primary-button class="mb-1">
-                        Gerar Link
-                    </x-primary-button>
-                </form>
+            <form action="{{ route('master.invites.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+                @csrf
+                <div>
+                    <x-input-label for="email" value="E-mail do Diretor" />
+                    <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" required />
+                </div>
+                <button type="submit" class="ui-btn-primary w-full sm:w-auto">Gerar Link</button>
+            </form>
+        </div>
+
+        <div class="ui-card overflow-hidden">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="ui-title text-lg">Historico de Convites</h3>
             </div>
-
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Histórico de Convites</h3>
-                <table class="min-w-full text-left text-sm font-light text-gray-900 dark:text-gray-100">
-                    <thead class="border-b font-medium dark:border-neutral-500">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-xs uppercase">
                         <tr>
-                            <th scope="col" class="px-6 py-4">Email</th>
-                            <th scope="col" class="px-6 py-4">Link de Cadastro</th>
-                            <th scope="col" class="px-6 py-4">Status</th>
-                            <th scope="col" class="px-6 py-4">Criado em</th>
+                            <th class="px-4 py-3">Email</th>
+                            <th class="px-4 py-3">Link de Cadastro</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Criado em</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @foreach($invites as $invite)
-                        <tr class="border-b dark:border-neutral-500">
-                            <td class="whitespace-nowrap px-6 py-4">{{ $invite->email }}</td>
-                            <td class="whitespace-nowrap px-6 py-4">
-                                @if(!$invite->used_at)
-                                <div class="flex items-center gap-2">
-                                    <input type="text" readonly value="{{ route('register', ['token' => $invite->token]) }}" class="text-xs bg-gray-100 border-0 rounded p-1 w-64 text-gray-600">
-                                </div>
-                                @else
-                                <span class="text-gray-400 italic">Cadastrado</span>
-                                @endif
-                            </td>
-                            <td class="whitespace-nowrap px-6 py-4">
-                                @if($invite->used_at)
-                                <span class="text-green-600 font-bold">Usado</span>
-                                @else
-                                <span class="text-yellow-600 font-bold">Pendente</span>
-                                @endif
-                            </td>
-                            <td class="whitespace-nowrap px-6 py-4">{{ $invite->created_at->format('d/m/Y H:i') }}</td>
-                        </tr>
+                            <tr>
+                                <td class="px-4 py-3">{{ $invite->email }}</td>
+                                <td class="px-4 py-3">
+                                    @if(!$invite->used_at)
+                                        <input type="text" readonly value="{{ route('register', ['token' => $invite->token]) }}" class="ui-input text-xs" />
+                                    @else
+                                        <span class="text-gray-400 italic">Cadastrado</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">
+                                    @if($invite->used_at)
+                                        <span class="font-bold text-green-600 dark:text-green-400">Usado</span>
+                                    @else
+                                        <span class="font-bold text-amber-600 dark:text-amber-400">Pendente</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">{{ $invite->created_at->format('d/m/Y H:i') }}</td>
+                            </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-
         </div>
     </div>
 </x-app-layout>

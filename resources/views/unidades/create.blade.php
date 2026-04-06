@@ -5,10 +5,10 @@
         </h2>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="ui-page">
+        <div class="max-w-2xl mx-auto">
             <div
-                class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                class="ui-card overflow-hidden">
 
                 <div class="p-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30">
                     <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -37,7 +37,7 @@
                         <div>
                             <x-input-label for="grito_guerra" :value="__('Grito de Guerra (Opcional)')" />
                             <textarea id="grito_guerra" name="grito_guerra" rows="4"
-                                class="block mt-1 w-full border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:border-dbv-blue focus:ring-dbv-blue rounded-lg shadow-sm"
+                                class="ui-input mt-1"
                                 placeholder="Digite o grito de guerra aqui...">{{ old('grito_guerra') }}</textarea>
                             <x-input-error :messages="$errors->get('grito_guerra')" class="mt-2" />
                         </div>
@@ -48,7 +48,7 @@
                                 {{ __('Cancelar') }}
                             </x-secondary-button>
 
-                            <x-primary-button class="bg-dbv-blue hover:bg-blue-800">
+                            <x-primary-button>
                                 {{ __('Criar Unidade') }}
                             </x-primary-button>
                         </div>

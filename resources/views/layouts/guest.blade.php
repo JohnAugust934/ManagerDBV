@@ -14,10 +14,10 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="font-sans antialiased text-gray-900 bg-gray-100 overflow-hidden"
-    style="opacity: 0; transition: opacity 0.4s ease-in-out;">
+<body class="font-sans antialiased text-gray-900 bg-gray-100 dark:bg-slate-900 overflow-x-hidden"
+    style="opacity: 0; transition: opacity 0.25s ease-in-out;">
 
-    <div class="min-h-screen flex">
+    <div class="min-h-screen flex flex-col lg:flex-row">
 
         <div class="hidden lg:flex lg:w-1/2 bg-dbv-blue items-center justify-center relative overflow-hidden">
             <div
@@ -31,13 +31,13 @@
                 <h1 class="text-5xl font-bold mb-4 drop-shadow-lg">Salvar do Pecado</h1>
                 <p class="text-xl text-gray-200 tracking-wide font-light">e Guiar no Serviço.</p>
                 <div class="mt-8 border-t border-blue-700/50 pt-8">
-                    <p class="text-sm font-bold tracking-widest uppercase text-dbv-yellow">Sistema de Gestão de Clube
+                    <p class="text-sm font-bold tracking-widest uppercase text-dbv-yellow">Sistema de Gestao de Clube
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white shadow-2xl relative z-10">
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-white dark:bg-slate-950 shadow-2xl relative z-10">
             <div class="w-full max-w-md space-y-8">
                 <div class="text-center lg:text-left">
                     <div class="lg:hidden flex justify-center mb-6">
@@ -45,8 +45,8 @@
                             class="w-16 h-16 bg-dbv-blue rounded-full flex items-center justify-center text-dbv-yellow font-bold text-2xl shadow-lg">
                             DBV</div>
                     </div>
-                    <h2 class="text-3xl font-bold text-dbv-blue">DBV Manager</h2>
-                    <p class="text-gray-500 mt-2">Acesse sua conta para continuar.</p>
+                    <h2 class="text-3xl font-bold text-dbv-blue dark:text-blue-200">DBV Manager</h2>
+                    <p class="text-gray-500 dark:text-slate-400 mt-2">Acesse sua conta para continuar.</p>
                 </div>
                 <div class="mt-8">
                     {{ $slot }}
@@ -57,3 +57,4 @@
 </body>
 
 </html>
+

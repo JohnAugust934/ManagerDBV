@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-200 leading-tight flex items-center gap-2">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -10,7 +10,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-8" x-data="{
+    <div class="ui-page" x-data="{
         isBackingUp: false,
         isImporting: false,
         isRestoring: false,
@@ -37,11 +37,11 @@
             this.showDeleteConfirm = true;
         }
     }">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div>
 
             {{-- PAINEL DE CONTROLE --}}
             <div
-                class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 mb-6">
+                class="ui-card overflow-hidden mb-6">
                 <div
                     class="p-6 bg-red-50 dark:bg-red-900/10 border-b border-red-100 dark:border-red-900/30 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                     <div class="flex-1">
@@ -95,7 +95,7 @@
 
             {{-- LISTA DE BACKUPS --}}
             <div
-                class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700">
+                class="ui-card overflow-hidden">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                     <h3 class="text-lg font-bold text-gray-800 dark:text-white">Arquivos Disponíveis</h3>
                     <span
@@ -105,17 +105,18 @@
                 </div>
 
                 @if (empty($backups))
-                    <div class="p-10 text-center flex flex-col items-center">
-                        <div
-                            class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4 text-gray-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
-                                </path>
-                            </svg>
-                        </div>
-                        <p class="text-gray-500 dark:text-gray-400 font-medium">Nenhum backup encontrado no servidor ou
-                            nuvem.</p>
+                    <div class="p-6">
+                        <x-empty-state
+                            title="Nenhum backup encontrado"
+                            description="Gere um novo backup agora ou importe um arquivo local para iniciar o historico.">
+                            <x-slot:action>
+                                <button onclick="document.getElementById('backupFile').click();" type="button"
+                                    :disabled="isImporting || isBackingUp || isRestoring"
+                                    class="ui-btn-primary disabled:opacity-50">
+                                    Gerar ou Importar Backup
+                                </button>
+                            </x-slot:action>
+                        </x-empty-state>
                     </div>
                 @else
                     <div class="overflow-x-auto">
@@ -234,7 +235,7 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="text-3xl font-black text-gray-900 dark:text-white mb-3">⚠️ Atenção! Ação Crítica</h3>
+                    <h3 class="text-3xl font-black text-gray-900 dark:text-white mb-3">⚠ï¸ Atenção! Ação Crítica</h3>
                     <p class="text-base text-gray-600 dark:text-gray-400 mb-8 max-w-md">
                         Esta ação apagará <strong class="text-gray-800 dark:text-white">TODO</strong> o banco de dados
                         atual e substituirá por este backup. Você será desconectado se a sua senha na época for
@@ -351,9 +352,9 @@
                 </div>
 
                 <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2"
-                    x-text="isRestoring ? 'Restaurando Sistema...' : 'Processando Arquivos...'"></h3>
+                    x-text="isRestoring? 'Restaurando Sistema...' : 'Processando Arquivos...'"></h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-6"
-                    x-text="isRestoring ? 'Apagando banco atual e injetando dados do backup. Isso vai demorar um pouco.' : 'Aguarde o envio ou a geração dos arquivos em segurança.'">
+                    x-text="isRestoring? 'Apagando banco atual e injetando dados do backup. Isso vai demorar um pouco.' : 'Aguarde o envio ou a geração dos arquivos em segurança.'">
                 </p>
 
                 <div
@@ -371,3 +372,6 @@
         </div>
     </div>
 </x-app-layout>
+
+
+

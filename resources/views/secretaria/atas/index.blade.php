@@ -1,30 +1,23 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between w-full h-full gap-4">
-            <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
-                Atas de Reunião
-            </h2>
-
-            <a href="{{ route('atas.create') }}"
-                class="hidden md:inline-flex items-center justify-center px-4 py-2 bg-dbv-blue border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-blue-800 shadow-md shrink-0">
-                Nova Ata
-            </a>
-        </div>
+        <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
+            Atas de Reunião
+        </h2>
     </x-slot>
 
-    <div class="py-6 space-y-6">
-        <div class="md:hidden px-4">
+    <div class="ui-page space-y-6">
+        <div class="px-4 sm:px-0 flex justify-end">
             <a href="{{ route('atas.create') }}"
-                class="w-full flex items-center justify-center px-4 py-3 bg-dbv-blue border border-transparent rounded-xl font-bold text-sm text-white uppercase tracking-widest hover:bg-blue-800 shadow-md transition">
+                class="ui-btn-primary w-full sm:w-auto">
                 Nova Ata
             </a>
         </div>
 
         <div class="px-4 md:px-0">
             @if ($atas->isEmpty())
-                <div class="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-700">
-                    <p class="text-gray-500 dark:text-gray-400">Nenhuma ata registrada.</p>
-                </div>
+                <x-empty-state
+                    title="Nenhuma ata registrada"
+                    description="Crie a primeira ata para iniciar o historico oficial de reunioes." />
             @else
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach ($atas as $ata)
@@ -38,7 +31,7 @@
                                             {{ $ata->data_reuniao?->format('d/m/Y') }}
                                         </span>
                                         <h3 class="font-bold text-gray-800 dark:text-white mt-2">
-                                            {{ $ata->titulo ?? 'Reunião Regular' }}
+                                            {{ $ata->titulo?? 'Reunião Regular' }}
                                         </h3>
                                     </div>
                                     <span class="text-[10px] bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
@@ -81,3 +74,5 @@
         </div>
     </div>
 </x-app-layout>
+
+

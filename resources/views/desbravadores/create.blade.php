@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight flex items-center gap-2">
             <svg class="w-6 h-6 text-dbv-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,8 +81,8 @@
                                     class="block mt-1 w-full border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-300 focus:border-dbv-blue focus:ring-dbv-blue rounded-md shadow-sm"
                                     required>
                                     <option value="">Selecione...</option>
-                                    <option value="M" {{ old('sexo') == 'M' ? 'selected' : '' }}>Masculino</option>
-                                    <option value="F" {{ old('sexo') == 'F' ? 'selected' : '' }}>Feminino</option>
+                                    <option value="M" {{ old('sexo') == 'M'? 'selected' : '' }}>Masculino</option>
+                                    <option value="F" {{ old('sexo') == 'F'? 'selected' : '' }}>Feminino</option>
                                 </select>
                             </div>
 
@@ -94,7 +94,7 @@
                                     <option value="">Selecione uma unidade...</option>
                                     @foreach ($unidades as $unidade)
                                         <option value="{{ $unidade->id }}"
-                                            {{ old('unidade_id') == $unidade->id ? 'selected' : '' }}>
+                                            {{ old('unidade_id') == $unidade->id? 'selected' : '' }}>
                                             {{ $unidade->nome }}</option>
                                     @endforeach
                                 </select>
@@ -107,7 +107,7 @@
                                     <option value="">Selecione a classe...</option>
                                     @foreach ($classes as $classe)
                                         <option value="{{ $classe->id }}"
-                                            {{ old('classe_atual') == $classe->id ? 'selected' : '' }}>
+                                            {{ old('classe_atual') == $classe->id? 'selected' : '' }}>
                                             {{ $classe->nome }}</option>
                                     @endforeach
                                 </select>
@@ -203,7 +203,7 @@
                                     <option value="">Não sei</option>
                                     @foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $tipo)
                                         <option value="{{ $tipo }}"
-                                            {{ old('tipo_sanguineo') == $tipo ? 'selected' : '' }}>{{ $tipo }}
+                                            {{ old('tipo_sanguineo') == $tipo? 'selected' : '' }}>{{ $tipo }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -231,12 +231,12 @@
                     <div
                         class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-slate-700">
                         <a href="{{ route('desbravadores.index') }}"
-                            class="w-full sm:w-auto text-center px-4 py-3 sm:py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition">
+                            class="ui-btn-secondary w-full sm:w-auto">
                             {{ __('Cancelar') }}
                         </a>
                         <button type="submit"
-                            class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 bg-dbv-blue border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-800 active:bg-blue-900 transition shadow-sm">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="ui-btn-primary w-full sm:w-auto">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7" />
                             </svg>
@@ -248,3 +248,4 @@
         </div>
     </div>
 </x-app-layout>
+

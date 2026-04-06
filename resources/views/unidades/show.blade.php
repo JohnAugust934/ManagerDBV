@@ -1,37 +1,19 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between w-full h-full gap-4">
-            <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
-                Unidade {{ $unidade->nome }}
-            </h2>
-
-            <div class="hidden md:flex items-center gap-2 shrink-0">
-                <a href="{{ route('unidades.index') }}"
-                    class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none transition shadow-sm">
-                    Voltar
-                </a>
-                <a href="{{ route('unidades.edit', $unidade) }}"
-                    class="inline-flex items-center justify-center px-4 py-2 bg-dbv-yellow border border-transparent rounded-lg font-bold text-xs text-yellow-900 uppercase tracking-widest hover:bg-yellow-500 active:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition ease-in-out duration-150 shadow-sm">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Editar
-                </a>
-            </div>
-        </div>
+        <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight truncate">
+            Unidade {{ $unidade->nome }}
+        </h2>
     </x-slot>
 
-    <div class="py-6 space-y-6">
-
-        <div class="grid grid-cols-2 gap-3 md:hidden px-4">
+    <div class="ui-page space-y-6">
+        <div class="px-4 sm:px-0 flex flex-col sm:flex-row sm:justify-end gap-2">
             <a href="{{ route('unidades.index') }}"
-                class="flex items-center justify-center py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl font-bold text-sm text-gray-700 dark:text-gray-300 shadow-sm">
+                class="ui-btn-secondary w-full sm:w-auto">
                 Voltar
             </a>
             <a href="{{ route('unidades.edit', $unidade) }}"
-                class="flex items-center justify-center py-3 bg-dbv-yellow border border-transparent rounded-xl font-bold text-sm text-yellow-900 shadow-sm">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="ui-btn-primary w-full sm:w-auto">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
@@ -143,7 +125,7 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $dbv->cargo ?? 'Desbravador' }}
+                                        {{ $dbv->cargo?? 'Desbravador' }}
                                     </td>
                                     <td
                                         class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
@@ -176,7 +158,7 @@
                                 <div>
                                     <h4 class="font-bold text-gray-900 dark:text-white">{{ $dbv->nome }}</h4>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                                        {{ $dbv->cargo ?? 'Desbravador' }} &bull;
+                                        {{ $dbv->cargo?? 'Desbravador' }} &bull;
                                         {{ \Carbon\Carbon::parse($dbv->data_nascimento)->age }} anos</p>
                                 </div>
                             </div>
@@ -198,3 +180,5 @@
         </div>
     </div>
 </x-app-layout>
+
+

@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-200 leading-tight flex items-center gap-2">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -10,8 +10,8 @@
         </h2>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="ui-page">
+        <div>
             <div
                 class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700">
 
@@ -23,9 +23,9 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">Gerencie os acessos e cargos dos membros da
                             diretoria.</p>
                     </div>
-                    <div class="w-full md:w-auto flex flex-col sm:flex-row gap-3">
+                    <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
                         <a href="{{ route('invites.index') }}"
-                            class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-md shadow-green-500/20 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5">
+                            class="ui-btn-primary w-full sm:w-auto flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
@@ -36,22 +36,29 @@
                     </div>
                 </div>
 
-                {{-- LISTAGEM DE USUÁRIOS --}}
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead
-                            class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-300 hidden md:table-header-group">
-                            <tr>
-                                <th scope="col" class="px-6 py-4 font-bold">Usuário</th>
-                                <th scope="col" class="px-6 py-4 font-bold">Cargo Oficial</th>
-                                <th scope="col" class="px-6 py-4 font-bold">Permissões Extras</th>
-                                <th scope="col" class="px-6 py-4 font-bold text-center">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 flex flex-col md:table-row-group">
-                            @foreach ($users as $user)
-                                <tr
-                                    class="flex flex-col md:table-row bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors p-4 md:p-0 gap-3 md:gap-0">
+                {{-- LISTAGEM DE USUARIOS --}}
+                @if ($users->isEmpty())
+                    <div class="p-6">
+                        <x-empty-state
+                            title="Nenhum usuario encontrado"
+                            description="Crie convites para montar a equipe do clube e distribuir os acessos de forma segura." />
+                    </div>
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead
+                                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-300 hidden md:table-header-group">
+                                <tr>
+                                    <th scope="col" class="px-6 py-4 font-bold">Usuario</th>
+                                    <th scope="col" class="px-6 py-4 font-bold">Cargo Oficial</th>
+                                    <th scope="col" class="px-6 py-4 font-bold">Permissões Extras</th>
+                                    <th scope="col" class="px-6 py-4 font-bold text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700 flex flex-col md:table-row-group">
+                                @foreach ($users as $user)
+                                    <tr
+                                        class="flex flex-col md:table-row bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors p-4 md:p-0 gap-3 md:gap-0">
 
                                     {{-- Nome e Email --}}
                                     <td class="px-2 md:px-6 py-2 md:py-4">
@@ -85,7 +92,7 @@
                                                     'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
                                             ];
                                             $colorClass =
-                                                $roleColors[$user->role] ??
+                                                $roleColors[$user->role]??
                                                 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
                                         @endphp
                                         <span
@@ -128,12 +135,12 @@
                                         @if ($user->id !== auth()->id())
                                             <form action="{{ route('usuarios.destroy', $user->id) }}" method="POST"
                                                 class="inline-block"
-                                                onsubmit="return confirm('Tem certeza que deseja remover o acesso deste usuário?');">
+                                                onsubmit="return confirm('Tem certeza que deseja remover o acesso deste usuario?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit"
                                                     class="p-2 text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-lg transition-colors"
-                                                    title="Remover Usuário">
+                                                    title="Remover Usuario">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -145,12 +152,16 @@
                                             </form>
                                         @endif
                                     </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 </x-app-layout>
+
+
+

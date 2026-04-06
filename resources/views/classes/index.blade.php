@@ -1,11 +1,11 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
-            📚 Classes Regulares e Avançadas
+            Classes Regulares e Avancadas
         </h2>
     </x-slot>
 
-    <div class="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="ui-page">
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach ($classes as $classe)
@@ -55,3 +55,5 @@
 
     </div>
 </x-app-layout>
+
+

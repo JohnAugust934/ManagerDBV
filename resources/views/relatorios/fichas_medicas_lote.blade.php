@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
@@ -49,7 +49,7 @@
                 <ul class="list">
                     <li><strong>Tipo sanguíneo:</strong> {{ $desbravador['tipo_sanguineo'] }}</li>
                     <li><strong>Cartão SUS:</strong> {{ $desbravador['numero_sus'] }}</li>
-                    <li><strong>Plano de saúde:</strong> {{ $desbravador['plano_saude'] }}</li>
+                    <li><strong>Plano de saude:</strong> {{ $desbravador['plano_saude'] }}</li>
                 </ul>
                 <div class="alert"><strong>Alergias:</strong> {{ $desbravador['alergias'] }}</div>
                 <div class="alert"><strong>Medicamentos continuos:</strong> {{ $desbravador['medicamentos_continuos'] }}</div>
@@ -62,3 +62,5 @@
     @endforeach
 </body>
 </html>
+
+

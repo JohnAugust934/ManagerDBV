@@ -71,7 +71,7 @@
                 </a>
 
                 <x-primary-button class="ms-4">
-                    {{ $needsClubSetup ? __('Fundar Clube') : __('Completar Cadastro') }}
+                    {{ $needsClubSetup? __('Fundar Clube') : __('Completar Cadastro') }}
                 </x-primary-button>
             </div>
         </form>

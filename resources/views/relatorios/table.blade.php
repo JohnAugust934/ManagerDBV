@@ -86,6 +86,7 @@
         </table>
     @endif
 
-    <div class="footer">Sistema de Gestão Desbravadores Manager</div>
+    <div class="footer">Sistema de Gestao Desbravadores Manager</div>
 </body>
 </html>
+

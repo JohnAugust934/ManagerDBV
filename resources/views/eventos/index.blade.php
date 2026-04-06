@@ -1,12 +1,12 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
             {{ __('Eventos do Clube') }}
         </h2>
     </x-slot>
 
-    <div class="py-6 bg-gray-50 dark:bg-dbv-dark-bg min-h-screen">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="ui-page min-h-full">
+        <div>
 
             {{-- BARRA DE AÇÕES --}}
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-5">
@@ -16,7 +16,7 @@
 
                 @can('secretaria')
                     <a href="{{ route('eventos.create') }}"
-                        class="w-full md:w-auto inline-flex justify-center items-center px-4 py-2 bg-dbv-blue border border-transparent rounded-lg font-semibold text-sm text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md hover:shadow-lg transform active:scale-95">
+                        class="ui-btn-primary w-full sm:w-auto">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
@@ -44,7 +44,7 @@
 
                             {{-- Barra Superior Colorida --}}
                             <div
-                                class="h-2 bg-gradient-to-r {{ $isPassado ? 'from-gray-400 to-gray-600' : 'from-dbv-blue to-blue-500' }}">
+                                class="h-2 bg-gradient-to-r {{ $isPassado? 'from-gray-400 to-gray-600' : 'from-dbv-blue to-blue-500' }}">
                             </div>
 
                             <div class="p-5 flex-1 flex flex-col">
@@ -96,8 +96,8 @@
                                             </path>
                                         </svg>
                                         <span
-                                            class="font-bold {{ $evento->valor == 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300' }}">
-                                            {{ $evento->valor == 0 ? 'Gratuito' : 'R$ ' . number_format($evento->valor, 2, ',', '.') }}
+                                            class="font-bold {{ $evento->valor == 0? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300' }}">
+                                            {{ $evento->valor == 0? 'Gratuito' : 'R$ ' . number_format($evento->valor, 2, ',', '.') }}
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -132,29 +132,19 @@
                     {{ $eventos->links() }}
                 </div>
             @else
-                {{-- Empty State --}}
-                <div
-                    class="flex flex-col items-center justify-center p-10 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-dashed border-gray-300 dark:border-gray-700 text-center">
-                    <div
-                        class="w-16 h-16 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                            </path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-white">Nenhum evento encontrado</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-6 max-w-xs mx-auto">
-                        Comece a planejar o ano do clube criando o primeiro evento do calendário.
-                    </p>
+                <x-empty-state
+                    title="Nenhum evento encontrado"
+                    description="Comece a planejar o ano do clube criando o primeiro evento do calendario.">
                     @can('secretaria')
-                        <a href="{{ route('eventos.create') }}"
-                            class="inline-flex items-center px-4 py-2 bg-dbv-blue border border-transparent rounded-lg font-semibold text-sm text-white uppercase tracking-widest hover:bg-blue-700 transition shadow-md">
-                            Criar Primeiro Evento
-                        </a>
+                        <x-slot:action>
+                            <a href="{{ route('eventos.create') }}" class="ui-btn-primary">Criar Primeiro Evento</a>
+                        </x-slot:action>
                     @endcan
-                </div>
+                </x-empty-state>
             @endif
         </div>
     </div>
 </x-app-layout>
+
+
+

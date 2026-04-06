@@ -1,23 +1,23 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
-            📅 Histórico de Frequência
+            Histórico de Frequência
         </h2>
     </x-slot>
 
-    <div class="py-6 space-y-6">
+    <div class="ui-page space-y-6">
 
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+        <div>
+            <div class="ui-card overflow-hidden p-6">
                 <form action="{{ route('frequencia.index') }}" method="GET"
                     class="flex flex-col md:flex-row items-end gap-4">
 
                     <div class="w-full md:w-1/4">
                         <x-input-label for="mes" :value="__('Mês')" />
                         <select name="mes" id="mes"
-                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            class="ui-input mt-1">
                             @foreach (range(1, 12) as $m)
-                                <option value="{{ $m }}" {{ $mes == $m ? 'selected' : '' }}>
+                                <option value="{{ $m }}" {{ $mes == $m? 'selected' : '' }}>
                                     {{ \Carbon\Carbon::create()->month($m)->locale('pt_BR')->monthName }}
                                 </option>
                             @endforeach
@@ -27,15 +27,15 @@
                     <div class="w-full md:w-1/4">
                         <x-input-label for="ano" :value="__('Ano')" />
                         <select name="ano" id="ano"
-                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            class="ui-input mt-1">
                             @foreach (range(date('Y'), date('Y') - 5) as $y)
-                                <option value="{{ $y }}" {{ $ano == $y ? 'selected' : '' }}>
+                                <option value="{{ $y }}" {{ $ano == $y? 'selected' : '' }}>
                                     {{ $y }}</option>
                             @endforeach
                         </select>
                     </div>
 
-                    <div class="w-full md:w-auto">
+                    <div class="w-full sm:w-auto">
                         <x-primary-button class="h-[42px]">
                             {{ __('Filtrar') }}
                         </x-primary-button>
@@ -44,18 +44,15 @@
             </div>
         </div>
 
-        <div class="max-w-full mx-auto sm:px-6 lg:px-8">
+        <div>
             <div
-                class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-gray-100 dark:border-gray-700">
+                class="ui-card overflow-hidden">
 
                 @if ($datasReunioes->isEmpty())
-                    <div class="p-12 text-center">
-                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p class="text-gray-500 text-lg">Nenhuma chamada registrada para este período.</p>
+                    <div class="p-6">
+                        <x-empty-state
+                            title="Nenhuma chamada registrada"
+                            description="Não h? registros de frequencia para o periodo selecionado." />
                     </div>
                 @else
                     <div class="overflow-x-auto">
@@ -93,7 +90,7 @@
                                         </td>
 
                                         <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
-                                            {{ $dbv->unidade->nome ?? '-' }}
+                                            {{ $dbv->unidade->nome?? '-' }}
                                         </td>
 
                                         @php $presencasTotal = 0; @endphp
@@ -163,3 +160,5 @@
         </div>
     </div>
 </x-app-layout>
+
+

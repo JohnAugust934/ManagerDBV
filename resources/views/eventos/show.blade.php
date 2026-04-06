@@ -1,72 +1,43 @@
-<x-app-layout>
-    {{-- CABEÇALHO (Desktop: Completo | Mobile: Apenas Título) --}}
+﻿<x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
-                {{ __('Eventos do Clube') }}
-            </h2>
+        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
+            {{ __('Eventos do Clube') }}
+        </h2>
+    </x-slot>
 
-            {{-- AÇÕES DESKTOP (Oculto no Mobile) --}}
-            <div class="hidden md:flex items-center gap-2">
+    {{-- CONTEÚDO PRINCIPAL --}}
+    <div class="ui-page min-h-full space-y-6">
+        <div class="space-y-6">
+            <div class="px-4 sm:px-0 flex flex-col sm:flex-row sm:justify-end gap-2">
                 <a href="{{ route('eventos.index') }}"
-                    class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition text-sm font-bold shadow-sm">
+                    class="ui-btn-secondary w-full sm:w-auto">
                     Voltar
                 </a>
 
                 @can('secretaria')
                     <a href="{{ route('eventos.edit', $evento->id) }}"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-bold shadow-md shadow-blue-500/20">
+                        class="ui-btn-primary w-full sm:w-auto">
                         Editar
                     </a>
 
                     @if ($evento->desbravadores->count() == 0)
-                        <form action="{{ route('eventos.destroy', $evento->id) }}" method="POST"
+                        <form action="{{ route('eventos.destroy', $evento->id) }}" method="POST" class="w-full sm:w-auto"
                             onsubmit="return confirm('Tem certeza que deseja excluir este evento?');">
                             @csrf @method('DELETE')
                             <button type="submit"
-                                class="px-4 py-2 bg-red-100 text-red-600 border border-red-200 rounded-lg hover:bg-red-200 transition text-sm font-bold shadow-sm">
+                                class="ui-btn-danger w-full sm:w-auto">
                                 Excluir
                             </button>
                         </form>
                     @endif
                 @endcan
             </div>
-        </div>
-    </x-slot>
-
-    {{-- CONTEÚDO PRINCIPAL --}}
-    <div class="py-6 bg-gray-50 dark:bg-dbv-dark-bg min-h-screen">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
             {{-- DADOS OCULTOS PARA JS --}}
             <input type="hidden" id="evento-valor" value="{{ $evento->valor }}">
             <input type="hidden" id="count-pagos"
                 value="{{ $evento->desbravadores->where('pivot.pago', true)->count() }}">
             <input type="hidden" id="count-total" value="{{ $evento->desbravadores->count() }}">
-
-            {{-- AÇÕES MOBILE (Visível apenas no celular) --}}
-            <div class="md:hidden grid grid-cols-2 gap-2">
-                <a href="{{ route('eventos.index') }}"
-                    class="flex justify-center items-center px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 shadow-sm">
-                    ← Voltar
-                </a>
-                @can('secretaria')
-                    <a href="{{ route('eventos.edit', $evento->id) }}"
-                        class="flex justify-center items-center px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-sm">
-                        Editar
-                    </a>
-                    @if ($evento->desbravadores->count() == 0)
-                        <form action="{{ route('eventos.destroy', $evento->id) }}" method="POST"
-                            onsubmit="return confirm('Excluir evento?');" class="col-span-2">
-                            @csrf @method('DELETE')
-                            <button type="submit"
-                                class="w-full flex justify-center items-center px-4 py-2.5 bg-red-100 text-red-600 border border-red-200 rounded-lg text-sm font-bold shadow-sm">
-                                Excluir Evento
-                            </button>
-                        </form>
-                    @endif
-                @endcan
-            </div>
 
             {{-- SEÇÃO 1: DETALHES DO EVENTO (TÍTULO + INFO) --}}
             <div
@@ -161,7 +132,7 @@
                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Inscrição
                                 </p>
                                 <p class="font-bold text-gray-800 dark:text-gray-100 text-sm">
-                                    {{ $evento->valor == 0 ? 'Gratuito' : 'R$ ' . number_format($evento->valor, 2, ',', '.') }}
+                                    {{ $evento->valor == 0? 'Gratuito' : 'R$ ' . number_format($evento->valor, 2, ',', '.') }}
                                 </p>
                             </div>
                         </div>
@@ -222,7 +193,7 @@
                         @php
                             $total = $evento->desbravadores->count();
                             $pagos = $evento->desbravadores->where('pivot.pago', true)->count();
-                            $porcentagem = $total > 0 ? ($pagos / $total) * 100 : 0;
+                            $porcentagem = $total > 0? ($pagos / $total) * 100 : 0;
                         @endphp
                         <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-1">
                             <div id="progress-bar" class="bg-green-500 h-1.5 rounded-full transition-all duration-500"
@@ -251,7 +222,7 @@
                 </div>
             </div>
 
-            {{-- SEÇÃO 3: ÁREA PRINCIPAL (LISTA E INSCRIÇÃO) --}}
+            {{-- SEÇÃO 3: ÁREA PRINCIPAL (LISTA E INSCRI??O) --}}
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="{ tab: 'lista' }">
 
                 {{-- COLUNA DA ESQUERDA: LISTA --}}
@@ -261,14 +232,14 @@
                     {{-- Tabs Navigation --}}
                     <div class="flex border-b border-gray-200 dark:border-gray-700">
                         <button @click="tab = 'lista'"
-                            :class="tab === 'lista' ? 'border-dbv-blue text-dbv-blue bg-blue-50/50 dark:bg-blue-900/10' :
+                            :class="tab === 'lista'? 'border-dbv-blue text-dbv-blue bg-blue-50/50 dark:bg-blue-900/10' :
                                 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'"
                             class="flex-1 py-4 px-4 text-sm font-bold uppercase tracking-wider border-b-2 transition-all">
                             Lista de Inscritos
                         </button>
                         @if ($naoInscritos->isNotEmpty())
                             <button @click="tab = 'novo'"
-                                :class="tab === 'novo' ?
+                                :class="tab === 'novo'?
                                     'border-dbv-blue text-dbv-blue bg-blue-50/50 dark:bg-blue-900/10' :
                                     'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'"
                                 class="flex-1 py-4 px-4 text-sm font-bold uppercase tracking-wider border-b-2 transition-all lg:hidden">
@@ -318,7 +289,7 @@
                                                                 class="font-bold text-gray-900 dark:text-white text-sm truncate">
                                                                 {{ $dbv->nome }}</p>
                                                             <span
-                                                                class="text-[10px] uppercase font-bold text-gray-400">{{ $dbv->unidade->nome ?? 'Sem Unidade' }}</span>
+                                                                class="text-[10px] uppercase font-bold text-gray-400">{{ $dbv->unidade->nome?? 'Sem Unidade' }}</span>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -326,10 +297,10 @@
                                                 <td class="px-6 py-4 text-center">
                                                     <button
                                                         onclick="toggleStatus(this, '{{ route('eventos.status', [$evento->id, $dbv->id]) }}', 'pago')"
-                                                        data-active="{{ $dbv->pivot->pago ? 'true' : 'false' }}"
+                                                        data-active="{{ $dbv->pivot->pago? 'true' : 'false' }}"
                                                         class="px-3 py-1 rounded-full text-[10px] font-extrabold border transition-all shadow-sm w-24 hover:scale-105 active:scale-95
-                                                    {{ $dbv->pivot->pago ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-100' }}">
-                                                        {{ $dbv->pivot->pago ? 'PAGO' : 'PENDENTE' }}
+                                                    {{ $dbv->pivot->pago? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-100' }}">
+                                                        {{ $dbv->pivot->pago? 'PAGO' : 'PENDENTE' }}
                                                     </button>
                                                 </td>
 
@@ -375,8 +346,8 @@
                     </div>
                 </div>
 
-                {{-- COLUNA DA DIREITA: NOVA INSCRIÇÃO --}}
-                <div class="lg:block" :class="tab === 'novo' ? 'block' : 'hidden lg:block'">
+                {{-- COLUNA DA DIREITA: NOVA INSCRI??O --}}
+                <div class="lg:block" :class="tab === 'novo'? 'block' : 'hidden lg:block'">
                     <div
                         class="bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700 rounded-2xl p-6 sticky top-24">
                         <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
@@ -404,12 +375,12 @@
                                 {{-- Seletor de Modo --}}
                                 <div class="flex bg-gray-100 dark:bg-gray-700 p-1.5 rounded-xl">
                                     <button type="button" @click="mode = 'single'"
-                                        :class="mode === 'single' ?
+                                        :class="mode === 'single'?
                                             'bg-white dark:bg-gray-600 shadow text-gray-900 dark:text-white' :
                                             'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
                                         class="flex-1 py-2 text-xs font-bold rounded-lg transition-all">Individual</button>
                                     <button type="button" @click="mode = 'multiple'"
-                                        :class="mode === 'multiple' ?
+                                        :class="mode === 'multiple'?
                                             'bg-white dark:bg-gray-600 shadow text-gray-900 dark:text-white' :
                                             'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
                                         class="flex-1 py-2 text-xs font-bold rounded-lg transition-all">Em
@@ -525,7 +496,7 @@
                     body: JSON.stringify({
                         _method: 'PATCH',
                         campo: campo,
-                        valor: newState ? '1' : '0'
+                        valor: newState? '1' : '0'
                     })
                 });
 
@@ -540,8 +511,8 @@
                     button.disabled = false;
 
                     if (campo === 'pago') {
-                        button.innerText = newState ? 'PAGO' : 'PENDENTE';
-                        button.className = newState ?
+                        button.innerText = newState? 'PAGO' : 'PENDENTE';
+                        button.className = newState?
                             'px-3 py-1 rounded-full text-[10px] font-extrabold border transition-all shadow-sm w-24 hover:scale-105 active:scale-95 bg-green-100 text-green-700 border-green-200' :
                             'px-3 py-1 rounded-full text-[10px] font-extrabold border transition-all shadow-sm w-24 hover:scale-105 active:scale-95 bg-red-50 text-red-600 border-red-100';
 
@@ -579,7 +550,7 @@
 
             // Calcular novos valores
             const totalArrecadado = countPagos * eventValue;
-            const porcentagem = countTotal > 0 ? (countPagos / countTotal) * 100 : 0;
+            const porcentagem = countTotal > 0? (countPagos / countTotal) * 100 : 0;
 
             // Formatar Moeda (BRL)
             const formatter = new Intl.NumberFormat('pt-BR', {

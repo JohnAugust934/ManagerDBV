@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <style>
         @keyframes fadeInUp {
             from {
@@ -29,8 +29,8 @@
         }
     </style>
 
-    <div class="py-8 bg-gray-50 dark:bg-dbv-dark-bg min-h-screen">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="ui-page min-h-full space-y-8">
+        <div class="space-y-8">
 
             {{-- HEADER DE BOAS VINDAS --}}
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in-up">
@@ -50,7 +50,7 @@
 
                 @can('pedagogico')
                     <a href="{{ route('frequencia.create') }}"
-                        class="w-full md:w-auto bg-dbv-blue hover:bg-blue-800 text-white px-6 py-3 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 group">
+                        class="w-full sm:w-auto bg-dbv-blue hover:bg-blue-800 text-white px-6 py-3 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 group">
                         <svg class="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -63,14 +63,14 @@
             </div>
 
             {{-- GRID DE ESTATÍSTICAS --}}
-            {{-- Se for usuário do financeiro, exibe as 3 colunas. Se não for, exibe só os ativos como max-w-sm --}}
+            {{-- Se for usuario do financeiro, exibe as 3 colunas. Se não for, exibe só os ativos como max-w-sm --}}
             <div
-                class="grid grid-cols-1 {{ auth()->user()->can('financeiro') ? 'md:grid-cols-3' : 'md:grid-cols-1 max-w-sm' }} gap-6">
+                class="grid grid-cols-1 {{ auth()->user()->can('financeiro')? 'md:grid-cols-3' : 'md:grid-cols-1 max-w-sm' }} gap-6">
 
                 @can('financeiro')
                     {{-- CARD 1: SALDO --}}
                     <div
-                        class="relative overflow-hidden rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up delay-100 {{ $saldoAtual >= 0 ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-500/20' : 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-500/20' }}">
+                        class="relative overflow-hidden rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up delay-100 {{ $saldoAtual >= 0? 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-500/20' : 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-500/20' }}">
                         <div class="relative z-10 flex justify-between items-start">
                             <div>
                                 <p class="text-white/80 text-xs font-bold uppercase tracking-wider">Saldo em Caixa</p>
@@ -148,7 +148,7 @@
                             V</div>
                         <div
                             class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">
-                            +{{ $totalAtivos > 2 ? $totalAtivos - 2 : 0 }}
+                            +{{ $totalAtivos > 2? $totalAtivos - 2 : 0 }}
                         </div>
                     </div>
                     <p class="mt-2 text-xs text-gray-400">Desbravadores regulares</p>
@@ -401,3 +401,5 @@
         });
     </script>
 </x-app-layout>
+
+

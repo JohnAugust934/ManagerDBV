@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
             {{ __('Controle de Mensalidades') }}
@@ -6,7 +6,7 @@
     </x-slot>
 
     {{-- Alpine Data para gerenciar os dois Modais (Gerar e Pagar) --}}
-    <div class="py-6 md:py-12" x-data="{
+    <div class="ui-page space-y-8" x-data="{
         modalPagamentoOpen: false,
         modalGerarOpen: false,
     
@@ -22,7 +22,7 @@
             this.modalPagamentoOpen = true;
         }
     }">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div class="space-y-8">
 
             {{-- 1. Resumo Financeiro do Mês --}}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -83,22 +83,26 @@
                 class="flex flex-col md:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
 
                 {{-- Filtros de Data --}}
-                <form method="GET" action="{{ route('mensalidades.index') }}" class="w-full md:w-auto flex gap-2">
+                <form method="GET" action="{{ route('mensalidades.index') }}" class="w-full sm:w-auto flex gap-2">
                     <div class="relative w-1/2 md:w-40">
+                        <label for="filtro_mes" class="sr-only">Filtrar por mes</label>
                         <select name="mes" onchange="this.form.submit()"
-                            class="w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 focus:outline-none focus:ring-dbv-blue focus:border-dbv-blue sm:text-sm rounded-lg">
+                            id="filtro_mes"
+                            class="ui-input">
                             @foreach (range(1, 12) as $m)
-                                <option value="{{ $m }}" {{ $mes == $m ? 'selected' : '' }}>
+                                <option value="{{ $m }}" {{ $mes == $m? 'selected' : '' }}>
                                     {{ \Carbon\Carbon::create()->month($m)->locale('pt_BR')->monthName }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                     <div class="relative w-1/2 md:w-32">
+                        <label for="filtro_ano" class="sr-only">Filtrar por ano</label>
                         <select name="ano" onchange="this.form.submit()"
-                            class="w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 focus:outline-none focus:ring-dbv-blue focus:border-dbv-blue sm:text-sm rounded-lg">
+                            id="filtro_ano"
+                            class="ui-input">
                             @foreach (range(date('Y') - 1, date('Y') + 1) as $y)
-                                <option value="{{ $y }}" {{ $ano == $y ? 'selected' : '' }}>
+                                <option value="{{ $y }}" {{ $ano == $y? 'selected' : '' }}>
                                     {{ $y }}</option>
                             @endforeach
                         </select>
@@ -107,7 +111,7 @@
 
                 {{-- Botão de Gerar --}}
                 <button @click="modalGerarOpen = true"
-                    class="w-full md:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-dbv-blue dark:bg-blue-600 border border-transparent rounded-lg font-bold text-sm text-white uppercase tracking-widest hover:bg-blue-800 dark:hover:bg-blue-500 shadow-md transition-all">
+                    class="ui-btn-primary w-full sm:w-auto">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -153,7 +157,7 @@
                                                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z">
                                                 </path>
                                             </svg>
-                                            {{ $mensalidade->desbravador->unidade->nome ?? 'Sem Unidade' }}
+                                            {{ $mensalidade->desbravador->unidade->nome?? 'Sem Unidade' }}
                                         </p>
                                     </div>
                                 </div>
@@ -224,23 +228,14 @@
                     </div>
                 </div>
             @else
-                {{-- Empty State --}}
-                <div
-                    class="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                    <div class="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600 mb-4">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Nenhuma mensalidade encontrada</h3>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Nenhum registro para
-                        {{ $mes }}/{{ $ano }}. Deseja gerar o carnê?</p>
-                    <button @click="modalGerarOpen = true"
-                        class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900 focus:outline-none transition">
-                        Gerar Agora
-                    </button>
+                <div class="p-1">
+                    <x-empty-state
+                        title="Nenhuma mensalidade encontrada"
+                        description="Não h? registros para {{ $mes }}/{{ $ano }}. Voc? pode gerar as cobrancas do periodo com um clique.">
+                        <x-slot:action>
+                            <button @click="modalGerarOpen = true" class="ui-btn-primary">Gerar Agora</button>
+                        </x-slot:action>
+                    </x-empty-state>
                 </div>
             @endif
         </div>
@@ -356,7 +351,7 @@
                                         class="block w-full mt-1 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 rounded-lg shadow-sm focus:ring-dbv-blue focus:border-dbv-blue">
                                         @foreach (range(1, 12) as $m)
                                             <option value="{{ $m }}"
-                                                {{ date('m') == $m ? 'selected' : '' }}>
+                                                {{ date('m') == $m? 'selected' : '' }}>
                                                 {{ $m }} -
                                                 {{ \Carbon\Carbon::create()->month($m)->locale('pt_BR')->monthName }}
                                             </option>
@@ -405,3 +400,6 @@
 
     </div>
 </x-app-layout>
+
+
+

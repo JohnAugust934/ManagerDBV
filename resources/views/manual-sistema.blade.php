@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight flex items-center gap-2">
             <svg class="w-6 h-6 text-dbv-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,7 +56,7 @@
                 'key' => 'pedagogico',
                 'title' => 'Pedagógico',
                 'badge' => 'Formação',
-                'summary' => 'Gestão da evolução em classes, especialidades e frequência.',
+                'summary' => 'Gestao da evolução em classes, especialidades e frequência.',
                 'sections' => [
                     [
                         'title' => 'Classes (Requisitos)',
@@ -223,19 +223,19 @@
                 'summary' => 'Controle de acesso, convites e políticas de backup/restauração.',
                 'sections' => [
                     [
-                        'title' => 'Gestão de Acessos',
-                        'description' => 'Administra usuários e níveis de permissão.',
-                        'can_do' => ['Criar usuário', 'Editar permissões', 'Remover acessos quando necessário'],
+                        'title' => 'Gestao de Acessos',
+                        'description' => 'Administra usuarios e níveis de permissão.',
+                        'can_do' => ['Criar usuario', 'Editar permissões', 'Remover acessos quando necessário'],
                         'steps' => [
-                            ['title' => 'Acesse Admin Master > Gestão de Acessos', 'detail' => 'Visualize usuários ativos e seus respectivos perfis de autorização.'],
-                            ['title' => 'Crie ou ajuste usuários', 'detail' => 'Defina papel correto para evitar acessos indevidos a módulos sensíveis.'],
+                            ['title' => 'Acesse Admin Master > Gestao de Acessos', 'detail' => 'Visualize usuarios ativos e seus respectivos perfis de autorização.'],
+                            ['title' => 'Crie ou ajuste usuarios', 'detail' => 'Defina papel correto para evitar acessos indevidos a módulos sensíveis.'],
                             ['title' => 'Revise permissões periodicamente', 'detail' => 'Mudanças de função devem refletir imediatamente no sistema.'],
                             ['title' => 'Remova acessos inativos', 'detail' => 'Mantenha política de segurança limpa e auditável.'],
                         ],
                     ],
                     [
                         'title' => 'Convites',
-                        'description' => 'Entrada controlada de novos usuários por convite.',
+                        'description' => 'Entrada controlada de novos usuarios por convite.',
                         'can_do' => ['Criar convite', 'Acompanhar pendências', 'Cancelar convite'],
                         'steps' => [
                             ['title' => 'Abra o módulo de convites', 'detail' => 'Gerencie entrada de novos perfis sem liberar cadastro aberto.'],
@@ -333,7 +333,7 @@
                         Selecione seu módulo e siga o passo a passo completo
                     </h1>
                     <p class="mt-3 text-sm sm:text-base text-gray-600 dark:text-gray-300 max-w-4xl leading-relaxed">
-                        Este manual foi estruturado para treinamento e consulta rápida. Cada módulo possui ações que o usuário pode executar, com fluxo operacional detalhado.
+                        Este manual foi estruturado para treinamento e consulta rápida. Cada módulo possui ações que o usuario pode executar, com fluxo operacional detalhado.
                     </p>
                 </div>
             </section>
@@ -344,7 +344,7 @@
                     @foreach ($modules as $module)
                         <button type="button"
                             @click="selected = '{{ $module['key'] }}'"
-                            :class="selected === '{{ $module['key'] }}' ? 'border-dbv-blue bg-blue-50 dark:bg-blue-900/25 shadow-sm' : 'border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'"
+                            :class="selected === '{{ $module['key'] }}'? 'border-dbv-blue bg-blue-50 dark:bg-blue-900/25 shadow-sm' : 'border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'"
                             class="text-left rounded-2xl border p-4 transition-all duration-200">
                             <div class="flex items-center justify-between gap-3">
                                 <h3 class="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">{{ $module['title'] }}</h3>
@@ -390,7 +390,7 @@
                                     <div class="p-4 sm:p-5 space-y-3">
                                         @foreach ($section['steps'] as $stepIndex => $step)
                                             @php
-                                                $imageKey = $sectionImageMap[$module['key']][$sectionIndex][$stepIndex] ?? 'dashboard';
+                                                $imageKey = $sectionImageMap[$module['key']][$sectionIndex][$stepIndex]?? 'dashboard';
                                                 $imagePath = asset('images/manual/' . $imageKey . '.png');
                                             @endphp
                                             <div class="rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4">
@@ -430,3 +430,5 @@
         </button>
     </div>
 </x-app-layout>
+
+

@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight flex items-center gap-2">
             <svg class="w-6 h-6 text-dbv-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -9,11 +9,11 @@
         </h2>
     </x-slot>
 
-    <div class="py-6 space-y-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="ui-page space-y-6">
 
         <div class="px-4 sm:px-0 flex justify-end">
             <a href="{{ route('desbravadores.create') }}"
-                class="inline-flex items-center justify-center px-4 py-3 sm:py-2 bg-dbv-yellow border border-transparent rounded-lg font-bold text-sm sm:text-xs text-yellow-900 uppercase tracking-widest hover:bg-yellow-500 active:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition ease-in-out duration-150 shadow-sm w-full sm:w-auto">
+                class="ui-btn-primary w-full sm:w-auto">
                 <svg class="w-5 h-5 sm:w-4 sm:h-4 mr-2 sm:mr-1.5" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -23,7 +23,7 @@
         </div>
 
         <div
-            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden mx-4 sm:mx-0">
+            class="ui-card overflow-hidden">
             <div class="p-4 md:p-6 border-b border-gray-100 dark:border-slate-700">
                 <form method="GET" action="{{ route('desbravadores.index') }}" class="flex flex-col md:flex-row gap-4"
                     id="filter-form">
@@ -38,16 +38,16 @@
                         </div>
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="Buscar por nome, email ou CPF..."
-                            class="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-slate-600 rounded-lg leading-5 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-dbv-blue focus:border-dbv-blue sm:text-sm transition-colors duration-200">
+                            class="ui-input pl-10">
                     </div>
                     <div class="w-full md:w-48">
                         <select name="unidade_id"
-                            class="block w-full py-2 pl-3 pr-10 border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-dbv-blue sm:text-sm"
+                            class="ui-input"
                             onchange="this.form.submit()">
                             <option value="">Todas as Unidades</option>
                             @foreach (\App\Models\Unidade::orderBy('nome')->get() as $unidade)
                                 <option value="{{ $unidade->id }}"
-                                    {{ request('unidade_id') == $unidade->id ? 'selected' : '' }}>
+                                    {{ request('unidade_id') == $unidade->id? 'selected' : '' }}>
                                     {{ $unidade->nome }}
                                 </option>
                             @endforeach
@@ -55,13 +55,13 @@
                     </div>
                     <div class="flex gap-2">
                         <button type="submit"
-                            class="w-full md:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-dbv-blue hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dbv-blue transition">
+                            class="ui-btn-primary w-full sm:w-auto">
                             Filtrar
                         </button>
                         @if (request()->hasAny(['search', 'unidade_id', 'status']) &&
                                 (request('search') != '' || request('unidade_id') != '' || request('status') != 'ativos'))
                             <a href="{{ route('desbravadores.index') }}"
-                                class="w-full md:w-auto inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 transition">
+                                class="ui-btn-secondary w-full sm:w-auto">
                                 Limpar
                             </a>
                         @endif
@@ -72,15 +72,15 @@
             <div
                 class="bg-gray-50 dark:bg-slate-800/50 px-4 md:px-6 py-3 border-b border-gray-100 dark:border-slate-700 flex flex-wrap gap-2">
                 <a href="{{ request()->fullUrlWithQuery(['status' => 'ativos']) }}"
-                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'ativos' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
+                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'ativos'? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
                     Ativos
                 </a>
                 <a href="{{ request()->fullUrlWithQuery(['status' => 'inativos']) }}"
-                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'inativos' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-800' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
+                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'inativos'? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-800' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
                     Inativos
                 </a>
                 <a href="{{ request()->fullUrlWithQuery(['status' => 'todos']) }}"
-                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'todos' ? 'bg-dbv-blue text-white dark:bg-blue-600 border border-blue-700' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
+                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'todos'? 'bg-dbv-blue text-white dark:bg-blue-600 border border-blue-700' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
                     Todos
                 </a>
             </div>
@@ -141,13 +141,13 @@
                                             <span class="text-xs text-gray-400">-</span>
                                         @endif
                                         <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                                            {{ $dbv->classe->nome ?? 'Sem Classe' }}
+                                            {{ $dbv->classe->nome?? 'Sem Classe' }}
                                         </span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-gray-300">
-                                        {{ $dbv->telefone ?? 'Não informado' }}</div>
+                                        {{ $dbv->telefone?? 'Não informado' }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $dbv->email }}
                                     </div>
                                 </td>
@@ -190,18 +190,12 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4"
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Nenhum desbravador
-                                        encontrado.</p>
-                                </td>
-                            </tr>
-                        @endforelse
+                    <div class="px-4 py-6">
+                        <x-empty-state
+                            title="Nenhum desbravador encontrado"
+                            description="Ajuste os filtros ou cadastre novos desbravadores." />
+                    </div>
+                @endforelse
                     </tbody>
                 </table>
             </div>
@@ -225,11 +219,11 @@
                                     <div class="text-sm font-bold text-gray-900 dark:text-white leading-tight">
                                         {{ $dbv->nome }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
-                                        {{ \Carbon\Carbon::parse($dbv->data_nascimento)->age }} anos •
-                                        {{ $dbv->unidade->nome ?? 'Sem Unidade' }}
+                                        {{ \Carbon\Carbon::parse($dbv->data_nascimento)->age }} anos -
+                                        {{ $dbv->unidade->nome?? 'Sem Unidade' }}
                                     </div>
                                     <div class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 mt-0.5">
-                                        {{ $dbv->classe->nome ?? 'Sem Classe' }}
+                                        {{ $dbv->classe->nome?? 'Sem Classe' }}
                                     </div>
                                 </div>
                             </div>
@@ -272,14 +266,10 @@
                         </div>
                     </div>
                 @empty
-                    <div class="px-6 py-12 text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
-                            </path>
-                        </svg>
-                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Nenhum desbravador encontrado.
-                        </p>
+                    <div class="px-4 py-6">
+                        <x-empty-state
+                            title="Nenhum desbravador encontrado"
+                            description="Ajuste os filtros ou cadastre novos desbravadores." />
                     </div>
                 @endforelse
             </div>
@@ -292,3 +282,6 @@
         </div>
     </div>
 </x-app-layout>
+
+
+

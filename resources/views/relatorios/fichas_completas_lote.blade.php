@@ -44,7 +44,7 @@
                 <div class="summary">
                     <strong>Filtros deste lote:</strong>
                     @foreach ($filtros as $label => $valor)
-                        <span>{{ $label }}: {{ $valor }}{{ !$loop->last ? ' | ' : '' }}</span>
+                        <span>{{ $label }}: {{ $valor }}{{ !$loop->last? ' | ' : '' }}</span>
                     @endforeach
                 </div>
             @endif
@@ -88,7 +88,7 @@
                             <ul class="list">
                                 <li><strong>Cartão SUS:</strong> {{ $desbravador['numero_sus'] }}</li>
                                 <li><strong>Tipo sanguíneo:</strong> {{ $desbravador['tipo_sanguineo'] }}</li>
-                                <li><strong>Plano de saúde:</strong> {{ $desbravador['plano_saude'] }}</li>
+                                <li><strong>Plano de saude:</strong> {{ $desbravador['plano_saude'] }}</li>
                                 <li><strong>Alergias:</strong> {{ $desbravador['alergias'] }}</li>
                                 <li><strong>Medicamentos continuos:</strong> {{ $desbravador['medicamentos_continuos'] }}</li>
                             </ul>
@@ -216,3 +216,4 @@
     @endforeach
 </body>
 </html>
+

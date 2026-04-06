@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 
 <head>
@@ -82,7 +82,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
             <span
                 class="inline-block py-1 px-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-wide mb-6 border border-blue-200 dark:border-blue-800">
-                Sistema de Gestão de Clubes
+                Sistema de Gestao de Clubes
             </span>
 
             <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6">
@@ -130,7 +130,7 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Gestão de Membros</h3>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Gestao de Membros</h3>
                     <p class="text-gray-500 dark:text-gray-400 leading-relaxed">
                         Controle completo de fichas médicas, unidades, cargos e especialidades. Tudo na palma da sua
                         mão.
@@ -219,3 +219,5 @@
 </body>
 
 </html>
+
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
@@ -29,9 +29,9 @@
     <div class="header">
         <div class="eyebrow">Documento oficial do clube</div>
         <h1>Autorização para Participação em Evento</h1>
-        <div class="subtitulo">Termo de ciência e autorização do responsável legal</div>
+        <div class="subtitulo">Termo de ciencia e autorização do responsável legal</div>
         <div class="meta">
-            Clube: {{ auth()->user()?->club?->nome ?? 'Clube de Desbravadores' }} |
+            Clube: {{ auth()->user()?->club?->nome?? 'Clube de Desbravadores' }} |
             Emitido em {{ now()->format('d/m/Y H:i') }}
         </div>
     </div>
@@ -52,11 +52,11 @@
             <tr>
                 <td>
                     <span class="item-label">Saída / Início</span>
-                    <span class="item-value">{{ $evento->data_inicio?->format('d/m/Y H:i') ?? '-' }}</span>
+                    <span class="item-value">{{ $evento->data_inicio?->format('d/m/Y H:i')?? '-' }}</span>
                 </td>
                 <td>
                     <span class="item-label">Retorno / Término</span>
-                    <span class="item-value">{{ $evento->data_fim?->format('d/m/Y H:i') ?? '-' }}</span>
+                    <span class="item-value">{{ $evento->data_fim?->format('d/m/Y H:i')?? '-' }}</span>
                 </td>
             </tr>
         </table>
@@ -72,17 +72,17 @@
                 </td>
                 <td>
                     <span class="item-label">Data de nascimento</span>
-                    <span class="item-value">{{ $desbravador->data_nascimento?->format('d/m/Y') ?? '-' }}</span>
+                    <span class="item-value">{{ $desbravador->data_nascimento?->format('d/m/Y')?? '-' }}</span>
                 </td>
             </tr>
             <tr>
                 <td>
                     <span class="item-label">Unidade</span>
-                    <span class="item-value">{{ $desbravador->unidade?->nome ?? 'Sem unidade' }}</span>
+                    <span class="item-value">{{ $desbravador->unidade?->nome?? 'Sem unidade' }}</span>
                 </td>
                 <td>
                     <span class="item-label">Classe atual</span>
-                    <span class="item-value">{{ $desbravador->classe?->nome ?? 'Não definida' }}</span>
+                    <span class="item-value">{{ $desbravador->classe?->nome?? 'Não definida' }}</span>
                 </td>
             </tr>
         </table>
@@ -94,17 +94,17 @@
             <tr>
                 <td>
                     <span class="item-label">Responsável legal</span>
-                    <span class="item-value">{{ $desbravador->nome_responsavel ?? '-' }}</span>
+                    <span class="item-value">{{ $desbravador->nome_responsavel?? '-' }}</span>
                 </td>
                 <td>
                     <span class="item-label">Telefone para contato</span>
-                    <span class="item-value">{{ $desbravador->telefone_responsavel ?? $desbravador->telefone ?? '-' }}</span>
+                    <span class="item-value">{{ $desbravador->telefone_responsavel?? $desbravador->telefone?? '-' }}</span>
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
                     <span class="item-label">Endereço</span>
-                    <span class="item-value">{{ $desbravador->endereco ?? '-' }}</span>
+                    <span class="item-value">{{ $desbravador->endereco?? '-' }}</span>
                 </td>
             </tr>
         </table>
@@ -116,27 +116,27 @@
             <tr>
                 <td>
                     <span class="item-label">Tipo sanguíneo</span>
-                    <span class="item-value">{{ $desbravador->tipo_sanguineo ?? 'Não informado' }}</span>
+                    <span class="item-value">{{ $desbravador->tipo_sanguineo?? 'Não informado' }}</span>
                 </td>
                 <td>
                     <span class="item-label">Cartão SUS</span>
-                    <span class="item-value">{{ $desbravador->numero_sus ?? 'Não informado' }}</span>
+                    <span class="item-value">{{ $desbravador->numero_sus?? 'Não informado' }}</span>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <span class="item-label">Plano de saúde</span>
-                    <span class="item-value">{{ $desbravador->plano_saude ?? 'Não informado' }}</span>
+                    <span class="item-label">Plano de saude</span>
+                    <span class="item-value">{{ $desbravador->plano_saude?? 'Não informado' }}</span>
                 </td>
                 <td>
                     <span class="item-label">Medicamentos contínuos</span>
-                    <span class="item-value">{{ $desbravador->medicamentos_continuos ?? 'Nenhum informado' }}</span>
+                    <span class="item-value">{{ $desbravador->medicamentos_continuos?? 'Nenhum informado' }}</span>
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
                     <span class="item-label">Alergias / observações importantes</span>
-                    <span class="item-value">{{ $desbravador->alergias ?? 'Nenhuma informada' }}</span>
+                    <span class="item-value">{{ $desbravador->alergias?? 'Nenhuma informada' }}</span>
                 </td>
             </tr>
         </table>
@@ -145,16 +145,16 @@
     <div class="section">
         <h2>Declaração do Responsável</h2>
         <p>
-            Eu, <strong>{{ $desbravador->nome_responsavel ?? '____________________________________________' }}</strong>,
+            Eu, <strong>{{ $desbravador->nome_responsavel?? '____________________________________________' }}</strong>,
             responsável legal por <strong>{{ $desbravador->nome }}</strong>, autorizo sua participação no evento acima identificado.
         </p>
         <p>
             Declaro estar ciente da programação, dos horários, do local de realização e das orientações do clube.
-            Confirmo que as informações de saúde acima estão corretas e atualizadas.
+            Confirmo que as informações de saude acima estão corretas e atualizadas.
         </p>
         <p>
             Em caso de necessidade de atendimento de urgência ou emergência, autorizo a liderança responsável a tomar
-            as providências imediatas necessárias para preservar a saúde e a integridade do(a) desbravador(a), inclusive
+            as providências imediatas necessárias para preservar a saude e a integridade do(a) desbravador(a), inclusive
             encaminhamento para atendimento médico.
         </p>
 
@@ -188,3 +188,5 @@
     </table>
 </body>
 </html>
+
+
