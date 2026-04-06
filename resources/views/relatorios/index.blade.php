@@ -93,7 +93,7 @@
                 <div class="border-b border-slate-200 px-6 py-5 dark:border-slate-700">
                     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <h3 class="text-xl font-black text-slate-900 dark:text-white">Gerador de Relatório Personalizado</h3>
+                            <h3 class="text-xl font-black text-slate-900 dark:text-white">Gerador de Relatorio Personalizado</h3>
                             <p class="text-sm text-slate-500 dark:text-slate-400">Escolha um modelo, aplique filtros e abra o PDF em nova aba.</p>
                         </div>
                         <div class="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
@@ -248,4 +248,3 @@
         </div>
     </div>
 </x-app-layout>
-
