@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="margin:0; padding:0;">
 
 <head>
     <meta charset="utf-8">
@@ -15,7 +15,7 @@
 </head>
 
 <body class="font-sans antialiased text-gray-900 bg-gray-100 dark:bg-slate-900 overflow-x-hidden"
-    style="opacity: 0; transition: opacity 0.25s ease-in-out;">
+    style="margin:0; padding:0; opacity: 0; transition: opacity 0.25s ease-in-out;">
 
     <div class="min-h-screen flex flex-col lg:flex-row">
 
@@ -57,4 +57,3 @@
 </body>
 
 </html>
-

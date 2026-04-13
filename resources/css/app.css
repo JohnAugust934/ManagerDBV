@@ -38,7 +38,7 @@
     }
 
     body {
-        @apply antialiased;
+        @apply antialiased m-0;
         background-color: rgb(var(--ui-bg));
         color: rgb(var(--ui-text));
         text-rendering: optimizeLegibility;

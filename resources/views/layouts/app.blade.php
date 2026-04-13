@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="margin:0; padding:0;" x-data="{
     darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
     sidebarOpen: false,
     sidebarPinned: localStorage.getItem('sidebarPinned') !== 'false',
@@ -100,13 +100,14 @@
 </head>
 
 <body
-    class="font-sans antialiased {{ request()->boolean('manual_capture')? 'manual-capture' : '' }}">
+    class="font-sans antialiased {{ request()->boolean('manual_capture')? 'manual-capture' : '' }}"
+    style="margin:0; padding:0;">
     <a href="#app-content"
         class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] bg-white text-slate-900 px-3 py-2 rounded-lg shadow">
         Pular para o conteudo
     </a>
 
-    <div class="flex h-screen overflow-hidden">
+    <div class="fixed inset-0 flex h-screen overflow-hidden">
 
         <div x-show="sidebarOpen" x-transition:enter="transition-opacity ease-linear duration-300"
             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
@@ -144,12 +145,20 @@
                     </span>
                 </div>
                 <button type="button" @click="toggleSidebarPinned()"
-                    class="hidden md:inline-flex items-center justify-center ml-auto h-9 w-9 rounded-xl border border-white/10 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white transition relative z-10"
+                    class="hidden md:inline-flex items-center justify-center ml-auto h-9 w-9 rounded-xl border transition relative z-10"
+                    :class="sidebarPinned
+                        ? 'border-dbv-yellow/50 bg-dbv-yellow/20 text-dbv-yellow hover:bg-dbv-yellow/30'
+                        : 'border-white/10 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'"
                     :title="sidebarPinned? 'Recolher menu lateral' : 'Fixar menu lateral aberto'">
-                    <svg class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" :class="desktopSidebarExpanded()? '' : 'rotate-180'">
+                    <svg x-show="sidebarPinned" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 19l-7-7 7-7" />
+                            d="M12 17v4m0-4L8 9m4 8 4-8M7 5h10l-2 4H9L7 5z" />
+                    </svg>
+                    <svg x-show="!sidebarPinned" x-cloak class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 17v4m0-4L8 9m4 8 4-8M7 5h10l-2 4H9L7 5zM4 4l16 16" />
                     </svg>
                 </button>
             </div>
@@ -536,4 +545,3 @@
 </body>
 
 </html>
-
