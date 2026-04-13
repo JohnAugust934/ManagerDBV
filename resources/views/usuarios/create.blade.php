@@ -53,6 +53,9 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                             @foreach(\App\Models\User::PERMISSOES as $key => $label)
+                                @if ($key === 'gestao_acessos' && !($canGrantAccessManagement ?? false))
+                                    @continue
+                                @endif
                                 <label class="flex items-center space-x-2 rounded-lg border border-amber-100 dark:border-amber-800/30 bg-white/80 dark:bg-slate-900/30 px-3 py-2">
                                     <input type="checkbox" name="extra_permissions[]" value="{{ $key }}" class="rounded border-gray-300 text-amber-600 focus:ring-amber-500">
                                     <span class="text-sm">{{ $label }}</span>

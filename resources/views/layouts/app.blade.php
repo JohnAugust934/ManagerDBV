@@ -420,31 +420,36 @@
                     Sobre o ManagerDBV
                 </a>
 
-                {{-- ================= ADMIN MASTER ================= --}}
-                @can('master')
+                {{-- ================= ADMINISTRACAO ================= --}}
+                @if (auth()->user()->can('gestao-acessos') || auth()->user()->can('master'))
                     <div class="mt-8 pt-4 border-t border-white/10">
-                        <p class="sidebar-heading px-3 text-[10px] font-extrabold text-red-400/80 uppercase tracking-widest mb-2">Admin
-                            Master</p>
+                        <p class="sidebar-heading px-3 text-[10px] font-extrabold text-red-400/80 uppercase tracking-widest mb-2">
+                            Administracao
+                        </p>
 
-                        <a href="{{ route('usuarios.index') }}"
-                            class="{{ $linkClass }} {{ request()->routeIs('usuarios*') || request()->routeIs('invites*')? 'bg-red-900/40 text-white shadow-inner ring-1 ring-red-500/30' : 'text-red-300 hover:bg-red-900/20 hover:text-white hover:translate-x-1' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            Gestao de Acessos
-                        </a>
+                        @can('gestao-acessos')
+                            <a href="{{ route('usuarios.index') }}"
+                                class="{{ $linkClass }} {{ request()->routeIs('usuarios*') || request()->routeIs('invites*')? 'bg-red-900/40 text-white shadow-inner ring-1 ring-red-500/30' : 'text-red-300 hover:bg-red-900/20 hover:text-white hover:translate-x-1' }}">
+                                <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Gestao de Acessos
+                            </a>
+                        @endcan
 
-                        <a href="{{ route('backups.index') }}"
-                            class="{{ $linkClass }} {{ request()->routeIs('backups*')? 'bg-red-900/40 text-white shadow-inner ring-1 ring-red-500/30 mt-1.5' : 'text-red-300 hover:bg-red-900/20 hover:text-white hover:translate-x-1 mt-1.5' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                            </svg>
-                            Backups & Nuvem
-                        </a>
+                        @can('master')
+                            <a href="{{ route('backups.index') }}"
+                                class="{{ $linkClass }} {{ request()->routeIs('backups*')? 'bg-red-900/40 text-white shadow-inner ring-1 ring-red-500/30 mt-1.5' : 'text-red-300 hover:bg-red-900/20 hover:text-white hover:translate-x-1 mt-1.5' }}">
+                                <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                </svg>
+                                Backups & Nuvem
+                            </a>
+                        @endcan
                     </div>
-                @endcan
+                @endif
             </nav>
 
             <div
@@ -526,6 +531,5 @@
 </body>
 
 </html>
-
 
 

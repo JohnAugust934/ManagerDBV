@@ -16,7 +16,8 @@ class InvitationController extends Controller
 {
     public function index()
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
+
         // Single tenant: mostra todos os convites do sistema
         $invites = Invitation::latest()->get();
 
@@ -25,26 +26,26 @@ class InvitationController extends Controller
 
     public function create()
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
 
         return view('admin.invites.create');
     }
 
     public function store(Request $request)
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
 
         $request->validate([
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|in:master,diretor,secretario,tesoureiro,instrutor,conselheiro',
+            'role' => 'required|in:'.implode(',', $this->allowedInvitableRoles()),
         ], [
-            'email.unique' => 'Este e-mail já está cadastrado no sistema.',
+            'email.unique' => 'Este e-mail ja esta cadastrado no sistema.',
         ]);
 
-        $club = \App\Models\Club::first(); // Busca o único clube do banco (se já existir)
+        $club = \App\Models\Club::first(); // Busca o unico clube do banco (se ja existir)
         $existingInvitation = Invitation::where('email', $request->email)->first();
 
-        // REGRA 1: Só pode haver UM diretor no sistema (já cadastrado ou convidado)
+        // REGRA 1: So pode haver UM diretor no sistema (ja cadastrado ou convidado)
         if ($request->role === 'diretor') {
             $directorExists = User::where('role', 'diretor')->exists() ||
                               Invitation::where('role', 'diretor')
@@ -53,13 +54,13 @@ class InvitationController extends Controller
                                   ->exists();
 
             if ($directorExists) {
-                return back()->with('error', 'Ação Bloqueada: Só pode existir UM Diretor no sistema. Já existe um cadastrado ou com convite pendente.');
+                return back()->with('error', 'Acao bloqueada: so pode existir UM Diretor no sistema. Ja existe um cadastrado ou com convite pendente.');
             }
         }
 
-        // REGRA 2: Se o clube ainda não existe, o Master SÓ PODE convidar o Diretor
+        // REGRA 2: Se o clube ainda nao existe, o Master so pode convidar o Diretor
         if (! $club && $request->role !== 'diretor' && $request->role !== 'master') {
-            return back()->with('error', 'Ação Bloqueada: O clube ainda não existe. Você deve convidar o DIRETOR primeiro para que ele configure o clube.');
+            return back()->with('error', 'Acao bloqueada: o clube ainda nao existe. Voce deve convidar o DIRETOR primeiro para que ele configure o clube.');
         }
 
         if ($existingInvitation?->registered_at) {
@@ -93,7 +94,7 @@ class InvitationController extends Controller
         } catch (\Throwable $e) {
             Log::error('Erro ao preparar convite: '.$e->getMessage());
 
-            return back()->with('error', 'Não foi possível preparar o convite agora. Tente novamente.');
+            return back()->with('error', 'Nao foi possivel preparar o convite agora. Tente novamente.');
         }
 
         try {
@@ -102,8 +103,8 @@ class InvitationController extends Controller
             Log::error('Erro ao enviar e-mail de convite: '.$e->getMessage());
 
             return redirect()->route('invites.index')->with('warning', $conviteFoiReaproveitado
-                ? 'Convite pendente atualizado, mas o e-mail não pôde ser enviado (verifique o SMTP). Copie o link e envie manualmente.'
-                : 'Convite gerado, mas o e-mail não pôde ser enviado (verifique o SMTP). Copie o link e envie manualmente.');
+                ? 'Convite pendente atualizado, mas o e-mail nao pode ser enviado (verifique o SMTP). Copie o link e envie manualmente.'
+                : 'Convite gerado, mas o e-mail nao pode ser enviado (verifique o SMTP). Copie o link e envie manualmente.');
         }
 
         return redirect()->route('invites.index')->with('success', $conviteFoiReaproveitado
@@ -113,9 +114,28 @@ class InvitationController extends Controller
 
     public function destroy(Invitation $invite)
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
+
+        if (! auth()->user()->isMaster() && $invite->role === 'master') {
+            abort(403, 'Somente o admin master pode cancelar convites de master.');
+        }
+
         $invite->delete();
 
         return redirect()->route('invites.index')->with('success', 'Convite cancelado com sucesso!');
+    }
+
+    private function authorizeAccessManagement(): void
+    {
+        Gate::authorize('gestao-acessos');
+    }
+
+    private function allowedInvitableRoles(): array
+    {
+        if (auth()->user()->isMaster()) {
+            return ['master', 'diretor', 'secretario', 'tesoureiro', 'instrutor', 'conselheiro'];
+        }
+
+        return ['diretor', 'secretario', 'tesoureiro', 'instrutor', 'conselheiro'];
     }
 }

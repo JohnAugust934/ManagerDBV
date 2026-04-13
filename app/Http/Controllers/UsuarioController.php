@@ -4,30 +4,33 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 
 class UsuarioController extends Controller
 {
     public function create()
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
 
-        return view('usuarios.create');
+        return view('usuarios.create', [
+            'canGrantAccessManagement' => auth()->user()->isMaster(),
+        ]);
     }
 
     public function index()
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
 
-        // Lógica corrigida:
-        // Se for Master (super admin), vê TODOS.
-        // Se futuramente um Diretor tiver acesso a essa tela, vê apenas do seu clube.
         if (auth()->user()->isMaster()) {
             $users = User::orderBy('name')->get();
         } else {
-            $users = User::where('club_id', auth()->user()->club_id)->orderBy('name')->get();
+            $users = User::where('club_id', auth()->user()->club_id)
+                ->where('role', '!=', 'master')
+                ->orderBy('name')
+                ->get();
         }
 
         return view('usuarios.index', compact('users'));
@@ -35,16 +38,18 @@ class UsuarioController extends Controller
 
     public function store(Request $request)
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'string'],
+            'role' => ['required', 'in:'.implode(',', $this->allowedAssignableRoles())],
             'extra_permissions' => ['nullable', 'array'],
             'extra_permissions.*' => ['string'],
         ]);
+
+        $extraPermissions = $this->sanitizeExtraPermissions($validated['extra_permissions'] ?? []);
 
         User::create([
             'name' => $validated['name'],
@@ -52,41 +57,42 @@ class UsuarioController extends Controller
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'club_id' => auth()->user()->club_id,
-            'extra_permissions' => $validated['extra_permissions'] ?? [],
+            'extra_permissions' => $extraPermissions,
         ]);
 
-        return redirect()->route('usuarios.index')->with('success', 'Usuário criado com sucesso!');
+        return redirect()->route('usuarios.index')->with('success', 'Usuario criado com sucesso!');
     }
 
     public function edit(User $usuario)
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
+        $this->ensureCanManageTargetUser($usuario);
 
-        // Impede editar usuários de outros clubes (caso tenhamos multi-tenancy no futuro)
-        // Mas permite se quem edita é Master
-        if (!auth()->user()->isMaster() && $usuario->club_id !== auth()->user()->club_id) {
-            abort(403);
-        }
-
-        return view('usuarios.edit', compact('usuario'));
+        return view('usuarios.edit', [
+            'usuario' => $usuario,
+            'canAssignMaster' => auth()->user()->isMaster(),
+            'canGrantAccessManagement' => auth()->user()->isMaster(),
+        ]);
     }
 
     public function update(Request $request, User $usuario)
     {
-        Gate::authorize('master');
+        $this->authorizeAccessManagement();
+        $this->ensureCanManageTargetUser($usuario);
 
-        $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $usuario->id],
-            'role' => ['required', 'string'],
-            'extra_permissions' => ['nullable', 'array']
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$usuario->id],
+            'role' => ['required', 'in:'.implode(',', $this->allowedAssignableRoles())],
+            'extra_permissions' => ['nullable', 'array'],
+            'extra_permissions.*' => ['string'],
         ]);
 
         $dados = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role,
-            'extra_permissions' => $request->extra_permissions ?? []
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $validated['role'],
+            'extra_permissions' => $this->sanitizeExtraPermissions($validated['extra_permissions'] ?? []),
         ];
 
         if ($request->filled('password')) {
@@ -96,15 +102,65 @@ class UsuarioController extends Controller
 
         $usuario->update($dados);
 
-        return redirect()->route('usuarios.index')->with('success', 'Usuário atualizado!');
+        return redirect()->route('usuarios.index')->with('success', 'Usuario atualizado!');
     }
 
     public function destroy(User $usuario)
     {
-        Gate::authorize('master');
-        if ($usuario->id === auth()->id()) return back()->with('error', 'Você não pode se excluir.');
+        $this->authorizeAccessManagement();
+        $this->ensureCanManageTargetUser($usuario);
+
+        if ($usuario->id === auth()->id()) {
+            return back()->with('error', 'Voce nao pode se excluir.');
+        }
 
         $usuario->delete();
-        return back()->with('success', 'Usuário removido.');
+
+        return back()->with('success', 'Usuario removido.');
+    }
+
+    private function authorizeAccessManagement(): void
+    {
+        Gate::authorize('gestao-acessos');
+    }
+
+    private function ensureCanManageTargetUser(User $usuario): void
+    {
+        $authUser = auth()->user();
+
+        if ($authUser->isMaster()) {
+            return;
+        }
+
+        if ($usuario->role === 'master') {
+            abort(403, 'Somente o admin master pode gerenciar usuarios master.');
+        }
+
+        if ($usuario->club_id !== $authUser->club_id) {
+            abort(403, 'Voce nao pode gerenciar usuarios de outro clube.');
+        }
+    }
+
+    private function allowedAssignableRoles(): array
+    {
+        if (auth()->user()->isMaster()) {
+            return ['master', 'diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'];
+        }
+
+        return ['diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'];
+    }
+
+    private function sanitizeExtraPermissions(array $permissions): array
+    {
+        $allowed = array_keys(User::PERMISSOES);
+        $normalized = array_values(array_unique(array_intersect($permissions, $allowed)));
+
+        if (! auth()->user()->isMaster() && in_array('gestao_acessos', $normalized, true)) {
+            throw ValidationException::withMessages([
+                'extra_permissions' => 'Somente o admin master pode conceder a permissao de Gestao de Acessos.',
+            ]);
+        }
+
+        return $normalized;
     }
 }

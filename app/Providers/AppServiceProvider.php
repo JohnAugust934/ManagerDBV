@@ -41,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
             return $user->role === 'master';
         });
 
+        Gate::define('gestao-acessos', fn (User $user) => $user->temPermissao('gestao_acessos'));
         Gate::define('financeiro', fn (User $user) => $user->temPermissao('financeiro'));
         Gate::define('secretaria', fn (User $user) => $user->temPermissao('secretaria'));
         Gate::define('unidades', fn (User $user) => $user->temPermissao('unidades'));

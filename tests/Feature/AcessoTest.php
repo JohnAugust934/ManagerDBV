@@ -71,4 +71,40 @@ class AcessoTest extends TestCase
 
         $this->actingAs($secretario)->delete(route('patrimonio.destroy', $patrimonio))->assertStatus(403);
     }
+
+    public function test_diretor_com_permissao_gestao_acessos_acessa_usuarios_e_convites_mas_nao_backups()
+    {
+        $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'Sao Paulo', 'associacao' => 'APL']);
+        $diretor = User::factory()->create([
+            'role' => 'diretor',
+            'club_id' => $club->id,
+            'extra_permissions' => ['gestao_acessos'],
+        ]);
+
+        $this->actingAs($diretor)->get(route('usuarios.index'))->assertOk();
+        $this->actingAs($diretor)->get(route('invites.index'))->assertOk();
+        $this->actingAs($diretor)->get(route('backups.index'))->assertForbidden();
+    }
+
+    public function test_usuario_com_gestao_acessos_nao_pode_criar_usuario_master()
+    {
+        $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'Sao Paulo', 'associacao' => 'APL']);
+        $diretor = User::factory()->create([
+            'role' => 'diretor',
+            'club_id' => $club->id,
+            'extra_permissions' => ['gestao_acessos'],
+        ]);
+
+        $response = $this->actingAs($diretor)->from(route('usuarios.create'))->post(route('usuarios.store'), [
+            'name' => 'Tentativa Master',
+            'email' => 'novo-master@teste.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'master',
+        ]);
+
+        $response->assertRedirect(route('usuarios.create'));
+        $response->assertSessionHasErrors('role');
+        $this->assertDatabaseMissing('users', ['email' => 'novo-master@teste.com']);
+    }
 }

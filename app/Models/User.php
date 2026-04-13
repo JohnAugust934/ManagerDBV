@@ -17,7 +17,7 @@ class User extends Authenticatable
         'club_id',
         'role',              // master, diretor, secretario, tesoureiro, conselheiro, instrutor
         'extra_permissions', // array json
-        'is_master',         // mantido para compatibilidade, mas o foco agora é 'role'
+        'is_master',         // mantido para compatibilidade, mas o foco agora e 'role'
     ];
 
     protected $hidden = [
@@ -32,14 +32,15 @@ class User extends Authenticatable
         'extra_permissions' => 'array', // Converte JSON para Array automaticamente
     ];
 
-    // Constantes de Permissões Disponíveis (Módulos)
+    // Constantes de permissoes disponiveis (modulos)
     const PERMISSOES = [
-        'financeiro' => 'Acesso ao Caixa, Mensalidades e Patrimônio',
+        'gestao_acessos' => 'Gestao de Acessos (usuarios e convites)',
+        'financeiro' => 'Acesso ao Caixa, Mensalidades e Patrimonio',
         'secretaria' => 'Acesso a Desbravadores, Atas e Atos',
-        'unidades' => 'Gestão de Unidades',
+        'unidades' => 'Gestao de Unidades',
         'pedagogico' => 'Classes e Especialidades',
-        'eventos' => 'Gestão de Eventos',
-        'relatorios' => 'Acesso aos Relatórios do Clube', // <-- MÓDULO RECRIADO AQUI
+        'eventos' => 'Gestao de Eventos',
+        'relatorios' => 'Acesso aos Relatorios do Clube',
     ];
 
     public function club()
@@ -47,7 +48,7 @@ class User extends Authenticatable
         return $this->belongsTo(Club::class);
     }
 
-    // --- Lógica de Acesso ---
+    // --- Logica de acesso ---
 
     public function temPermissao(string $modulo): bool
     {
@@ -55,40 +56,30 @@ class User extends Authenticatable
             return true;
         }
 
-        // Verifica permissões padrão do cargo
+        // Verifica permissoes padrao do cargo
         $permissoesPadrao = $this->getPermissoesPadrao();
-        if (in_array($modulo, $permissoesPadrao)) {
+        if (in_array($modulo, $permissoesPadrao, true)) {
             return true;
         }
 
-        // Verifica permissões extras (checkboxes)
+        // Verifica permissoes extras (checkboxes)
         $extras = $this->extra_permissions ?? [];
 
-        return in_array($modulo, $extras);
+        return in_array($modulo, $extras, true);
     }
 
     /**
-     * Define o que cada cargo pode fazer por padrão.
+     * Define o que cada cargo pode fazer por padrao.
      */
     private function getPermissoesPadrao(): array
     {
-        switch ($this->role) {
-            case 'diretor':
-                return ['financeiro', 'secretaria', 'unidades', 'pedagogico', 'eventos', 'relatorios']; // <-- ADICIONADO AQUI
-
-            case 'secretario':
-                return ['secretaria', 'unidades', 'pedagogico', 'eventos', 'relatorios']; // <-- ADICIONADO AQUI
-
-            case 'tesoureiro':
-                return ['financeiro', 'eventos', 'relatorios']; // <-- ADICIONADO AQUI
-
-            case 'conselheiro':
-            case 'instrutor':
-                return ['pedagogico']; // Apenas pedagógico (Eventos foram removidos anteriormente)
-
-            default:
-                return [];
-        }
+        return match ($this->role) {
+            'diretor' => ['financeiro', 'secretaria', 'unidades', 'pedagogico', 'eventos', 'relatorios'],
+            'secretario' => ['secretaria', 'unidades', 'pedagogico', 'eventos', 'relatorios'],
+            'tesoureiro' => ['financeiro', 'eventos', 'relatorios'],
+            'conselheiro', 'instrutor' => ['pedagogico'],
+            default => [],
+        };
     }
 
     public function isMaster(): bool

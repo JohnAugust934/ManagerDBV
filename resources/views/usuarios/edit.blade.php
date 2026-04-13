@@ -48,6 +48,9 @@
                         <h3 class="ui-title text-base mb-3">Cargo Principal</h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                             @foreach (['master', 'diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'] as $role)
+                                @if ($role === 'master' && !($canAssignMaster ?? false))
+                                    @continue
+                                @endif
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" {{ $usuario->role == $role? 'checked' : '' }}>
                                     <div class="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-3 text-center font-semibold uppercase text-xs bg-white dark:bg-gray-800 peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20">
@@ -64,6 +67,9 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                             @foreach (\App\Models\User::PERMISSOES as $key => $label)
+                                @if ($key === 'gestao_acessos' && !($canGrantAccessManagement ?? false))
+                                    @continue
+                                @endif
                                 <label class="flex items-start space-x-2 rounded-lg border border-amber-100 dark:border-amber-800/30 bg-white/80 dark:bg-slate-900/30 px-3 py-2">
                                     <input type="checkbox" name="extra_permissions[]" value="{{ $key }}"
                                         class="mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"

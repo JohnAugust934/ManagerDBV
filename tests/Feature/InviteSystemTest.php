@@ -132,4 +132,26 @@ class InviteSystemTest extends TestCase
         $this->assertDatabaseCount('invitations', 1);
         Mail::assertNothingQueued();
     }
+
+    public function test_usuario_com_gestao_acessos_nao_pode_convidar_master()
+    {
+        Mail::fake();
+
+        $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'Sao Paulo', 'associacao' => 'APL']);
+        $diretor = User::factory()->create([
+            'role' => 'diretor',
+            'club_id' => $club->id,
+            'extra_permissions' => ['gestao_acessos'],
+        ]);
+
+        $response = $this->actingAs($diretor)->from(route('invites.create'))->post(route('invites.store'), [
+            'email' => 'master-convite@clube.com',
+            'role' => 'master',
+        ]);
+
+        $response->assertRedirect(route('invites.create'));
+        $response->assertSessionHasErrors('role');
+        $this->assertDatabaseMissing('invitations', ['email' => 'master-convite@clube.com']);
+        Mail::assertNothingQueued();
+    }
 }
