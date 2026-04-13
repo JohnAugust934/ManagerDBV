@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AttendanceColumn;
 use App\Models\Club;
 use App\Models\Desbravador;
 use App\Models\Frequencia;
@@ -130,5 +131,72 @@ class RankingTest extends TestCase
 
         $this->assertNotEmpty($snapshot->entries);
         $this->assertSame($desbravador->nome, $snapshot->entries[0]['name']);
+    }
+
+    public function test_coluna_nova_nao_recalcula_pontuacao_antiga_no_ranking()
+    {
+        $clube = Club::create(['nome' => 'Clube Ranking', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
+        $dbv = Desbravador::factory()->create([
+            'unidade_id' => $unidade->id,
+            'nome' => 'Sem Recalculo',
+            'ativo' => true,
+        ]);
+
+        // Registro legado antes da criacao de coluna personalizada.
+        Frequencia::create([
+            'desbravador_id' => $dbv->id,
+            'data' => now()->subDays(7),
+            'presente' => true,
+            'uniforme' => false,
+            'biblia' => false,
+            'pontual' => false,
+        ]);
+
+        // Inicializa colunas fixas.
+        $this->actingAs($user)->get(route('frequencia.create'))->assertOk();
+
+        $existingColumns = AttendanceColumn::where('club_id', $clube->id)->get();
+        $payloadColumns = [];
+        foreach ($existingColumns as $column) {
+            $payloadColumns[$column->id] = [
+                'name' => $column->name,
+                'points' => $column->points,
+            ];
+        }
+
+        $this->actingAs($user)->put(route('frequencia.columns.update'), [
+            'columns' => $payloadColumns,
+            'new_columns' => [
+                ['name' => 'caderno', 'points' => 4],
+            ],
+        ])->assertRedirect(route('frequencia.columns.index'));
+
+        $presenteColumn = AttendanceColumn::where('club_id', $clube->id)
+            ->where('key', 'presente')
+            ->firstOrFail();
+        $customColumn = AttendanceColumn::where('club_id', $clube->id)
+            ->where('is_fixed', false)
+            ->firstOrFail();
+
+        $this->actingAs($user)->post(route('frequencia.store'), [
+            'data' => now()->toDateString(),
+            'presencas' => [
+                $dbv->id => [
+                    'colunas' => [
+                        $presenteColumn->id => '1',
+                        $customColumn->id => '1',
+                    ],
+                ],
+            ],
+        ])->assertRedirect(route('dashboard'));
+
+        $response = $this->actingAs($user)->get(route('ranking.desbravadores'));
+        $dados = $response->viewData('data');
+
+        $this->assertEquals('Sem Recalculo', $dados->first()->nome);
+        $this->assertEquals(24, $dados->first()->pontos);
     }
 }

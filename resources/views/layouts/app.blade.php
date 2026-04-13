@@ -344,6 +344,11 @@
                             <a href="{{ route('frequencia.create') }}"
                                 class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.create')? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Nova
                                 Chamada</a>
+                            @can('gerenciar-colunas-chamada')
+                                <a href="{{ route('frequencia.columns.index') }}"
+                                    class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.columns.*')? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Gerenciar
+                                    Colunas</a>
+                            @endcan
                         </div>
                     </div>
                 @endcan
@@ -531,5 +536,4 @@
 </body>
 
 </html>
-
 

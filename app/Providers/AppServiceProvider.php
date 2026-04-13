@@ -11,6 +11,7 @@ use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\QueueBusy;
@@ -48,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('pedagogico', fn (User $user) => $user->temPermissao('pedagogico'));
         Gate::define('eventos', fn (User $user) => $user->temPermissao('eventos'));
         Gate::define('relatorios', fn (User $user) => $user->temPermissao('relatorios'));
+        Gate::define('gerenciar-colunas-chamada', fn (User $user) => in_array($user->role, ['master', 'diretor', 'secretario'], true));
 
         Gate::define('gerir-unidade', function (User $user, $unidade = null) {
             if ($user->temPermissao('unidades')) {
@@ -150,7 +152,15 @@ class AppServiceProvider extends ServiceProvider
 
     public static function snapshotRankingYear(int $year, ?int $generatedBy = null): void
     {
-        $unitEntries = Unidade::with(['desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $year)])
+        $hasColumnValues = Schema::hasTable('frequencia_column_values');
+        $frequenciasLoader = function ($query) use ($year, $hasColumnValues) {
+            $query->whereYear('data', $year);
+            if ($hasColumnValues) {
+                $query->with('columnValues');
+            }
+        };
+
+        $unitEntries = Unidade::with(['desbravadores.frequencias' => $frequenciasLoader])
             ->orderBy('nome')
             ->get()
             ->map(function (Unidade $unidade) {
@@ -175,7 +185,7 @@ class AppServiceProvider extends ServiceProvider
             })
             ->all();
 
-        $memberEntries = Desbravador::with(['unidade', 'frequencias' => fn ($query) => $query->whereYear('data', $year)])
+        $memberEntries = Desbravador::with(['unidade', 'frequencias' => $frequenciasLoader])
             ->where('ativo', true)
             ->orderBy('nome')
             ->get()

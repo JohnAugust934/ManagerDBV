@@ -36,6 +36,15 @@
                                     @endforeach
                                 </select>
                             </div>
+
+                            @can('gerenciar-colunas-chamada')
+                                <div class="w-full md:w-auto md:ml-auto md:self-end">
+                                    <a href="{{ route('frequencia.columns.index') }}"
+                                        class="inline-flex items-center justify-center px-4 h-[42px] rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-sm font-semibold text-dbv-blue hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                                        Gerenciar Colunas
+                                    </a>
+                                </div>
+                            @endcan
                         </div>
 
                         @if ($unidades->isEmpty())
@@ -66,13 +75,19 @@
                                                     class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-300">
                                                     <tr>
                                                         <th scope="col" class="px-4 py-4">Desbravador</th>
-                                                        <th scope="col" class="px-4 py-4 text-center">Presente (10)
-                                                        </th>
-                                                        <th scope="col" class="px-4 py-4 text-center">Pontual (5)
-                                                        </th>
-                                                        <th scope="col" class="px-4 py-4 text-center">Bíblia (5)</th>
-                                                        <th scope="col" class="px-4 py-4 text-center">Uniforme (10)
-                                                        </th>
+                                                        @if (!empty($usesLegacyColumns) && $usesLegacyColumns)
+                                                            <th scope="col" class="px-4 py-4 text-center">PRESENTE (10)</th>
+                                                            <th scope="col" class="px-4 py-4 text-center">PONTUAL (5)</th>
+                                                            <th scope="col" class="px-4 py-4 text-center">BIBLIA (5)</th>
+                                                            <th scope="col" class="px-4 py-4 text-center">UNIFORME (10)</th>
+                                                        @else
+                                                            @foreach ($columns as $column)
+                                                                <th scope="col" class="px-4 py-4 text-center">
+                                                                    {{ mb_strtoupper($column->name, 'UTF-8') }}
+                                                                    ({{ $column->points }})
+                                                                </th>
+                                                            @endforeach
+                                                        @endif
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -86,31 +101,41 @@
                                                                     value="1">
                                                                 {{ $dbv->nome }}
                                                             </td>
-
-                                                            <td class="px-4 py-3 text-center">
-                                                                <input type="checkbox"
-                                                                    name="presencas[{{ $dbv->id }}][presente]"
-                                                                    value="1"
-                                                                    class="w-5 h-5 text-green-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-green-500 cursor-pointer">
-                                                            </td>
-                                                            <td class="px-4 py-3 text-center">
-                                                                <input type="checkbox"
-                                                                    name="presencas[{{ $dbv->id }}][pontual]"
-                                                                    value="1"
-                                                                    class="w-5 h-5 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer">
-                                                            </td>
-                                                            <td class="px-4 py-3 text-center">
-                                                                <input type="checkbox"
-                                                                    name="presencas[{{ $dbv->id }}][biblia]"
-                                                                    value="1"
-                                                                    class="w-5 h-5 text-yellow-500 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-yellow-500 cursor-pointer">
-                                                            </td>
-                                                            <td class="px-4 py-3 text-center">
-                                                                <input type="checkbox"
-                                                                    name="presencas[{{ $dbv->id }}][uniforme]"
-                                                                    value="1"
-                                                                    class="w-5 h-5 text-purple-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-purple-500 cursor-pointer">
-                                                            </td>
+                                                            @if (!empty($usesLegacyColumns) && $usesLegacyColumns)
+                                                                <td class="px-4 py-3 text-center">
+                                                                    <input type="checkbox"
+                                                                        name="presencas[{{ $dbv->id }}][presente]"
+                                                                        value="1"
+                                                                        class="w-5 h-5 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer">
+                                                                </td>
+                                                                <td class="px-4 py-3 text-center">
+                                                                    <input type="checkbox"
+                                                                        name="presencas[{{ $dbv->id }}][pontual]"
+                                                                        value="1"
+                                                                        class="w-5 h-5 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer">
+                                                                </td>
+                                                                <td class="px-4 py-3 text-center">
+                                                                    <input type="checkbox"
+                                                                        name="presencas[{{ $dbv->id }}][biblia]"
+                                                                        value="1"
+                                                                        class="w-5 h-5 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer">
+                                                                </td>
+                                                                <td class="px-4 py-3 text-center">
+                                                                    <input type="checkbox"
+                                                                        name="presencas[{{ $dbv->id }}][uniforme]"
+                                                                        value="1"
+                                                                        class="w-5 h-5 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer">
+                                                                </td>
+                                                            @else
+                                                                @foreach ($columns as $column)
+                                                                    <td class="px-4 py-3 text-center">
+                                                                        <input type="checkbox"
+                                                                            name="presencas[{{ $dbv->id }}][colunas][{{ $column->id }}]"
+                                                                            value="1"
+                                                                            class="w-5 h-5 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer">
+                                                                    </td>
+                                                                @endforeach
+                                                            @endif
                                                         </tr>
                                                     @endforeach
                                                 </tbody>
@@ -139,5 +164,3 @@
         </div>
     </div>
 </x-app-layout>
-
-

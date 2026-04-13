@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\AttendanceColumn;
 use App\Models\Club;
 use App\Models\Desbravador;
 use App\Models\Frequencia;
+use App\Models\FrequenciaColumnValue;
 use App\Models\Unidade;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -88,5 +90,108 @@ class FrequenciaTest extends TestCase
             'desbravador_id' => $dbv->id,
             'presente' => false,
         ]);
+    }
+
+    public function test_apenas_diretor_secretario_e_master_acessam_gerencia_de_colunas()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+
+        $diretor = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $secretario = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $master = User::factory()->create(['club_id' => $clube->id, 'role' => 'master']);
+        $conselheiro = User::factory()->create(['club_id' => $clube->id, 'role' => 'conselheiro']);
+
+        $this->actingAs($diretor)->get(route('frequencia.columns.index'))->assertOk();
+        $this->actingAs($secretario)->get(route('frequencia.columns.index'))->assertOk();
+        $this->actingAs($master)->get(route('frequencia.columns.index'))->assertOk();
+        $this->actingAs($conselheiro)->get(route('frequencia.columns.index'))->assertForbidden();
+    }
+
+    public function test_coluna_personalizada_aparece_em_maiusculo_na_nova_chamada()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $diretor = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
+        Desbravador::factory()->create([
+            'unidade_id' => $unidade->id,
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($diretor)->put(route('frequencia.columns.update'), [
+            'columns' => [],
+            'new_columns' => [
+                ['name' => 'caderno de campo', 'points' => 7],
+            ],
+        ])->assertRedirect(route('frequencia.columns.index'));
+
+        $column = AttendanceColumn::where('club_id', $clube->id)
+            ->where('is_fixed', false)
+            ->firstOrFail();
+
+        $response = $this->actingAs($diretor)->get(route('frequencia.create'));
+
+        $response->assertOk();
+        $response->assertSee(mb_strtoupper($column->name, 'UTF-8'));
+        $response->assertSee('(7)');
+    }
+
+    public function test_pode_remover_coluna_adicional_nunca_usada()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $diretor = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+
+        $column = AttendanceColumn::create([
+            'club_id' => $clube->id,
+            'name' => 'Caderno',
+            'points' => 4,
+            'is_fixed' => false,
+            'is_active' => true,
+            'sort_order' => 120,
+        ]);
+
+        $this->actingAs($diretor)
+            ->delete(route('frequencia.columns.destroy', $column->id))
+            ->assertRedirect(route('frequencia.columns.index'));
+
+        $this->assertDatabaseMissing('attendance_columns', ['id' => $column->id]);
+    }
+
+    public function test_nao_pode_remover_coluna_adicional_ja_usada()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $diretor = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
+        $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
+
+        $column = AttendanceColumn::create([
+            'club_id' => $clube->id,
+            'name' => 'Caderno',
+            'points' => 4,
+            'is_fixed' => false,
+            'is_active' => true,
+            'sort_order' => 120,
+        ]);
+
+        $frequencia = Frequencia::create([
+            'desbravador_id' => $dbv->id,
+            'data' => now()->toDateString(),
+            'presente' => true,
+            'pontual' => false,
+            'biblia' => false,
+            'uniforme' => false,
+        ]);
+
+        FrequenciaColumnValue::create([
+            'frequencia_id' => $frequencia->id,
+            'attendance_column_id' => $column->id,
+            'checked' => true,
+            'points_awarded' => 4,
+        ]);
+
+        $this->actingAs($diretor)
+            ->delete(route('frequencia.columns.destroy', $column->id))
+            ->assertRedirect(route('frequencia.columns.index'));
+
+        $this->assertDatabaseHas('attendance_columns', ['id' => $column->id]);
     }
 }

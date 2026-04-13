@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AtaController;
 use App\Http\Controllers\AtoController;
+use App\Http\Controllers\AttendanceColumnController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CaixaController;
@@ -119,6 +120,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/chamada', [FrequenciaController::class, 'create'])->name('create');
             Route::post('/store', [FrequenciaController::class, 'store'])->name('store');
         });
+    });
+
+    Route::middleware('can:gerenciar-colunas-chamada')->prefix('frequencia/colunas')->name('frequencia.columns.')->group(function () {
+        Route::get('/', [AttendanceColumnController::class, 'index'])->name('index');
+        Route::put('/', [AttendanceColumnController::class, 'update'])->name('update');
+        Route::delete('/{attendanceColumn}', [AttendanceColumnController::class, 'destroy'])->name('destroy');
     });
 
     // 7. Financeiro

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Desbravador;
 use App\Models\Unidade;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 
 class RankingController extends Controller
 {
@@ -13,11 +14,21 @@ class RankingController extends Controller
         Gate::authorize('relatorios');
 
         $ano = now()->year;
+        $hasColumnValues = Schema::hasTable('frequencia_column_values');
 
-        $data = Unidade::with(['desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)])
+        $frequenciasLoader = function ($query) use ($ano, $hasColumnValues) {
+            $query->whereYear('data', $ano);
+            if ($hasColumnValues) {
+                $query->with('columnValues.column');
+            }
+        };
+
+        $data = Unidade::with([
+            'desbravadores.frequencias' => $frequenciasLoader,
+        ])
             ->get()
-            ->map(function ($unidade) {
-                $stats = $this->calcularPontos($unidade->desbravadores);
+            ->map(function ($unidade) use ($hasColumnValues) {
+                $stats = $this->calcularPontos($unidade->desbravadores, $hasColumnValues);
 
                 return (object) [
                     'id' => $unidade->id,
@@ -26,7 +37,7 @@ class RankingController extends Controller
                     'cor' => $this->getCorUnidade($unidade->id),
                     'pontos' => $stats['total'],
                     'detalhes' => $stats,
-                    'tipo' => 'unidade', // Para ícone na view
+                    'tipo' => 'unidade',
                 ];
             })
             ->sortByDesc('pontos')
@@ -40,13 +51,23 @@ class RankingController extends Controller
         Gate::authorize('relatorios');
 
         $ano = now()->year;
+        $hasColumnValues = Schema::hasTable('frequencia_column_values');
 
-        $data = Desbravador::with(['unidade', 'frequencias' => fn ($query) => $query->whereYear('data', $ano)])
+        $frequenciasLoader = function ($query) use ($ano, $hasColumnValues) {
+            $query->whereYear('data', $ano);
+            if ($hasColumnValues) {
+                $query->with('columnValues.column');
+            }
+        };
+
+        $data = Desbravador::with([
+            'unidade',
+            'frequencias' => $frequenciasLoader,
+        ])
             ->where('ativo', true)
             ->get()
-            ->map(function ($dbv) {
-                // Passamos uma coleção com 1 item para reaproveitar a função de cálculo
-                $stats = $this->calcularPontos(collect([$dbv]));
+            ->map(function ($dbv) use ($hasColumnValues) {
+                $stats = $this->calcularPontos(collect([$dbv]), $hasColumnValues);
 
                 return (object) [
                     'id' => $dbv->id,
@@ -72,7 +93,7 @@ class RankingController extends Controller
         return view('ranking.index', compact('data', 'top3', 'demais', 'titulo', 'ano'));
     }
 
-    private function calcularPontos($desbravadores)
+    private function calcularPontos($desbravadores, bool $hasColumnValues): array
     {
         $stats = [
             'presente' => 0,
@@ -84,26 +105,48 @@ class RankingController extends Controller
 
         foreach ($desbravadores as $dbv) {
             foreach ($dbv->frequencias as $freq) {
+                if ($hasColumnValues && $freq->columnValues->isNotEmpty()) {
+                    foreach ($freq->columnValues as $columnValue) {
+                        if (! $columnValue->checked) {
+                            continue;
+                        }
+
+                        $points = (int) $columnValue->points_awarded;
+                        $stats['total'] += $points;
+
+                        $columnKey = $columnValue->column?->key;
+                        if (in_array($columnKey, ['presente', 'pontual', 'biblia', 'uniforme'], true)) {
+                            $stats[$columnKey] += $points;
+                        }
+                    }
+
+                    continue;
+                }
+
+                // Fallback para registros legados criados antes das colunas dinamicas.
                 if ($freq->presente) {
                     $stats['presente'] += 10;
+                    $stats['total'] += 10;
                 }
                 if ($freq->pontual) {
                     $stats['pontual'] += 5;
+                    $stats['total'] += 5;
                 }
                 if ($freq->biblia) {
                     $stats['biblia'] += 5;
+                    $stats['total'] += 5;
                 }
                 if ($freq->uniforme) {
                     $stats['uniforme'] += 10;
+                    $stats['total'] += 10;
                 }
             }
         }
-        $stats['total'] = array_sum($stats);
 
         return $stats;
     }
 
-    private function getCorUnidade($id)
+    private function getCorUnidade($id): string
     {
         $colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
 
