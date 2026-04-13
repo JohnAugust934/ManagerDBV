@@ -186,4 +186,22 @@ class DesbravadorTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500', false);
     }
+
+    public function test_busca_localiza_nome_independente_de_maiusculas_e_minusculas()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        Desbravador::factory()->create(['nome' => 'Joao Alves', 'ativo' => true]);
+        Desbravador::factory()->create(['nome' => 'Maria Santos', 'ativo' => true]);
+
+        $response = $this->actingAs($user)->get(route('desbravadores.index', [
+            'search' => 'joAO',
+            'status' => 'todos',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Joao Alves');
+        $response->assertDontSee('Maria Santos');
+    }
 }

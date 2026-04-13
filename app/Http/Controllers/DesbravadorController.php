@@ -16,11 +16,14 @@ class DesbravadorController extends Controller
         $query = Desbravador::with(['unidade', 'classe'])->orderBy('nome');
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('nome', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('cpf', 'like', "%{$search}%");
+            $search = trim((string) $request->search);
+            $normalizedSearch = mb_strtolower($search, 'UTF-8');
+            $searchPattern = "%{$normalizedSearch}%";
+
+            $query->where(function ($q) use ($searchPattern) {
+                $q->whereRaw('LOWER(nome) LIKE ?', [$searchPattern])
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$searchPattern])
+                    ->orWhereRaw('LOWER(cpf) LIKE ?', [$searchPattern]);
             });
         }
 

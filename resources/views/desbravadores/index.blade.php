@@ -38,12 +38,14 @@
                         </div>
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="Buscar por nome, email ou CPF..."
-                            class="ui-input pl-10">
+                            class="ui-input pl-10"
+                            id="search-input"
+                            autocomplete="off">
                     </div>
                     <div class="w-full md:w-48">
                         <select name="unidade_id"
                             class="ui-input"
-                            onchange="this.form.submit()">
+                            id="unidade-filter">
                             <option value="">Todas as Unidades</option>
                             @foreach (\App\Models\Unidade::orderBy('nome')->get() as $unidade)
                                 <option value="{{ $unidade->id }}"
@@ -69,17 +71,21 @@
                 </form>
             </div>
 
+            <div id="desbravadores-results">
             <div
                 class="bg-gray-50 dark:bg-slate-800/50 px-4 md:px-6 py-3 border-b border-gray-100 dark:border-slate-700 flex flex-wrap gap-2">
                 <a href="{{ request()->fullUrlWithQuery(['status' => 'ativos']) }}"
+                    data-async="true"
                     class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'ativos'? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
                     Ativos
                 </a>
                 <a href="{{ request()->fullUrlWithQuery(['status' => 'inativos']) }}"
+                    data-async="true"
                     class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'inativos'? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-800' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
                     Inativos
                 </a>
                 <a href="{{ request()->fullUrlWithQuery(['status' => 'todos']) }}"
+                    data-async="true"
                     class="px-4 py-1.5 rounded-full text-xs font-bold transition-colors {{ $status === 'todos'? 'bg-dbv-blue text-white dark:bg-blue-600 border border-blue-700' : 'bg-white dark:bg-slate-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-100' }}">
                     Todos
                 </a>
@@ -279,9 +285,122 @@
                     {{ $desbravadores->withQueryString()->links() }}
                 </div>
             @endif
+            </div>
         </div>
+        <script>
+            (() => {
+                const form = document.getElementById('filter-form');
+                const input = document.getElementById('search-input');
+                const unidadeFilter = document.getElementById('unidade-filter');
+                const resultsContainer = document.getElementById('desbravadores-results');
+
+                if (!form || !input || !resultsContainer) return;
+
+                let debounceTimer = null;
+                let lastSubmittedValue = input.value.trim();
+                let activeRequest = null;
+
+                const setLoading = (loading) => {
+                    resultsContainer.style.opacity = loading ? '0.6' : '1';
+                    resultsContainer.style.transition = 'opacity 120ms ease';
+                };
+
+                const syncFiltersFromUrl = (url) => {
+                    const params = new URL(url, window.location.origin).searchParams;
+                    input.value = params.get('search') ?? '';
+                    if (unidadeFilter) {
+                        unidadeFilter.value = params.get('unidade_id') ?? '';
+                    }
+
+                    const statusInput = form.querySelector('input[name="status"]');
+                    if (statusInput) {
+                        statusInput.value = params.get('status') ?? 'ativos';
+                    }
+                };
+
+                const requestAndRender = async (url) => {
+                    if (activeRequest) {
+                        activeRequest.abort();
+                    }
+
+                    activeRequest = new AbortController();
+                    setLoading(true);
+
+                    try {
+                        const response = await fetch(url, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            signal: activeRequest.signal,
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Falha ao buscar resultados');
+                        }
+
+                        const html = await response.text();
+                        const doc = new DOMParser().parseFromString(html, 'text/html');
+                        const nextContainer = doc.getElementById('desbravadores-results');
+
+                        if (!nextContainer) {
+                            throw new Error('Container de resultados nao encontrado');
+                        }
+
+                        resultsContainer.innerHTML = nextContainer.innerHTML;
+                        window.history.replaceState({}, '', url);
+                        syncFiltersFromUrl(url);
+                    } catch (error) {
+                        if (error.name !== 'AbortError') {
+                            window.location.href = url;
+                        }
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                const submitFilters = () => {
+                    const params = new URLSearchParams(new FormData(form));
+                    const url = `${form.action}?${params.toString()}`;
+                    requestAndRender(url);
+                };
+
+                form.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    submitFilters();
+                });
+
+                if (unidadeFilter) {
+                    unidadeFilter.addEventListener('change', () => {
+                        submitFilters();
+                    });
+                }
+
+                input.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+
+                    debounceTimer = setTimeout(() => {
+                        const currentValue = input.value.trim();
+
+                        if (currentValue === lastSubmittedValue) return;
+
+                        lastSubmittedValue = currentValue;
+                        submitFilters();
+                    }, 900);
+                });
+
+                resultsContainer.addEventListener('click', (event) => {
+                    const link = event.target.closest('a[href]');
+                    if (!link) return;
+
+                    const isStatusFilter = link.hasAttribute('data-async');
+                    const isPagination = Boolean(link.closest('nav[role="navigation"]'));
+
+                    if (!isStatusFilter && !isPagination) return;
+
+                    event.preventDefault();
+                    requestAndRender(link.href);
+                });
+            })();
+        </script>
     </div>
 </x-app-layout>
-
-
-
