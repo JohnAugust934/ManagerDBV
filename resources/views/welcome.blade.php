@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'Desbravadores Manager') }}</title>
 
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    @include('partials.favicon')
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
 
@@ -30,9 +30,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center gap-2">
-                    <div
-                        class="w-8 h-8 rounded-full bg-dbv-red flex items-center justify-center text-white font-bold border-2 border-dbv-yellow shadow-sm">
-                        D
+                    <div class="w-9 h-9 rounded-full bg-white border border-blue-100 shadow-sm flex items-center justify-center p-1">
+                        <img src="{{ asset('favicon.svg') }}" alt="ManagerDBV" class="w-7 h-7 object-contain">
                     </div>
                     <span class="font-bold text-xl tracking-tight text-dbv-blue dark:text-white">Manager<span
                             class="text-dbv-red">DBV</span></span>
@@ -219,5 +218,4 @@
 </body>
 
 </html>
-
 

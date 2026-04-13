@@ -24,7 +24,7 @@
 
     <title>{{ Auth::user()->club->nome?? config('app.name', 'Desbravadores Manager') }}</title>
 
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    @include('partials.favicon')
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
 
@@ -129,9 +129,8 @@
                         class="h-11 w-11 rounded-xl object-cover border-[1.5px] border-dbv-yellow/80 shadow-md relative z-10"
                         alt="Logo">
                 @else
-                    <div
-                        class="h-11 w-11 rounded-xl bg-gradient-to-br from-dbv-red to-red-600 flex items-center justify-center font-black text-white border border-white/20 shadow-md relative z-10">
-                        DBV
+                    <div class="h-11 w-11 rounded-xl bg-white border border-white/20 shadow-md relative z-10 p-1.5">
+                        <img src="{{ asset('favicon.svg') }}" alt="ManagerDBV" class="w-full h-full object-contain">
                     </div>
                 @endif
 
@@ -166,6 +165,7 @@
             <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
 
                 @php
+                    $hasClubBinding = ! empty(Auth::user()->club_id);
                     $linkClass =
                         'group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 relative overflow-hidden whitespace-nowrap';
                     $activeClass =
@@ -347,17 +347,23 @@
                         <div x-show="open" x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 -translate-y-2"
                             x-transition:enter-end="opacity-100 translate-y-0" x-cloak class="sidebar-submenu pl-11 pr-3 mt-1 space-y-1">
-                            <a href="{{ route('frequencia.index') }}"
-                                class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.index')? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Histórico
-                                Mensal</a>
-                            <a href="{{ route('frequencia.create') }}"
-                                class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.create')? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Nova
-                                Chamada</a>
-                            @can('gerenciar-colunas-chamada')
-                                <a href="{{ route('frequencia.columns.index') }}"
-                                    class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.columns.*')? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Gerenciar
-                                    Colunas</a>
-                            @endcan
+                            @if ($hasClubBinding)
+                                <a href="{{ route('frequencia.index') }}"
+                                    class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.index')? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Histórico
+                                    Mensal</a>
+                                <a href="{{ route('frequencia.create') }}"
+                                    class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.create')? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Nova
+                                    Chamada</a>
+                                @can('gerenciar-colunas-chamada')
+                                    <a href="{{ route('frequencia.columns.index') }}"
+                                        class="block px-3 py-2 text-sm transition-all rounded-lg {{ request()->routeIs('frequencia.columns.*')? 'text-white font-bold bg-white/10 shadow-sm' : 'text-blue-200/70 hover:text-white hover:bg-white/5' }}">Gerenciar
+                                        Colunas</a>
+                                @endcan
+                            @else
+                                <span class="block px-3 py-2 text-xs text-blue-200/70">
+                                    Vincule um clube para usar a frequência
+                                </span>
+                            @endif
                         </div>
                     </div>
                 @endcan

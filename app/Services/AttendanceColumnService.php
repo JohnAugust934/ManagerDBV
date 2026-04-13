@@ -20,9 +20,9 @@ class AttendanceColumnService
         return ! Schema::hasTable('attendance_columns');
     }
 
-    public function ensureFixedColumns(int $clubId): void
+    public function ensureFixedColumns(?int $clubId): void
     {
-        if ($this->usesLegacyColumns()) {
+        if ($this->usesLegacyColumns() || empty($clubId) || $clubId <= 0) {
             return;
         }
 
@@ -43,9 +43,9 @@ class AttendanceColumnService
         }
     }
 
-    public function getActiveColumnsForClub(int $clubId): Collection
+    public function getActiveColumnsForClub(?int $clubId): Collection
     {
-        if ($this->usesLegacyColumns()) {
+        if ($this->usesLegacyColumns() || empty($clubId) || $clubId <= 0) {
             return $this->legacyColumns();
         }
 
@@ -59,9 +59,9 @@ class AttendanceColumnService
             ->get();
     }
 
-    public function getColumnsForManagement(int $clubId): Collection
+    public function getColumnsForManagement(?int $clubId): Collection
     {
-        if ($this->usesLegacyColumns()) {
+        if ($this->usesLegacyColumns() || empty($clubId) || $clubId <= 0) {
             return $this->legacyColumns();
         }
 
@@ -89,4 +89,3 @@ class AttendanceColumnService
         });
     }
 }
-

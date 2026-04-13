@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'DBV Manager') }}</title>
 
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    @include('partials.favicon')
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
@@ -41,11 +41,11 @@
             <div class="w-full max-w-md space-y-8">
                 <div class="text-center lg:text-left">
                     <div class="lg:hidden flex justify-center mb-6">
-                        <div
-                            class="w-16 h-16 bg-dbv-blue rounded-full flex items-center justify-center text-dbv-yellow font-bold text-2xl shadow-lg">
-                            DBV</div>
+                        <div class="w-16 h-16 rounded-full bg-white border border-blue-100 shadow-lg flex items-center justify-center p-2">
+                            <img src="{{ asset('favicon.svg') }}" alt="ManagerDBV" class="w-12 h-12 object-contain">
+                        </div>
                     </div>
-                    <h2 class="text-3xl font-bold text-dbv-blue dark:text-blue-200">DBV Manager</h2>
+                    <h2 class="text-3xl font-bold text-dbv-blue dark:text-blue-200">ManagerDBV</h2>
                     <p class="text-gray-500 dark:text-slate-400 mt-2">Acesse sua conta para continuar.</p>
                 </div>
                 <div class="mt-8">

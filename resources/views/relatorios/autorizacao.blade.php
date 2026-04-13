@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
+    @include('partials.favicon')
     <title>Autorização de Participação</title>
     <style>
         @page { margin: 24px; }
@@ -188,5 +189,4 @@
     </table>
 </body>
 </html>
-
 

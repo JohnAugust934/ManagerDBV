@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
+    @include('partials.favicon')
     <title>Ficha Médica - {{ $desbravador->nome }}</title>
     <style>
         @page { margin: 24px; }
@@ -71,5 +72,4 @@
     </div>
 </body>
 </html>
-
 

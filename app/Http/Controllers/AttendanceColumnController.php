@@ -18,7 +18,13 @@ class AttendanceColumnController extends Controller
     {
         Gate::authorize('gerenciar-colunas-chamada');
 
-        $clubId = (int) auth()->user()->club_id;
+        $clubId = auth()->user()->club_id;
+        if (empty($clubId) || $clubId <= 0) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'Usuario sem clube vinculado. Vincule um clube para gerenciar colunas da chamada.');
+        }
+
         $columns = $this->attendanceColumnService->getColumnsForManagement($clubId);
         $legacyMode = $this->attendanceColumnService->usesLegacyColumns();
 
@@ -53,7 +59,12 @@ class AttendanceColumnController extends Controller
             'new_columns.*.points' => 'nullable|integer|min:1|max:10',
         ]);
 
-        $clubId = (int) auth()->user()->club_id;
+        $clubId = auth()->user()->club_id;
+        if (empty($clubId) || $clubId <= 0) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'Usuario sem clube vinculado. Vincule um clube para gerenciar colunas da chamada.');
+        }
         $clubColumns = $this->attendanceColumnService->getColumnsForManagement($clubId)->keyBy('id');
 
         DB::transaction(function () use ($validated, $clubColumns, $clubId) {
@@ -112,7 +123,12 @@ class AttendanceColumnController extends Controller
                 ->with('error', 'Atualizacao pendente: execute as migrations para habilitar a gestao de colunas.');
         }
 
-        $clubId = (int) auth()->user()->club_id;
+        $clubId = auth()->user()->club_id;
+        if (empty($clubId) || $clubId <= 0) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'Usuario sem clube vinculado. Vincule um clube para gerenciar colunas da chamada.');
+        }
         if ((int) $attendanceColumn->club_id !== $clubId) {
             abort(403);
         }

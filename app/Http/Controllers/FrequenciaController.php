@@ -17,6 +17,13 @@ class FrequenciaController extends Controller
 
     public function index(Request $request)
     {
+        $clubId = auth()->user()->club_id;
+        if (empty($clubId) || $clubId <= 0) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'Usuario sem clube vinculado. Vincule um clube para usar o modulo de frequencia.');
+        }
+
         $mes = $request->input('mes', now()->month);
         $ano = $request->input('ano', now()->year);
 
@@ -42,7 +49,7 @@ class FrequenciaController extends Controller
 
     public function create()
     {
-        $clubId = (int) auth()->user()->club_id;
+        $clubId = auth()->user()->club_id;
 
         $unidades = Unidade::with(['desbravadores' => function ($query) {
             $query->where('ativo', true)->orderBy('nome');
@@ -63,7 +70,13 @@ class FrequenciaController extends Controller
             'presencas' => 'required|array',
         ]);
 
-        $clubId = (int) auth()->user()->club_id;
+        $clubId = auth()->user()->club_id;
+
+        if (empty($clubId) || $clubId <= 0) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'Usuario sem clube vinculado. Vincule um clube para registrar chamada.');
+        }
 
         if ($this->attendanceColumnService->usesLegacyColumns()) {
             foreach ($request->presencas as $id => $dados) {

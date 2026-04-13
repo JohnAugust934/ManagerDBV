@@ -49,16 +49,23 @@
                 </div>
 
                 @can('pedagogico')
-                    <a href="{{ route('frequencia.create') }}"
-                        class="w-full sm:w-auto bg-dbv-blue hover:bg-blue-800 text-white px-6 py-3 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 group">
-                        <svg class="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                            </path>
-                        </svg>
-                        <span class="font-semibold">Nova Chamada</span>
-                    </a>
+                    @if (!empty(auth()->user()->club_id))
+                        <a href="{{ route('frequencia.create') }}"
+                            class="w-full sm:w-auto bg-dbv-blue hover:bg-blue-800 text-white px-6 py-3 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 group">
+                            <svg class="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                </path>
+                            </svg>
+                            <span class="font-semibold">Nova Chamada</span>
+                        </a>
+                    @else
+                        <span
+                            class="w-full sm:w-auto px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm font-semibold">
+                            Vincule um clube para usar a frequência
+                        </span>
+                    @endif
                 @endcan
             </div>
 
@@ -401,5 +408,4 @@
         });
     </script>
 </x-app-layout>
-
 

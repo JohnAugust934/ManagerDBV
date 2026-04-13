@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
+    @include('partials.favicon')
     <title>Ata {{ $ata->id }}</title>
     <style>
         @page { margin: 28px 24px 24px; }

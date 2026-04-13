@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
+    @include('partials.favicon')
     <title>Fichas Médicas em Lote</title>
     <style>
         @page { margin: 24px; }
@@ -62,5 +63,4 @@
     @endforeach
 </body>
 </html>
-
 

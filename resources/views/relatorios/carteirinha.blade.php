@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    @include('partials.favicon')
     <title>Carteirinha - {{ $desbravador->nome }}</title>
     <style>
         body {
@@ -172,4 +173,3 @@
 </body>
 
 </html>
-
