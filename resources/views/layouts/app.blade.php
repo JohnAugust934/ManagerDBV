@@ -2,8 +2,12 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="antialiased" x-data="{
     darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
     sidebarOpen: false,
-    mobileMenuOpen: false
-}" x-init="$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'))" :class="{ 'dark': darkMode }">
+    mobileMenuOpen: false,
+    sidebarExpanded: localStorage.getItem('sidebarExpanded') === 'true' || !('sidebarExpanded' in localStorage)
+}" x-init="
+    $watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'));
+    $watch('sidebarExpanded', val => localStorage.setItem('sidebarExpanded', val));
+" :class="{ 'dark': darkMode }">
 
 <head>
     <meta charset="utf-8">
@@ -46,212 +50,239 @@
 
         <!-- Sidebar Navigation -->
         <aside
-            class="fixed inset-y-0 left-0 z-50 w-[280px] m-4 md:m-6 ui-glass rounded-[32px] overflow-hidden flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-2xl shadow-blue-900/5 dark:shadow-black/50 lg:translate-x-0 lg:static lg:shrink-0"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-[150%]'"
+            class="fixed inset-y-0 left-0 z-50 m-4 md:m-6 ui-glass rounded-[32px] overflow-hidden flex flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-2xl shadow-blue-900/5 dark:shadow-black/50 lg:translate-x-0 lg:static lg:shrink-0"
+            :class="[
+                sidebarOpen ? 'translate-x-0 w-[280px]' : '-translate-x-[150%] w-[280px]',
+                sidebarExpanded ? 'lg:w-[280px]' : 'lg:w-[96px] items-center'
+            ]"
             style="height: calc(100vh - 2rem)">
             
             <!-- Branding -->
-            <div class="px-6 py-8 flex items-center gap-4 border-b border-black/5 dark:border-white/5 relative shrink-0">
+            <div class="px-6 py-8 flex items-center gap-4 border-b border-black/5 dark:border-white/5 relative shrink-0 w-full" :class="!sidebarExpanded && 'lg:justify-center lg:px-2'">
                 <!-- Club Logo -->
                 @if (Auth::user()->club && Auth::user()->club->logo)
-                    <img src="{{ asset('storage/' . Auth::user()->club->logo) }}" class="w-12 h-12 rounded-2xl object-cover shadow-sm border border-black/5 dark:border-white/10" alt="Logo">
+                    <img src="{{ asset('storage/' . Auth::user()->club->logo) }}" class="w-12 h-12 rounded-2xl object-cover shadow-sm border border-black/5 dark:border-white/10 shrink-0" alt="Logo">
                 @else
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#002F6C] to-[#001D42] p-2.5 shadow-lg shadow-blue-900/20 flex items-center justify-center">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#002F6C] to-[#001D42] p-2.5 shadow-lg shadow-blue-900/20 flex items-center justify-center shrink-0">
                         <img src="{{ asset('favicon.svg') }}" alt="ManagerDBV" class="w-full h-full object-contain filter drop-shadow">
                     </div>
                 @endif
                 
-                <div class="flex flex-col">
-                    <h1 class="font-black text-[17px] text-slate-800 dark:text-white leading-tight uppercase tracking-wide text-gradient-dbv">
+                <div class="flex flex-col overflow-hidden" x-show="sidebarExpanded" x-transition.opacity.duration.300ms>
+                    <h1 class="font-black text-[17px] text-slate-800 dark:text-white leading-tight uppercase tracking-wide text-gradient-dbv whitespace-nowrap">
                         {{ Str::limit(Auth::user()->club->nome ?? 'MANAGER', 15) }}
                     </h1>
-                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 whitespace-nowrap">
                         {{ Auth::user()->role === 'master' ? 'Master Admin' : 'Sistema de Gestão' }}
                     </span>
                 </div>
             </div>
 
             <!-- Navigation Links -->
-            <nav class="flex-1 px-4 py-6 overflow-y-auto custom-scrollbar space-y-1">
+            <nav class="flex-1 w-full px-4 py-6 overflow-y-auto custom-scrollbar space-y-1" :class="!sidebarExpanded && 'lg:px-2'">
                 @php
-                    $linkBase = 'flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-bold transition-all duration-300 relative group overflow-hidden';
+                    $linkBase = 'flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-bold transition-all duration-300 relative group overflow-hidden whitespace-nowrap';
                     $activeClass = 'bg-gradient-to-r from-[#002F6C]/10 to-transparent dark:from-blue-500/10 text-[#002F6C] dark:text-blue-400';
                     $inactiveClass = 'text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/50';
-                    $iconActive = 'text-[#D9222A] dark:text-red-400 drop-shadow-sm';
-                    $iconInactive = 'text-slate-400 group-hover:text-[#D9222A]/70 dark:text-slate-500 transition-colors';
+                    $iconActive = 'text-[#D9222A] dark:text-red-400 drop-shadow-sm shrink-0';
+                    $iconInactive = 'text-slate-400 group-hover:text-[#D9222A]/70 dark:text-slate-500 transition-colors shrink-0';
                 @endphp
 
-                <p class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Visão Geral</p>
+                <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Visão Geral</p>
+                <div x-show="!sidebarExpanded" class="h-4 border-b border-black/5 dark:border-white/5 mb-2 mx-4 transition-opacity hidden lg:block"></div>
 
-                <a href="{{ route('dashboard') }}" class="{{ $linkBase }} {{ request()->routeIs('dashboard') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('dashboard') }}" class="{{ $linkBase }} {{ request()->routeIs('dashboard') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                     @if(request()->routeIs('dashboard')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('dashboard') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                    Painel
+                    <svg class="w-6 h-6 {{ request()->routeIs('dashboard') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Painel</span>
                 </a>
 
                 @can('secretaria')
                 <!-- ACORDEON SECRETARIA -->
                 <div class="pt-4 pb-1">
-                    <p class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Secretaria & Clube</p>
+                    <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Secretaria & Clube</p>
+                    <div x-show="!sidebarExpanded" class="border-b border-black/5 dark:border-white/5 mx-4 mb-2 transition-opacity hidden lg:block"></div>
                 </div>
                 
-                <a href="{{ route('unidades.index') }}" class="{{ $linkBase }} {{ request()->routeIs('unidades*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('unidades.index') }}" class="{{ $linkBase }} {{ request()->routeIs('unidades*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('unidades*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('unidades*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    Unidades
+                    <svg class="w-6 h-6 {{ request()->routeIs('unidades*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Unidades</span>
                 </a>
 
-                <a href="{{ route('desbravadores.index') }}" class="{{ $linkBase }} {{ request()->routeIs('desbravadores*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('desbravadores.index') }}" class="{{ $linkBase }} {{ request()->routeIs('desbravadores*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('desbravadores*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('desbravadores*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                    Desbravadores
+                    <svg class="w-6 h-6 {{ request()->routeIs('desbravadores*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Desbravadores</span>
                 </a>
 
-                <a href="{{ route('club.edit') }}" class="{{ $linkBase }} {{ request()->routeIs('club.edit') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('club.edit') }}" class="{{ $linkBase }} {{ request()->routeIs('club.edit') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('club.edit')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('club.edit') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                    Meu Clube
+                    <svg class="w-6 h-6 {{ request()->routeIs('club.edit') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Meu Clube</span>
                 </a>
-                
-                <a href="{{ route('atas.index') }}" class="{{ $linkBase }} {{ request()->routeIs('atas*') || request()->routeIs('atos*') ? $activeClass : $inactiveClass }}">
-                     @if(request()->routeIs('atas*') || request()->routeIs('atos*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('atas*') || request()->routeIs('atos*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    Atas e Atos
-                </a>
+
+                <!-- Documentos: Atos e Atas -->
+                <div x-data="{ docMenuOpen: false }" class="space-y-1">
+                    <button @click="docMenuOpen = !docMenuOpen" class="{{ $linkBase }} {{ request()->routeIs('atas*') || request()->routeIs('atos*') ? $activeClass : $inactiveClass }} w-full text-left" :class="!sidebarExpanded && 'lg:justify-center'">
+                        @if(request()->routeIs('atas*') || request()->routeIs('atos*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                        <svg class="w-6 h-6 {{ request()->routeIs('atas*') || request()->routeIs('atos*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        <span x-show="sidebarExpanded" class="flex-1" x-transition.opacity.duration.300ms>Documentos</span>
+                        <svg x-show="sidebarExpanded" :class="{'rotate-180': docMenuOpen}" class="w-4 h-4 transition-transform duration-200 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <!-- Submenu -->
+                    <div x-show="docMenuOpen && sidebarExpanded" x-transition class="pl-12 pr-4 py-1 space-y-1 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl" x-cloak>
+                        <a href="{{ route('atas.index') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('atas*') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Atas Reunões</a>
+                        <a href="{{ route('atos.index') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('atos*') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Atos Administrativos</a>
+                    </div>
+                </div>
                 @endcan
 
                 @can('pedagogico')
                 <!-- ACORDEON PEDAGOGICO -->
                 <div class="pt-4 pb-1">
-                    <p class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Pedagógico</p>
+                    <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Pedagógico</p>
+                    <div x-show="!sidebarExpanded" class="border-b border-black/5 dark:border-white/5 mx-4 mb-2 transition-opacity hidden lg:block"></div>
                 </div>
 
-                <a href="{{ route('frequencia.index') }}" class="{{ $linkBase }} {{ request()->routeIs('frequencia*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('frequencia.index') }}" class="{{ $linkBase }} {{ request()->routeIs('frequencia*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('frequencia*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('frequencia*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Frequência Mensal
+                    <svg class="w-6 h-6 {{ request()->routeIs('frequencia*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Frequência</span>
                 </a>
                 
-                <a href="{{ route('classes.index') }}" class="{{ $linkBase }} {{ request()->routeIs('classes*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('classes.index') }}" class="{{ $linkBase }} {{ request()->routeIs('classes*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('classes*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('classes*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                    Classes Regulares
+                    <svg class="w-6 h-6 {{ request()->routeIs('classes*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Aulas Regulares</span>
                 </a>
 
-                <a href="{{ route('especialidades.index') }}" class="{{ $linkBase }} {{ request()->routeIs('especialidades*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('especialidades.index') }}" class="{{ $linkBase }} {{ request()->routeIs('especialidades*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('especialidades*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('especialidades*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Especialidades
+                    <svg class="w-6 h-6 {{ request()->routeIs('especialidades*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Especialidades</span>
                 </a>
                 
-                <a href="{{ route('ranking.desbravadores') }}" class="{{ $linkBase }} {{ request()->routeIs('ranking*') ? $activeClass : $inactiveClass }}">
-                     @if(request()->routeIs('ranking*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('ranking*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                    Rankings
-                </a>
+                <!-- Gamificação / Rankings -->
+                <div x-data="{ rankingMenuOpen: false }" class="space-y-1">
+                    <button @click="rankingMenuOpen = !rankingMenuOpen" class="{{ $linkBase }} {{ request()->routeIs('ranking*') ? $activeClass : $inactiveClass }} w-full text-left" :class="!sidebarExpanded && 'lg:justify-center'">
+                        @if(request()->routeIs('ranking*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                        <svg class="w-6 h-6 {{ request()->routeIs('ranking*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        <span x-show="sidebarExpanded" class="flex-1" x-transition.opacity.duration.300ms>Rankings</span>
+                        <svg x-show="sidebarExpanded" :class="{'rotate-180': rankingMenuOpen}" class="w-4 h-4 transition-transform duration-200 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <!-- Submenu -->
+                    <div x-show="rankingMenuOpen && sidebarExpanded" x-transition class="pl-12 pr-4 py-1 space-y-1 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl" x-cloak>
+                        <a href="{{ route('ranking.desbravadores') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('ranking.desbravadores') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Desbravadores</a>
+                        <a href="{{ route('ranking.unidades') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('ranking.unidades') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Top Unidades</a>
+                    </div>
+                </div>
                 @endcan
 
                 @can('eventos')
                 <div class="pt-4 pb-1">
-                    <p class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Eventos</p>
+                    <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Eventos</p>
+                    <div x-show="!sidebarExpanded" class="border-b border-black/5 dark:border-white/5 mx-4 mb-2 transition-opacity hidden lg:block"></div>
                 </div>
-                <a href="{{ route('eventos.index') }}" class="{{ $linkBase }} {{ request()->routeIs('eventos*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('eventos.index') }}" class="{{ $linkBase }} {{ request()->routeIs('eventos*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('eventos*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('eventos*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    Calendário
+                    <svg class="w-6 h-6 {{ request()->routeIs('eventos*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Calendário</span>
                 </a>
                 @endcan
 
                 @can('financeiro')
                 <!-- ACORDEON FINANCEIRO -->
                 <div class="pt-4 pb-1">
-                    <p class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Finanças & Bens</p>
+                    <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Finanças & Bens</p>
+                    <div x-show="!sidebarExpanded" class="border-b border-black/5 dark:border-white/5 mx-4 mb-2 transition-opacity hidden lg:block"></div>
                 </div>
                 
-                <a href="{{ route('mensalidades.index') }}" class="{{ $linkBase }} {{ request()->routeIs('mensalidades*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('mensalidades.index') }}" class="{{ $linkBase }} {{ request()->routeIs('mensalidades*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('mensalidades*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('mensalidades*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Mensalidades
+                    <svg class="w-6 h-6 {{ request()->routeIs('mensalidades*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Mensalidades</span>
                 </a>
-                <a href="{{ route('caixa.index') }}" class="{{ $linkBase }} {{ request()->routeIs('caixa*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('caixa.index') }}" class="{{ $linkBase }} {{ request()->routeIs('caixa*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('caixa*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('caixa*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                    Fluxo de Caixa
+                    <svg class="w-6 h-6 {{ request()->routeIs('caixa*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Fluxo de Caixa</span>
                 </a>
-                <a href="{{ route('patrimonio.index') }}" class="{{ $linkBase }} {{ request()->routeIs('patrimonio*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('patrimonio.index') }}" class="{{ $linkBase }} {{ request()->routeIs('patrimonio*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('patrimonio*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('patrimonio*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                    Patrimônio
+                    <svg class="w-6 h-6 {{ request()->routeIs('patrimonio*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Patrimônio</span>
                 </a>
                 @endcan
 
                 @if (auth()->user()->can('gestao-acessos') || auth()->user()->can('master') || auth()->user()->can('relatorios'))
                 <!-- ACORDEON ADMIN -->
                 <div class="pt-4 pb-1">
-                    <p class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Avançado</p>
+                    <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Avançado</p>
+                    <div x-show="!sidebarExpanded" class="border-b border-black/5 dark:border-white/5 mx-4 mb-2 transition-opacity hidden lg:block"></div>
                 </div>
                 @endif
                 
                 @can('relatorios')
-                <a href="{{ route('relatorios.index') }}" class="{{ $linkBase }} {{ request()->routeIs('relatorios*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('relatorios.index') }}" class="{{ $linkBase }} {{ request()->routeIs('relatorios*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('relatorios*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('relatorios*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                    Relatórios
+                    <svg class="w-6 h-6 {{ request()->routeIs('relatorios*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Relatórios</span>
                 </a>
                 @endcan
 
                 @can('gestao-acessos')
-                <a href="{{ route('usuarios.index') }}" class="{{ $linkBase }} {{ request()->routeIs('usuarios*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('usuarios.index') }}" class="{{ $linkBase }} {{ request()->routeIs('usuarios*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('usuarios*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('usuarios*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                    Usuários
+                    <svg class="w-6 h-6 {{ request()->routeIs('usuarios*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Usuários</span>
                 </a>
-                <a href="{{ route('invites.index') }}" class="{{ $linkBase }} {{ request()->routeIs('invites*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('invites.index') }}" class="{{ $linkBase }} {{ request()->routeIs('invites*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('invites*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('invites*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    Convites
+                    <svg class="w-6 h-6 {{ request()->routeIs('invites*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Convites</span>
                 </a>
                 @endcan
                 
                 @can('master')
-                <a href="{{ route('backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('backups*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('backups*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('backups*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                    Backups e Nuvem
+                    <svg class="w-6 h-6 {{ request()->routeIs('backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Backups Cloud</span>
                 </a>
                 @endcan
 
                 <div class="pt-4 pb-1">
-                    <p class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Ajuda</p>
+                    <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Ajuda</p>
+                    <div x-show="!sidebarExpanded" class="border-b border-black/5 dark:border-white/5 mx-4 mb-2 transition-opacity hidden lg:block"></div>
                 </div>
                 
-                <a href="{{ route('manual.sistema') }}" class="{{ $linkBase }} {{ request()->routeIs('manual*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('manual.sistema') }}" class="{{ $linkBase }} {{ request()->routeIs('manual*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('manual*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('manual*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                    Manual do Sistema
+                    <svg class="w-6 h-6 {{ request()->routeIs('manual*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Manual</span>
                 </a>
                 
-                <a href="{{ route('sobre') }}" class="{{ $linkBase }} {{ request()->routeIs('sobre*') ? $activeClass : $inactiveClass }}">
+                <a href="{{ route('sobre') }}" class="{{ $linkBase }} {{ request()->routeIs('sobre*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('sobre*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-5 h-5 {{ request()->routeIs('sobre*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Sobre
+                    <svg class="w-6 h-6 {{ request()->routeIs('sobre*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Sobre</span>
                 </a>
-
             </nav>
 
             <!-- Bottom Profile Area -->
-            <div class="px-4 py-4 border-t border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 shrink-0">
+            <div class="w-full px-4 py-4 border-t border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 shrink-0" :class="!sidebarExpanded && 'lg:px-2'">
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3" :class="!sidebarExpanded && 'lg:justify-center'">
                         <div class="w-10 h-10 rounded-full font-bold bg-[#D9222A] text-white flex items-center justify-center shrink-0">
                             {{ mb_strtoupper(substr(Auth::user()->name, 0, 1)) }}
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold truncate text-slate-800 dark:text-slate-200">{{ Auth::user()->name }}</p>
-                            <a href="{{ route('profile.edit') }}" class="text-[11px] font-bold text-slate-500 hover:text-[#002F6C] dark:hover:text-blue-400">Ver Perfil</a>
+                        <div class="flex-1 min-w-0" x-show="sidebarExpanded" x-transition.opacity.duration.300ms>
+                            <p class="text-[13px] font-bold truncate text-slate-800 dark:text-slate-200">{{ Auth::user()->name }}</p>
+                            <a href="{{ route('profile.edit') }}" class="text-[10px] font-bold text-slate-500 hover:text-[#002F6C] dark:hover:text-blue-400">Ver Perfil</a>
                         </div>
-                        <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Sair">
+                        <button x-show="sidebarExpanded" type="submit" class="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0" title="Sair" x-transition.opacity.duration.300ms>
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                         </button>
                     </div>
@@ -264,9 +295,14 @@
             
             <!-- Sleek Header -->
             <header class="h-16 sm:h-20 px-4 sm:px-8 mt-2 sm:mt-4 mx-4 md:mx-6 lg:ml-0 ui-glass rounded-[20px] sm:rounded-[28px] shadow-sm flex items-center justify-between sticky top-2 sm:top-4 z-30 shrink-0 border-b-0 border-white/40 dark:border-white/5">
-                <div class="flex items-center gap-3 sm:gap-4">
+                <div class="flex items-center gap-3 sm:gap-6">
+                    <!-- Mobile trigger -->
                     <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 -ml-2 text-slate-500 hover:text-[#002F6C] dark:text-slate-400 dark:hover:text-blue-400 focus:outline-none transition-colors">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h8m-8 6h16" /></svg>
+                    </button>
+                    <!-- Desktop Toggle (Retrátil) -->
+                    <button @click="sidebarExpanded = !sidebarExpanded" class="hidden lg:flex p-2 -ml-2 text-slate-400 hover:text-[#002F6C] dark:hover:text-blue-400 focus:outline-none transition-colors group" title="Recolher Menu">
+                        <svg class="w-5 h-5 transition-transform duration-300" :class="!sidebarExpanded && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h10M4 18h16" /></svg>
                     </button>
                     <h1 class="text-lg sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight">
                         {{ $header ?? 'Gestão DBV' }}

@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-1">
             <h2 class="text-2xl font-black text-slate-900 dark:text-white">
@@ -10,7 +10,7 @@
     <div class="ui-page" x-data="{ tipo: '' }">
         <div class="mx-auto flex max-w-7xl flex-col gap-8">
             <section class="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
-                <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="ui-card p-0 overflow-hidden border-0 xl:border">
                     <div class="bg-gradient-to-r from-slate-900 via-sky-900 to-teal-800 px-8 py-8 text-white">
                         <p class="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Central de gestao</p>
                         <h3 class="mt-3 max-w-2xl text-3xl font-black leading-tight">
@@ -44,7 +44,7 @@
                     </div>
                 </div>
 
-                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="ui-card p-6">
                     <div class="flex items-center gap-3">
                         <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +89,7 @@
                 </div>
             </section>
 
-            <section class="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <section class="ui-card p-0 border-0 xl:border overflow-hidden">
                 <div class="border-b border-slate-200 px-6 py-5 dark:border-slate-700">
                     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div>

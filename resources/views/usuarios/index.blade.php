@@ -1,167 +1,117 @@
-﻿<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-200 leading-tight flex items-center gap-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
-                </path>
-            </svg>
-            {{ __('Gestão de Usuários') }}
-        </h2>
-    </x-slot>
+<x-app-layout>
+    <x-slot name="header">Gestão de Usuários</x-slot>
 
-    <div class="ui-page">
-        <div>
-            <div
-                class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700">
+    <div class="ui-page max-w-6xl mx-auto space-y-6 ui-animate-fade-up">
 
-                {{-- CABEÇALHO DO CARD COM O BOTÃO DE CONVITES --}}
-                <div
-                    class="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50/50 dark:bg-gray-800/50">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-800 dark:text-white">Equipe do Clube</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Gerencie os acessos e cargos dos membros da
-                            diretoria.</p>
-                    </div>
-                    <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
-                        <a href="{{ route('invites.index') }}"
-                            class="ui-btn-primary w-full sm:w-auto flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
-                                </path>
-                            </svg>
-                            Gerenciar Convites
-                        </a>
-                    </div>
+        {{-- Cabeçalho da Tela --}}
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-0">
+            <div>
+                <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
+                    <svg class="w-8 h-8 text-[#002F6C] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5V10l-12-8L0 10v10h5m7-12h4m-4 4h4m-4 4h4M7 10h.01M7 14h.01M7 18h.01" /></svg>
+                    Equipe do Clube
+                </h1>
+                <p class="text-slate-500 font-medium mt-1">Gerencie os acessos, cargos e permissões dos membros da diretoria.</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                {{-- Verifica se a rota de convites existe para renderizar este link. Normalmente é pra existir. --}}
+                <a href="{{ route('invites.index') }}" class="ui-btn-secondary w-full sm:w-auto px-6 h-12 flex justify-center items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Gerenciar Convites
+                </a>
+            </div>
+        </div>
+
+        {{-- Tabela de Usuários --}}
+        <div class="ui-card p-0 overflow-hidden mx-4 sm:mx-0">
+            @if ($users->isEmpty())
+                <div class="ui-empty py-16 border-none shadow-none">
+                    <div class="ui-empty-icon"><svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
+                    <h3 class="ui-empty-title">Nenhum Usuário Encontrado</h3>
+                    <p class="ui-empty-description">A base do seu clube ainda não tem membros. Crie convites para montar sua equipe de diretoria.</p>
+                    <div class="mt-6"><a href="{{ route('invites.index') }}" class="ui-btn-primary">Criar Convites</a></div>
                 </div>
-
-                {{-- LISTAGEM DE USUARIOS --}}
-                @if ($users->isEmpty())
-                    <div class="p-6">
-                        <x-empty-state
-                            title="Nenhum usuario encontrado"
-                            description="Crie convites para montar a equipe do clube e distribuir os acessos de forma segura." />
-                    </div>
-                @else
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead
-                                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-300 hidden md:table-header-group">
-                                <tr>
-                                    <th scope="col" class="px-6 py-4 font-bold">Usuario</th>
-                                    <th scope="col" class="px-6 py-4 font-bold">Cargo Oficial</th>
-                                    <th scope="col" class="px-6 py-4 font-bold">Permissões Extras</th>
-                                    <th scope="col" class="px-6 py-4 font-bold text-center">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700 flex flex-col md:table-row-group">
-                                @foreach ($users as $user)
-                                    <tr
-                                        class="flex flex-col md:table-row bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors p-4 md:p-0 gap-3 md:gap-0">
-
-                                    {{-- Nome e Email --}}
-                                    <td class="px-2 md:px-6 py-2 md:py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div
-                                                class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-dbv-blue text-white flex items-center justify-center font-bold text-lg shadow-inner shrink-0">
-                                                {{ substr($user->name, 0, 1) }}
+            @else
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                                <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Usuário</th>
+                                <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-center">Cargo Hierárquico</th>
+                                <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Permissões Especiais</th>
+                                <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-right">Controles</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            @foreach ($users as $user)
+                                <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors group">
+                                    {{-- Nome / Foto --}}
+                                    <td class="px-6 py-5">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#002F6C] to-blue-500 shadow-lg shadow-blue-500/20 text-white flex items-center justify-center font-black text-xl shrink-0">
+                                                {{ mb_substr($user->name, 0, 1) }}
                                             </div>
                                             <div>
-                                                <div class="font-bold text-gray-900 dark:text-white text-base">
-                                                    {{ $user->name }}</div>
-                                                <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                    {{ $user->email }}</div>
+                                                <p class="font-black text-slate-800 dark:text-white uppercase tracking-tight">{{ $user->name }}</p>
+                                                <p class="text-xs font-semibold text-slate-500 mt-0.5 lowercase">{{ $user->email }}</p>
                                             </div>
                                         </div>
                                     </td>
 
                                     {{-- Cargo --}}
-                                    <td class="px-2 md:px-6 py-1 md:py-4">
-                                        <span
-                                            class="md:hidden text-xs font-semibold text-gray-400 uppercase mr-2">Cargo:</span>
+                                    <td class="px-6 py-5 text-center whitespace-nowrap">
                                         @php
                                             $roleColors = [
-                                                'master' =>
-                                                    'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
-                                                'diretor' =>
-                                                    'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800',
-                                                'secretario' =>
-                                                    'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
-                                                'tesoureiro' =>
-                                                    'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+                                                'master' => 'bg-red-50 border-red-200 text-red-600 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-400',
+                                                'diretor' => 'bg-purple-50 border-purple-200 text-purple-600 dark:bg-purple-500/10 dark:border-purple-500/30 dark:text-purple-400',
+                                                'secretario' => 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400',
+                                                'tesoureiro' => 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400',
                                             ];
-                                            $colorClass =
-                                                $roleColors[$user->role]??
-                                                'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
+                                            $colorClass = $roleColors[$user->role] ?? 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400';
                                         @endphp
-                                        <span
-                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border {{ $colorClass }}">
+                                        <span class="inline-block px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded border shadow-sm {{ $colorClass }}">
                                             {{ $user->role }}
                                         </span>
                                     </td>
 
-                                    {{-- Permissões Extras --}}
-                                    <td class="px-2 md:px-6 py-1 md:py-4">
-                                        <span
-                                            class="md:hidden text-xs font-semibold text-gray-400 uppercase mr-2">Extras:</span>
-                                        <div class="flex flex-wrap gap-1">
+                                    {{-- Permissões --}}
+                                    <td class="px-6 py-5">
+                                        <div class="flex flex-wrap gap-1.5">
                                             @if ($user->extra_permissions && count($user->extra_permissions) > 0)
                                                 @foreach ($user->extra_permissions as $perm)
-                                                    <span
-                                                        class="px-2 py-0.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-500 text-[10px] rounded font-semibold uppercase">
+                                                    <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-amber-700 dark:text-amber-500 text-[10px] rounded uppercase font-black tracking-widest shadow-sm">
                                                         {{ $perm }}
                                                     </span>
                                                 @endforeach
                                             @else
-                                                <span class="text-xs text-gray-400 italic">Nenhuma</span>
+                                                <span class="text-xs font-bold text-slate-300 dark:text-slate-600 italic">Sem permissões adicionais</span>
                                             @endif
                                         </div>
                                     </td>
 
                                     {{-- Ações --}}
-                                    <td
-                                        class="px-2 md:px-6 py-3 md:py-4 md:text-center mt-2 md:mt-0 border-t border-gray-100 md:border-none flex items-center justify-end gap-2">
-                                        <a href="{{ route('usuarios.edit', $user->id) }}"
-                                            class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 rounded-lg transition-colors"
-                                            title="Editar Acessos">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-                                                </path>
-                                            </svg>
-                                        </a>
-                                        @if ($user->id !== auth()->id())
-                                            <form action="{{ route('usuarios.destroy', $user->id) }}" method="POST"
-                                                class="inline-block"
-                                                onsubmit="return confirm('Tem certeza que deseja remover o acesso deste usuario?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="p-2 text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-lg transition-colors"
-                                                    title="Remover Usuario">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                        </path>
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        @endif
+                                    <td class="px-6 py-5 text-right whitespace-nowrap">
+                                        <div class="flex items-center justify-end gap-2 opacity-100 sm:opacity-40 group-hover:opacity-100 transition-opacity">
+                                            <a href="{{ route('usuarios.edit', $user->id) }}" class="p-2 rounded-xl text-slate-400 hover:text-[#002F6C] hover:bg-[#002F6C]/10 dark:hover:text-blue-400 dark:hover:bg-blue-500/20 transition-colors" title="Editar Permissões">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            </a>
+                                            
+                                            @if ($user->id !== auth()->id() && $user->role !== 'master')
+                                                <form action="{{ route('usuarios.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Deseja descadastrar e revogar o acesso deste usuário?');">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition-colors" title="Revogar Usuário">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-            </div>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>
-
-
-

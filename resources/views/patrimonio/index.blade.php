@@ -1,348 +1,216 @@
-﻿<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
-            {{ __('Inventário de Patrimônio') }}
-        </h2>
-    </x-slot>
+<x-app-layout>
+    <x-slot name="header">Gestão de Patrimônio</x-slot>
 
-    <div class="ui-page space-y-8">
-        <div class="space-y-8">
+    <div class="ui-page space-y-6 max-w-[1400px] ui-animate-fade-up">
 
-            {{-- 1. Dashboard de Resumo (KPIs) --}}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {{-- Total Itens --}}
-                <div
-                    class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border-l-4 border-blue-500 dark:border-blue-600">
-                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Total Itens (Qtd)</p>
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">{{ $totalItens }}</h3>
+        {{-- Cabeçalho --}}
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight">Inventário de Patrimônio</h1>
+                <p class="text-slate-500 font-medium mt-1 text-sm">Controle de bens, barracas, equipamentos e almoxarifado.</p>
+            </div>
+            <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary w-full sm:w-auto h-12 px-6 flex items-center justify-center gap-2 rounded-2xl">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                Novo Item
+            </a>
+        </div>
+
+        {{-- ============================================= --}}
+        {{-- CARDS DE RESUMO — layout equilibrado mobile  --}}
+        {{-- ============================================= --}}
+        {{-- Mobile: linha 1 = valor (full width), linha 2 = 3 cards em linha --}}
+        {{-- Desktop: 4 colunas lado a lado --}}
+        <div class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-4 lg:gap-4">
+
+            {{-- Valor Estimado Total — destaque, full-width no mobile --}}
+            <div class="lg:order-2 ui-card p-5 relative overflow-hidden border-l-4 border-emerald-500 flex items-center gap-4">
+                <div class="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-emerald-500/10 pointer-events-none"></div>
+                <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 border border-emerald-200 dark:border-emerald-500/30">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Valor Estimado Total</p>
+                    <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-tight">
+                        R$ {{ number_format($valorTotal, 2, ',', '.') }}
+                    </h3>
+                </div>
+            </div>
 
-                {{-- Valor Total --}}
-                <div
-                    class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border-l-4 border-green-500 dark:border-green-600">
-                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Valor Patrimonial</p>
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1 text-nowrap truncate">R$
-                        {{ number_format($valorTotal, 2, ',', '.') }}</h3>
+            {{-- Mini-cards: 3 em linha horizontal no mobile --}}
+            <div class="grid grid-cols-3 gap-3 lg:contents">
+                {{-- Total Itens --}}
+                <div class="lg:order-1 ui-card p-4 relative overflow-hidden text-center lg:text-left">
+                    <p class="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-tight">Total Itens</p>
+                    <h3 class="text-2xl lg:text-3xl font-black text-slate-800 dark:text-white">{{ $totalItens }}</h3>
                 </div>
 
                 {{-- Bom Estado --}}
-                <div
-                    class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border-l-4 border-teal-400 dark:border-teal-500">
-                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Em Bom Estado</p>
-                    <h3 class="text-2xl font-bold text-teal-600 dark:text-teal-400 mt-1">{{ $itensBons }}</h3>
+                <div class="lg:order-3 ui-card p-4 relative overflow-hidden text-center lg:text-left">
+                    <p class="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-tight">Bom Estado</p>
+                    <h3 class="text-2xl lg:text-3xl font-black text-blue-500 dark:text-blue-400">{{ $itensBons }}</h3>
                 </div>
 
-                {{-- Precisa Atenção --}}
-                <div
-                    class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border-l-4 border-red-400 dark:border-red-500">
-                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Inserviveis/Ruins</p>
-                    <h3 class="text-2xl font-bold text-red-500 dark:text-red-400 mt-1">{{ $itensRuins }}</h3>
+                {{-- Ruins --}}
+                <div class="lg:order-4 ui-card p-4 relative overflow-hidden text-center lg:text-left">
+                    <p class="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-tight">Ruins</p>
+                    <h3 class="text-2xl lg:text-3xl font-black text-red-500 dark:text-red-400">{{ $itensRuins }}</h3>
                 </div>
             </div>
+        </div>
 
-            {{-- 2. Barra de Ferramentas (Busca e Botão Novo) --}}
-            <div
-                class="flex flex-col md:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-
-                {{-- Campo de Busca --}}
-                <form method="GET" action="{{ route('patrimonio.index') }}" class="w-full md:w-96 relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+        {{-- ============================================= --}}
+        {{-- LISTA DE ITENS                                --}}
+        {{-- ============================================= --}}
+        <div class="ui-card overflow-hidden">
+            {{-- Toolbar de Busca --}}
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                <form method="GET" action="{{ route('patrimonio.index') }}" class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
-                    <input type="text" name="search" value="{{ $search }}"
-                        placeholder="Buscar item, local ou observacao..."
-                        class="ui-input pl-10 h-10">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Buscar item, local ou observação..." class="ui-input pl-10 w-full font-bold">
+                    @if($search)
+                        <a href="{{ route('patrimonio.index') }}" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-red-500 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </a>
+                    @endif
                 </form>
-
-                {{-- Botão Novo --}}
-                <a href="{{ route('patrimonio.create') }}"
-                    class="ui-btn-primary w-full sm:w-auto">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Adicionar Bem
-                </a>
             </div>
 
-            {{-- 3. Listagem --}}
-            <div
-                class="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+            @if ($patrimonios->count() > 0)
+                {{-- MOBILE: Cards individuais --}}
+                <div class="block lg:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                    @foreach ($patrimonios as $item)
+                        @php
+                            $estado = mb_strtolower($item->estado_conservacao, 'UTF-8');
+                            $badge = match(true) {
+                                in_array($estado, ['novo', 'ótimo', 'bom']) => 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400',
+                                in_array($estado, ['regular']) => 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400',
+                                default => 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/20 dark:text-red-400'
+                            };
+                        @endphp
+                        <div class="p-4 flex items-center gap-3">
+                            {{-- Ícone --}}
+                            <div class="w-11 h-11 rounded-xl bg-[#002F6C]/10 dark:bg-blue-500/20 text-[#002F6C] dark:text-blue-400 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            </div>
 
-                @if ($patrimonios->count() > 0)
-                    {{-- 
-                        === VISÃO DESKTOP (Tabela Clássica) === 
-                        Mantida conforme você gostou
-                    --}}
-                    <div class="hidden md:block overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-900/50">
-                                <tr>
-                                    <th scope="col"
-                                        class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Item</th>
-                                    <th scope="col"
-                                        class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Qtd</th>
-                                    <th scope="col"
-                                        class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Estado</th>
-                                    <th scope="col"
-                                        class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Local</th>
-                                    <th scope="col"
-                                        class="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Valor Unit.</th>
-                                    <th scope="col"
-                                        class="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @foreach ($patrimonios as $item)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div
-                                                    class="h-10 w-10 flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                                    </svg>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-bold text-gray-900 dark:text-white">
-                                                        {{ $item->item }}</div>
-                                                    <div class="text-xs text-gray-500 dark:text-gray-400">Aq:
-                                                        {{ $item->data_aquisicao? \Carbon\Carbon::parse($item->data_aquisicao)->format('d/m/Y') : '-' }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td
-                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-semibold">
-                                            {{ $item->quantidade }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @php
-                                                $estado = strtolower($item->estado_conservacao);
-                                                $colors = [
-                                                    'novo' => 'bg-green-100 text-green-800 border-green-200',
-                                                    'bom' => 'bg-blue-100 text-blue-800 border-blue-200',
-                                                    '?timo' => 'bg-blue-100 text-blue-800 border-blue-200',
-                                                    'regular' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                                                    'ruim' => 'bg-orange-100 text-orange-800 border-orange-200',
-                                                    'péssimo' => 'bg-red-100 text-red-800 border-red-200',
-                                                    'péssimo' => 'bg-red-100 text-red-800 border-red-200',
-                                                    'inservível' => 'bg-red-100 text-red-800 border-red-200',
-                                                    'inservível' => 'bg-red-100 text-red-800 border-red-200',
-                                                ];
-                                                $statusClass =
-                                                    $colors[$estado]?? 'bg-gray-100 text-gray-800 border-gray-200';
-                                            @endphp
-                                            <span
-                                                class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border {{ $statusClass }}">
-                                                {{ ucfirst($item->estado_conservacao) }}
-                                            </span>
-                                        </td>
-                                        <td
-                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $item->local_armazenamento?? '-' }}
-                                        </td>
-                                        <td
-                                            class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900 dark:text-white">
-                                            R$ {{ number_format($item->valor_estimado, 2, ',', '.') }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div class="flex justify-end gap-2">
-                                                <a href="{{ route('patrimonio.edit', $item->id) }}"
-                                                    class="text-blue-600 dark:text-blue-400 hover:text-blue-900 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg transition">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </a>
-                                                <form action="{{ route('patrimonio.destroy', $item->id) }}"
-                                                    method="POST"
-                                                    onsubmit="return confirm('Tem certeza que deseja excluir este item?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                        class="text-red-600 dark:text-red-400 hover:text-red-900 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg transition">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                            viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- 
-                        === VISÃO MOBILE (Cards Expandidos e Limpos) === 
-                        Redesenhado para não ficar espremido 
-                    --}}
-                    <div class="md:hidden space-y-4 p-4 bg-gray-50 dark:bg-gray-900/50">
-                        @foreach ($patrimonios as $item)
-                            <div
-                                class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col gap-4">
-
-                                {{-- Cabeçalho do Card: Ícone + Nome Principal + Valor --}}
-                                <div class="flex items-start gap-4">
-                                    <div
-                                        class="h-12 w-12 flex-shrink-0 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-inner">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <h4
-                                            class="text-lg font-bold text-gray-900 dark:text-white leading-tight break-words">
-                                            {{ $item->item }}
-                                        </h4>
-                                        <div class="flex items-center mt-1">
-                                            <span
-                                                class="text-xs font-bold px-2 py-0.5 rounded text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-900/30 border border-green-100 dark:border-green-800">
-                                                R$ {{ number_format($item->valor_estimado, 2, ',', '.') }}
-                                            </span>
-                                        </div>
-                                    </div>
+                            {{-- Info principale --}}
+                            <div class="flex-1 min-w-0">
+                                <p class="font-black text-slate-800 dark:text-white text-sm uppercase tracking-tight truncate">{{ $item->item }}</p>
+                                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                    <span class="inline-block px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-md border {{ $badge }}">
+                                        {{ mb_strtoupper($item->estado_conservacao, 'UTF-8') }}
+                                    </span>
+                                    @if($item->local_armazenamento)
+                                        <span class="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">📍 {{ $item->local_armazenamento }}</span>
+                                    @endif
                                 </div>
+                            </div>
 
-                                {{-- Corpo do Card: Grid de Informações --}}
-                                <div
-                                    class="grid grid-cols-2 gap-y-4 gap-x-2 text-sm border-t border-b border-gray-100 dark:border-gray-700 py-4">
-                                    {{-- Estado --}}
-                                    <div class="flex flex-col">
-                                        <span
-                                            class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Estado</span>
-                                        <div>
-                                            @php
-                                                $estado = strtolower($item->estado_conservacao);
-                                                $colorsMobile = [
-                                                    'novo' => 'bg-green-100 text-green-800',
-                                                    'bom' => 'bg-blue-100 text-blue-800',
-                                                    '?timo' => 'bg-blue-100 text-blue-800',
-                                                    'regular' => 'bg-yellow-100 text-yellow-800',
-                                                    'ruim' => 'bg-orange-100 text-orange-800',
-                                                    'péssimo' => 'bg-red-100 text-red-800',
-                                                    'péssimo' => 'bg-red-100 text-red-800',
-                                                    'inservível' => 'bg-red-100 text-red-800',
-                                                    'inservível' => 'bg-red-100 text-red-800',
-                                                ];
-                                                $statusClassMobile =
-                                                    $colorsMobile[$estado]?? 'bg-gray-100 text-gray-800';
-                                            @endphp
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold {{ $statusClassMobile }}">
-                                                {{ ucfirst($item->estado_conservacao) }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {{-- Quantidade --}}
-                                    <div class="flex flex-col pl-2 border-l border-gray-100 dark:border-gray-700">
-                                        <span
-                                            class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Qtd.</span>
-                                        <span
-                                            class="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                                            </svg>
-                                            {{ $item->quantidade }} item(s)
-                                        </span>
-                                    </div>
-
-                                    {{-- Local --}}
-                                    <div class="flex flex-col col-span-2">
-                                        <span
-                                            class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Localização</span>
-                                        <span
-                                            class="font-medium text-gray-800 dark:text-gray-200 truncate flex items-center gap-1">
-                                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            </svg>
-                                            {{ $item->local_armazenamento?? 'Não informado' }}
-                                        </span>
-                                    </div>
+                            {{-- Valor + Quantidade + Ações --}}
+                            <div class="shrink-0 text-right flex flex-col items-end gap-2">
+                                <div>
+                                    <p class="font-black text-sm text-slate-800 dark:text-white">R$ {{ number_format($item->valor_estimado, 2, ',', '.') }}</p>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Qtd: {{ $item->quantidade }}</p>
                                 </div>
-
-                                {{-- Ações: Botões Grandes e Fáceis de Tocar --}}
-                                <div class="flex items-center gap-3">
-                                    <a href="{{ route('patrimonio.edit', $item->id) }}"
-                                        class="flex-1 inline-flex justify-center items-center px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-bold rounded-xl transition active:scale-95">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Editar
+                                <div class="flex gap-1">
+                                    <a href="{{ route('patrimonio.edit', $item->id) }}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-[#002F6C] hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </a>
-
-                                    <form action="{{ route('patrimonio.destroy', $item->id) }}" method="POST"
-                                        onsubmit="return confirm('Tem certeza que deseja excluir este item?');"
-                                        class="flex-1">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            class="w-full inline-flex justify-center items-center px-4 py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 text-sm font-bold rounded-xl transition active:scale-95">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                            Excluir
+                                    <form action="{{ route('patrimonio.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Excluir este item permanentemente?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
                                     </form>
                                 </div>
-
                             </div>
-                        @endforeach
-                    </div>
+                        </div>
+                    @endforeach
+                </div>
 
-                    {{-- Paginação --}}
-                    <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                        {{ $patrimonios->links() }}
-                    </div>
-                @else
-                    <div class="p-6">
-                        <x-empty-state
-                            title="Nenhum item encontrado"
-                            description="{{ $search? 'Não encontramos resultados para o termo informado. Ajuste a busca e tente novamente.' : 'O inventário do clube ainda est? vazio. Comece adicionando os bens e equipamentos.' }}">
-                            <x-slot:action>
-                                <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary">
-                                    Adicionar Primeiro Item
-                                </a>
-                            </x-slot:action>
-                        </x-empty-state>
-                    </div>
-                @endif
-            </div>
+                {{-- DESKTOP: Tabela Completa --}}
+                <div class="hidden lg:block overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                                <th class="px-5 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Item</th>
+                                <th class="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-center">Qtd</th>
+                                <th class="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Estado</th>
+                                <th class="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Localização</th>
+                                <th class="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-right">Valor Unit.</th>
+                                <th class="px-5 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            @foreach ($patrimonios as $item)
+                                @php
+                                    $estado = mb_strtolower($item->estado_conservacao, 'UTF-8');
+                                    $badge = match(true) {
+                                        in_array($estado, ['novo', 'ótimo', 'bom']) => 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30',
+                                        in_array($estado, ['regular']) => 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+                                        default => 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30'
+                                    };
+                                @endphp
+                                <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors group">
+                                    <td class="px-5 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-xl bg-[#002F6C]/10 dark:bg-blue-500/20 text-[#002F6C] dark:text-blue-400 flex items-center justify-center shrink-0">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                            </div>
+                                            <div>
+                                                <p class="font-black text-slate-800 dark:text-white text-sm uppercase tracking-tight">{{ $item->item }}</p>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Aq: {{ $item->data_aquisicao ? \Carbon\Carbon::parse($item->data_aquisicao)->format('d/m/Y') : '-' }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-sm">{{ $item->quantidade }}</span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <span class="inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border {{ $badge }}">
+                                            {{ mb_strtoupper($item->estado_conservacao, 'UTF-8') }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 max-w-[150px] truncate">
+                                        {{ $item->local_armazenamento ?: '-' }}
+                                    </td>
+                                    <td class="px-4 py-4 text-right whitespace-nowrap">
+                                        <span class="text-sm font-black text-slate-700 dark:text-slate-300">R$ {{ number_format($item->valor_estimado, 2, ',', '.') }}</span>
+                                    </td>
+                                    <td class="px-5 py-4 text-right whitespace-nowrap">
+                                        <div class="flex items-center justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                            <a href="{{ route('patrimonio.edit', $item->id) }}" class="p-2 rounded-xl text-slate-400 hover:text-[#002F6C] hover:bg-[#002F6C]/10 dark:hover:text-blue-400 dark:hover:bg-blue-500/20 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            </a>
+                                            <form action="{{ route('patrimonio.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Excluir este item permanentemente?')">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition-colors">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
+                <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                    {{ $patrimonios->links() }}
+                </div>
+            @else
+                <div class="flex flex-col items-center justify-center py-16 px-6 text-center">
+                    <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">Inventário Vazio</h3>
+                    <p class="text-sm font-bold text-slate-400 mb-6 max-w-md">Nenhum bem patrimonial cadastrado. Comece a gerenciar os equipamentos do clube.</p>
+                    <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary">Adicionar Primeiro Item</a>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>
-
-
-
