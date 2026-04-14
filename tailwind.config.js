@@ -15,8 +15,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                // Mantém a fonte Figtree, que é moderna e limpa
-                sans: ["Figtree", ...defaultTheme.fontFamily.sans],
+                // Alterado para fonte Inter
+                sans: ["Inter", ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 // Paleta Oficial dos Desbravadores
@@ -28,8 +28,8 @@ export default {
 
                     // Variações para o modo escuro (Dark Mode)
                     dark: {
-                        bg: "#0f172a", // Fundo principal escuro (Slate 900)
-                        surface: "#1e293b", // Fundo de cartões/menus (Slate 800)
+                        bg: "#09090b", // Fundo principal escuro (Slate 900)
+                        surface: "#18181b", // Fundo de cartões/menus (Slate 800)
                     },
                 },
             },

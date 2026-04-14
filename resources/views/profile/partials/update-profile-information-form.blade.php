@@ -1,11 +1,11 @@
 <section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-            {{ __('Profile Information') }}
+    <header class="mb-6">
+        <h2 class="text-xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            Informações do Perfil
         </h2>
-
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ __("Update your account's profile information and email address.") }}
+        <p class="mt-2 text-[14px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+            Atualize as informações de perfil da sua conta e o endereço de e-mail.
         </p>
     </header>
 
@@ -18,46 +18,49 @@
         @method('patch')
 
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
+            <label for="name" class="ui-input-label">Nome Completo</label>
+            <input id="name" name="name" type="text" class="ui-input" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name" />
+            @if($errors->has('name'))
+                <p class="ui-input-error">{{ $errors->first('name') }}</p>
+            @endif
         </div>
 
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
-            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+            <label for="email" class="ui-input-label">Endereço de E-mail</label>
+            <input id="email" name="email" type="email" class="ui-input" value="{{ old('email', $user->email) }}" required autocomplete="username" />
+            @if($errors->has('email'))
+                <p class="ui-input-error">{{ $errors->first('email') }}</p>
+            @endif
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-gray-800 dark:text-gray-200">
-                        {{ __('Your email address is unverified.') }}
-
-                        <button form="send-verification" class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
-                            {{ __('Click here to re-send the verification email.') }}
+                <div class="mt-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50">
+                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-400">
+                        Seu endereço de e-mail não foi verificado.
+                        <button form="send-verification" class="mt-2 text-sm text-[#002F6C] dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 underline underline-offset-4 decoration-2 font-bold transition-colors">
+                            Clique aqui para reenviar o e-mail de verificação.
                         </button>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600 dark:text-green-400">
-                            {{ __('A new verification link has been sent to your email address.') }}
+                        <p class="mt-3 text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 p-2.5 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Um novo link de verificação foi enviado para o seu e-mail.
                         </p>
                     @endif
                 </div>
             @endif
         </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
+        <div class="flex items-center gap-6 pt-2">
+            <button type="submit" class="ui-btn-primary px-8">
+                Salvar Alterações
+            </button>
 
             @if (session('status') === 'profile-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600 dark:text-gray-400"
-                >{{ __('Saved.') }}</p>
+                <p x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms x-init="setTimeout(() => show = false, 3000)" class="text-[14px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    Salvo com sucesso.
+                </p>
             @endif
         </div>
     </form>
