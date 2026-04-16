@@ -22,8 +22,11 @@
                         <div class="flex items-center gap-3 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
                             <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            </div>
-                            <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Brasão Oficial</h3>
+                             </div>
+                             <div>
+                                 <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Identidade Visual</h3>
+                                 <p class="text-xs font-bold text-slate-400">Brasão Oficial do Clube</p>
+                             </div>
                         </div>
 
                         <div class="flex flex-col items-center text-center gap-6">
@@ -60,7 +63,10 @@
                             <div class="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                             </div>
-                            <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Associação e Igreja</h3>
+                            <div>
+                                <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Dados Cadastrais</h3>
+                                <p class="text-xs font-bold text-slate-400">Associação e Igreja</p>
+                            </div>
                         </div>
 
                         <div class="space-y-6">

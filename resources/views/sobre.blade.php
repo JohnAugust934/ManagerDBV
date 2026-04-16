@@ -19,7 +19,7 @@
 
                     <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/15 border border-white/20 rounded-full text-white/80 text-sm font-bold">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Versão 2.0 — {{ date('Y') }}
+                        Versão Atual: <strong class="ml-1">v1.3.3-beta</strong>
                     </div>
                 </div>
             </div>

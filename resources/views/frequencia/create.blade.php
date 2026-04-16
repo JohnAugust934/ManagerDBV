@@ -9,7 +9,7 @@
             <div class="relative z-10 flex items-center justify-between gap-4">
                 <div>
                     <p class="text-blue-300/80 text-[10px] font-black uppercase tracking-widest mb-1">Frequência</p>
-                    <h1 class="text-2xl font-black text-white tracking-tight leading-none">Chamada do Dia</h1>
+                    <h1 class="text-2xl font-black text-white tracking-tight leading-none">Registro de Chamada</h1>
                     <p class="text-blue-100/60 text-xs font-bold mt-1.5">{{ \Carbon\Carbon::now()->locale('pt_BR')->translatedFormat('l, d/m/Y') }}</p>
                 </div>
                 <a href="{{ route('frequencia.index') }}" class="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-xs font-black uppercase tracking-widest transition-colors border border-white/20">
@@ -82,8 +82,8 @@
                 @else
                     @foreach ($columns as $col)
                         <div class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ $col->name }}</span>
-                            <span class="text-[9px] font-black text-slate-400">+{{ $col->points }}pts</span>
+                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ mb_strtoupper($col->name, 'UTF-8') }}</span>
+                            <span class="text-[9px] font-black text-slate-400">({{ $col->points }})</span>
                         </div>
                     @endforeach
                 @endif

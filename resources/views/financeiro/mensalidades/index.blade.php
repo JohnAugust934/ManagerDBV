@@ -17,10 +17,13 @@
 
         <!-- Control Bar -->
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-            <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                <svg class="w-6 h-6 text-[#002F6C] dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Painel do Mês
-            </h2>
+            <div>
+                <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                    <svg class="w-6 h-6 text-[#002F6C] dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Controle de Mensalidades
+                </h2>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Painel do Mês</p>
+            </div>
 
             <form method="GET" action="{{ route('mensalidades.index') }}" class="flex flex-wrap md:flex-nowrap gap-2 w-full md:w-auto">
                 <div class="relative flex-1 md:w-48">
@@ -48,7 +51,7 @@
                 
                 <button type="button" @click="modalGerarOpen = true" class="w-full md:w-auto mt-2 md:mt-0 flex items-center justify-center gap-2 px-6 py-3 bg-[#002F6C] hover:bg-[#001D42] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                    Lançar Novo Lote
+                    Gerar Carnê do Mês
                 </button>
             </form>
         </div>
@@ -59,7 +62,7 @@
             <div class="ui-card relative overflow-hidden p-6 border-b-4 border-emerald-500 dark:border-emerald-500/50 bg-gradient-to-b from-white to-emerald-50/50 dark:from-slate-900 dark:to-emerald-900/10">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500 rounded-full blur-2xl opacity-10 dark:opacity-20"></div>
                 <div class="flex justify-between items-start mb-4">
-                    <p class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Caixa do Mês (Pago)</p>
+                    <p class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Recebido (Mês)</p>
                     <div class="p-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                     </div>

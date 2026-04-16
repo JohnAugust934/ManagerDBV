@@ -24,8 +24,16 @@ class FrequenciaController extends Controller
                 ->with('error', 'Usuario sem clube vinculado. Vincule um clube para usar o modulo de frequencia.');
         }
 
-        $mes = $request->input('mes', now()->month);
-        $ano = $request->input('ano', now()->year);
+        $mes = (int) $request->input('mes', now()->month);
+        $ano = (int) $request->input('ano', now()->year);
+
+        if ($mes < 1 || $mes > 12) {
+            $mes = (int) now()->month;
+        }
+
+        if ($ano < 2000 || $ano > 2100) {
+            $ano = (int) now()->year;
+        }
 
         $datasReunioes = Frequencia::whereYear('data', $ano)
             ->whereMonth('data', $mes)

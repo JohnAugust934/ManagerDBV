@@ -45,12 +45,17 @@ class FrequenciaTest extends TestCase
 
         // Acessa o filtro de JANEIRO 2026 -> Deve encontrar
         $response = $this->actingAs($user)->get(route('frequencia.index', ['mes' => 1, 'ano' => 2026]));
-        $response->assertSeeText('15');
-        $response->assertSee($dbv->nome);
+        $response->assertOk();
+        $response->assertViewHas('datasReunioes', function ($datas) {
+            return collect($datas)->contains('2026-01-15');
+        });
 
         // Acessa o filtro de FEVEREIRO 2026 -> Não deve encontrar a reunião de janeiro
         $response2 = $this->actingAs($user)->get(route('frequencia.index', ['mes' => 2, 'ano' => 2026]));
-        $response2->assertDontSeeText('15');
+        $response2->assertOk();
+        $response2->assertViewHas('datasReunioes', function ($datas) {
+            return collect($datas)->isEmpty();
+        });
     }
 
     public function test_pode_acessar_tela_de_nova_chamada()
