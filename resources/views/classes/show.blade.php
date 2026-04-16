@@ -157,25 +157,47 @@
         </div>
 
         {{-- DRAWER LATERAL (SISTEMA DE ASINATURA INDIVIDUAL) --}}
-        <div x-show="drawerOpen" class="fixed inset-0 z-[100] overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true" x-cloak>
-            
-            {{-- Backdrop Escuro Glassmorphism --}}
-            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-                @click="drawerOpen = false" x-transition:enter="ease-out duration-300"
-                x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0"></div>
+        <template x-teleport="body">
+            <div x-show="drawerOpen"
+                x-cloak
+                @keydown.escape.window="drawerOpen = false"
+                class="fixed inset-0 z-[120] overflow-hidden"
+                aria-labelledby="slide-over-title"
+                role="dialog"
+                aria-modal="true"
+                x-transition:enter="transition-opacity ease-out duration-250"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition-opacity ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0">
 
-            <div class="fixed inset-y-0 right-0 max-w-full flex">
-                {{-- Painel Drawer --}}
-                <div class="w-screen max-w-lg sm:pl-10 transform transition ease-in-out duration-300 sm:duration-500"
-                    x-transition:enter="translate-x-full" x-transition:enter-end="translate-x-0"
-                    x-transition:leave="translate-x-0" x-transition:leave-end="translate-x-full">
-                    
-                    <div class="h-full flex flex-col bg-slate-50 dark:bg-slate-900 shadow-custom-heavy rounded-l-[32px] sm:rounded-l-[40px] overflow-hidden border-l border-white/20 dark:border-white/5">
+                {{-- Backdrop Escuro --}}
+                <div class="absolute inset-0 bg-slate-900/55 backdrop-blur-[2px]"
+                    @click="drawerOpen = false"
+                    x-transition:enter="transition-opacity ease-out duration-300"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition-opacity ease-in duration-250"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"></div>
+
+                <div class="absolute inset-y-0 right-0 max-w-full flex">
+                    {{-- Painel Drawer --}}
+                    <div class="w-screen max-w-xl sm:max-w-lg h-full will-change-transform origin-right"
+                        x-transition:enter="transform transition duration-520 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                        x-transition:enter-start="translate-x-full scale-[0.985]"
+                        x-transition:enter-end="translate-x-0 scale-100"
+                        x-transition:leave="transform transition duration-320 ease-in"
+                        x-transition:leave-start="translate-x-0 scale-100"
+                        x-transition:leave-end="translate-x-full scale-[0.985]">
+
+                        <div class="h-full flex flex-col bg-slate-50 dark:bg-slate-900 shadow-custom-heavy rounded-l-[28px] sm:rounded-l-[40px] overflow-hidden border-l border-white/20 dark:border-white/5">
                         
                         {{-- Drawer Header Customizado com a cor da Classe --}}
-                        <div class="px-6 py-8 relative shrink-0" style="background: linear-gradient(135deg, {{ $classe->cor }}, {{ $classe->cor }}dd);">
+                        <div class="px-6 py-8 relative shrink-0 transition-all duration-500 ease-out"
+                            :class="drawerOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'"
+                            style="transition-delay: 70ms; background: linear-gradient(135deg, {{ $classe->cor }}, {{ $classe->cor }}dd);">
                             <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
                             
                             <div class="relative z-10 flex items-start justify-between">
@@ -192,7 +214,9 @@
                         </div>
 
                         {{-- Drawer Body Conteúdo (Checklist) --}}
-                        <div class="relative flex-1 py-6 px-6 sm:px-8 overflow-y-auto custom-scrollbar">
+                        <div class="relative flex-1 py-6 px-6 sm:px-8 overflow-y-auto custom-scrollbar transition-all duration-500 ease-out"
+                            :class="drawerOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'"
+                            style="transition-delay: 140ms;">
                             <template x-if="currentStudent">
                                 <div class="space-y-8">
                                     @php $currentCat = ''; @endphp
@@ -239,10 +263,11 @@
                             </template>
                         </div>
                         
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </template>
 
     </div>
 
@@ -258,7 +283,9 @@
 
                 openStudentDrawer(studentId) {
                     this.currentStudent = this.students.find(s => s.id === studentId);
-                    this.drawerOpen = true;
+                    requestAnimationFrame(() => {
+                        this.drawerOpen = true;
+                    });
                 },
 
                 async toggleRequirement(studentId, reqId, isChecked) {

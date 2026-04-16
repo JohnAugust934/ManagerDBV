@@ -11,9 +11,7 @@
     </x-slot>
 
     <div class="ui-page max-w-2xl mx-auto ui-animate-fade-up pb-20">
-        
         <div class="ui-card overflow-hidden">
-            {{-- Header customizado para Form --}}
             <div class="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-br from-[#002F6C]/5 to-transparent z-0"></div>
                 <div class="relative z-10 flex items-start gap-4">
@@ -33,9 +31,7 @@
 
                     <div>
                         <label for="nome" class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Nome da Especialidade <span class="text-red-500">*</span></label>
-                        <div class="relative relative group">
-                            <input id="nome" name="nome" type="text" class="ui-input w-full font-bold focus:border-[#002F6C]" value="{{ old('nome') }}" placeholder="Ex: Fogueiras e Cozinha ao Ar Livre" required autofocus>
-                        </div>
+                        <input id="nome" name="nome" type="text" class="ui-input w-full font-bold focus:border-[#002F6C]" value="{{ old('nome') }}" placeholder="Ex: Fogueiras e Cozinha ao Ar Livre" required autofocus>
                         @error('nome')
                             <p class="text-xs text-red-500 font-bold mt-2">{{ $message }}</p>
                         @enderror
@@ -45,13 +41,11 @@
                         <label for="area" class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Área / Categoria <span class="text-red-500">*</span></label>
                         <div class="relative group">
                             <select id="area" name="area" class="ui-input appearance-none w-full font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 focus:border-[#002F6C]" required>
-                                <option value="" disabled selected>Selecione a área principal...</option>
-                                @foreach (['ADRA', 'Artes e Habilidades Manuais', 'Atividades Agropecuárias', 'Atividades Missionárias e Comunitárias', 'Atividades Profissionais', 'Atividades Recreativas', 'Ciência e Saúde', 'Estudo da Natureza', 'Habilidades Domésticas', 'Mestrados'] as $area)
-                                    <option value="{{ $area }}" {{ old('area') == $area ? 'selected' : '' }}>
-                                        {{ $area }}
-                                    </option>
+                                <option value="" disabled {{ old('area') ? '' : 'selected' }}>Selecione a área principal...</option>
+                                @foreach (['ADRA', 'Artes e Habilidades Manuais', 'Atividades Agrícolas', 'Atividades Missionárias e Comunitárias', 'Atividades Profissionais', 'Atividades Recreativas', 'Ciência e Saúde', 'Estudos da Natureza', 'Habilidades Domésticas', 'Mestrados'] as $area)
+                                    <option value="{{ $area }}" {{ old('area') === $area ? 'selected' : '' }}>{{ $area }}</option>
                                 @endforeach
-                                <option value="Outra" {{ old('area') == 'Outra' ? 'selected' : '' }}>Outra Categoria</option>
+                                <option value="Outra" {{ old('area') === 'Outra' ? 'selected' : '' }}>Outra Categoria</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                 <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
@@ -73,6 +67,5 @@
                 </form>
             </div>
         </div>
-        
     </div>
 </x-app-layout>
