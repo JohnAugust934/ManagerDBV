@@ -19,6 +19,145 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
+if (! function_exists(__NAMESPACE__ . '\\fake')) {
+    /**
+     * Fallback para ambientes de produção sem fakerphp/faker (composer --no-dev).
+     */
+    function fake(): object
+    {
+        static $faker = null;
+
+        if (\function_exists('\\fake')) {
+            return \fake();
+        }
+
+        if ($faker === null) {
+            $faker = new SeederFallbackFaker();
+        }
+
+        return $faker;
+    }
+}
+
+final class SeederFallbackFaker
+{
+    private int $emailCounter = 1;
+
+    public function randomElement(array $items): mixed
+    {
+        if ($items === []) {
+            return null;
+        }
+
+        return $items[array_rand($items)];
+    }
+
+    public function name(?string $gender = null): string
+    {
+        $male = ['João', 'Pedro', 'Lucas', 'Gabriel', 'Rafael', 'Mateus', 'Bruno', 'Daniel'];
+        $female = ['Ana', 'Maria', 'Beatriz', 'Júlia', 'Larissa', 'Carolina', 'Vitória', 'Fernanda'];
+        $surnames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Almeida'];
+
+        $first = $gender === 'female'
+            ? $this->randomElement($female)
+            : ($gender === 'male' ? $this->randomElement($male) : $this->randomElement(array_merge($male, $female)));
+
+        return trim($first . ' ' . $this->randomElement($surnames));
+    }
+
+    public function dateTimeBetween(string $startDate = '-30 years', string $endDate = 'now'): \DateTime
+    {
+        $start = strtotime($startDate) ?: time() - 86400;
+        $end = strtotime($endDate) ?: time();
+
+        if ($start > $end) {
+            [$start, $end] = [$end, $start];
+        }
+
+        return (new \DateTime())->setTimestamp(random_int($start, $end));
+    }
+
+    public function unique(): self
+    {
+        return $this;
+    }
+
+    public function safeEmail(): string
+    {
+        $value = sprintf('seed.user.%04d@example.org', $this->emailCounter);
+        $this->emailCounter++;
+
+        return $value;
+    }
+
+    public function phoneNumber(): string
+    {
+        return sprintf('(11) 9%04d-%04d', random_int(1000, 9999), random_int(1000, 9999));
+    }
+
+    public function address(): string
+    {
+        return sprintf(
+            'Rua %s, %d - São Paulo/SP',
+            $this->randomElement(['das Flores', 'do Sol', 'das Acácias', 'Central', 'da Esperança']),
+            random_int(10, 9999)
+        );
+    }
+
+    public function numerify(string $pattern): string
+    {
+        return preg_replace_callback('/#/', fn () => (string) random_int(0, 9), $pattern) ?? $pattern;
+    }
+
+    public function boolean(int $chanceOfGettingTrue = 50): bool
+    {
+        return random_int(1, 100) <= max(0, min(100, $chanceOfGettingTrue));
+    }
+
+    public function randomFloat(int $maxDecimals = 2, float $min = 0, float $max = 1): float
+    {
+        if ($min > $max) {
+            [$min, $max] = [$max, $min];
+        }
+
+        $factor = 10 ** max(0, $maxDecimals);
+        return round(random_int((int) round($min * $factor), (int) round($max * $factor)) / $factor, $maxDecimals);
+    }
+
+    public function paragraphs(int $nb = 3, bool $asText = false): array|string
+    {
+        $base = [
+            'Reunião com foco em planejamento mensal e alinhamento das atividades.',
+            'Definição de responsabilidades da diretoria para o próximo ciclo.',
+            'Avaliação das ações realizadas e melhoria dos processos internos.',
+            'Organização de cronograma para eventos e classes dos desbravadores.',
+            'Registro de decisões e próximos passos para acompanhamento.',
+        ];
+
+        $paragraphs = [];
+        for ($i = 0; $i < max(1, $nb); $i++) {
+            $paragraphs[] = $this->randomElement($base);
+        }
+
+        return $asText ? implode("\n\n", $paragraphs) : $paragraphs;
+    }
+
+    public function sentence(int $nbWords = 6): string
+    {
+        $words = [
+            'planejamento', 'diretoria', 'clube', 'atividade', 'investidura', 'desbravadores',
+            'organização', 'reunião', 'mensal', 'alinhamento', 'calendário', 'objetivos',
+        ];
+
+        $parts = [];
+        for ($i = 0; $i < max(1, $nbWords); $i++) {
+            $parts[] = $this->randomElement($words);
+        }
+
+        return ucfirst(implode(' ', $parts)) . '.';
+    }
+}
+
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
