@@ -20,7 +20,7 @@ class SobreTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Versão Atual');
-        $response->assertSee('v2026_2.0.0-beta');
+        $response->assertSee('v2026_2.0.1-beta');
     }
 
     public function test_aba_sobre_redireciona_convidados()
