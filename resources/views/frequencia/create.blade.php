@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">Nova Chamada</x-slot>
 
-    <div class="ui-page space-y-0 max-w-4xl mx-auto pb-32 ui-animate-fade-up" x-data="{ filtroUnidade: '' }">
+    <div class="ui-page space-y-0 max-w-4xl mx-auto pb-32 ui-animate-fade-up" x-data="chamadaApp()">
 
         {{-- CABEÇALHO HERO COMPACTO --}}
         <div class="relative overflow-hidden rounded-[28px] mb-6 bg-gradient-to-r from-[#001D42] to-[#002F6C] p-6 shadow-xl shadow-blue-900/30">
@@ -19,7 +19,7 @@
             </div>
         </div>
 
-        <form action="{{ route('frequencia.store') }}" method="POST" id="chamada-form">
+        <form action="{{ route('frequencia.store') }}" method="POST" id="chamada-form" @submit.prevent="submitChamada">
             @csrf
 
             {{-- CONFIGURAÇÕES --}}
@@ -100,11 +100,15 @@
                 <div class="space-y-8">
                     @foreach ($unidades as $unidade)
                         @if ($unidade->desbravadores->count() > 0)
-                            <div x-show="filtroUnidade === '' || filtroUnidade == '{{ $unidade->id }}'"
+                            <div data-unit-section data-unidade-id="{{ $unidade->id }}"
+                                 x-show="filtroUnidade === '' || filtroUnidade == '{{ $unidade->id }}'"
                                  x-transition:enter="transition ease-out duration-300"
                                  x-transition:enter-start="opacity-0 -translate-y-2"
                                  x-transition:enter-end="opacity-100 translate-y-0"
                                  class="space-y-3">
+
+                                {{-- Input hidden dentro da seção para ser desabilitado junto quando oculto --}}
+                                <input type="hidden" name="unidades_submetidas[]" value="{{ $unidade->id }}" data-unit-field>
 
                                 {{-- Header da Unidade --}}
                                 <div class="flex items-center gap-3 px-1">
@@ -240,4 +244,39 @@
         </div>
         @endif
     </div>
+
+<script>
+function chamadaApp() {
+    return {
+        filtroUnidade: '',
+
+        submitChamada(event) {
+            const form = document.getElementById('chamada-form');
+
+            // Restaurar todos os inputs primeiro (caso o usuário submeta múltiplas vezes)
+            form.querySelectorAll('[data-unit-section]').forEach(section => {
+                section.querySelectorAll('input, select, textarea').forEach(el => {
+                    el.disabled = false;
+                });
+            });
+
+            // Se há filtro ativo, desabilitar os inputs das unidades NÃO selecionadas
+            if (this.filtroUnidade !== '') {
+                form.querySelectorAll('[data-unit-section]').forEach(section => {
+                    const unidadeId = section.getAttribute('data-unidade-id');
+                    if (unidadeId !== this.filtroUnidade) {
+                        // Desabilitar todos os inputs desta seção antes de enviar
+                        section.querySelectorAll('input, select, textarea').forEach(el => {
+                            el.disabled = true;
+                        });
+                    }
+                });
+            }
+
+            // Submeter o formulário
+            form.submit();
+        }
+    };
+}
+</script>
 </x-app-layout>

@@ -80,6 +80,7 @@ class FrequenciaTest extends TestCase
 
         $dados = [
             'data' => now()->format('Y-m-d'),
+            'unidades_submetidas' => [$unidade->id],
             'presencas' => [
                 $dbv->id => [
                     'registrado' => '1', // Simula o hidden input
@@ -88,7 +89,8 @@ class FrequenciaTest extends TestCase
             ],
         ];
 
-        $this->actingAs($user)->post(route('frequencia.store'), $dados);
+        $this->actingAs($user)->post(route('frequencia.store'), $dados)
+            ->assertRedirect(route('frequencia.index'));
 
         // Verifica se criou o registro no banco com presente = 0
         $this->assertDatabaseHas('frequencias', [

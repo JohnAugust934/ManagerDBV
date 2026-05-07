@@ -183,6 +183,7 @@ class RankingTest extends TestCase
 
         $this->actingAs($user)->post(route('frequencia.store'), [
             'data' => now()->toDateString(),
+            'unidades_submetidas' => [$unidade->id],
             'presencas' => [
                 $dbv->id => [
                     'colunas' => [
@@ -191,7 +192,7 @@ class RankingTest extends TestCase
                     ],
                 ],
             ],
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('frequencia.index'));
 
         $response = $this->actingAs($user)->get(route('ranking.desbravadores'));
         $dados = $response->viewData('data');
