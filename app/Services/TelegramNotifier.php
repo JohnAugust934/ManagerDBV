@@ -317,7 +317,14 @@ class TelegramNotifier
 
         return (string) $value;
     }
+
+    /**
+     * Publish a raw message to Telegram without additional formatting.
+     *
+     * @param  string  $message  The message to send
+     */
+    public function publish(string $message): void
+    {
+        $this->send($message);
+    }
 }
-
-
-
