@@ -4,14 +4,13 @@ namespace App\Mail;
 
 use App\Models\Invitation;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue; // <-- IMPORTAÇÃO NECESSÁRIA
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-// A adição do "implements ShouldQueue" é o que faz a mágica acontecer
-class ClubInvitation extends Mailable implements ShouldQueue
+// ShouldQueue removido: envio síncrono e imediato, sem depender de queue worker
+class ClubInvitation extends Mailable
 {
     use Queueable, SerializesModels;
 

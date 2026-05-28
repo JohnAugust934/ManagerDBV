@@ -2,10 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Services\ScheduledTaskTracker;
 use App\Services\TelegramNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Events\BackupWasSuccessful;
+use Spatie\Backup\Events\CleanupHasFailed;
+use Spatie\Backup\Events\CleanupWasSuccessful;
+use Spatie\Backup\Events\HealthyBackupWasFound;
 use Tests\TestCase;
 
 class TelegramNotificationTest extends TestCase
@@ -39,25 +45,197 @@ class TelegramNotificationTest extends TestCase
         });
     }
 
-    public function test_evento_de_backup_pode_ser_formatado_para_telegram()
+    public function test_evento_de_backup_sucesso_nao_envia_telegram_mas_registra_no_cache(): void
     {
         Http::fake();
 
         config([
-            'services.telegram.enabled' => true,
-            'services.telegram.bot_token' => 'bot-token',
-            'services.telegram.chat_id' => '123456',
+            'services.telegram.enabled'             => true,
+            'services.telegram.bot_token'           => 'bot-token',
+            'services.telegram.chat_id'             => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default' => 'array',
+            'cache.default'                         => 'array',
         ]);
+
+        Cache::flush();
 
         app(TelegramNotifier::class)->notifyBackupEvent(new BackupWasSuccessful('local', 'DBV Manager'));
 
+        // Sucesso NÃO deve disparar Telegram
+        Http::assertNothingSent();
+
+        // Sucesso DEVE registrar no Cache via ScheduledTaskTracker
+        $results = app(ScheduledTaskTracker::class)->getAll();
+        $this->assertArrayHasKey('backup_run', $results);
+        $this->assertSame('success', $results['backup_run']['status']);
+        $this->assertSame('Geração de Backup', $results['backup_run']['label']);
+    }
+
+    public function test_evento_de_backup_falha_envia_telegram_imediatamente(): void
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled'             => true,
+            'services.telegram.bot_token'           => 'bot-token',
+            'services.telegram.chat_id'             => '123456',
+            'services.telegram.admin_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default'                         => 'array',
+        ]);
+
+        Cache::flush();
+
+        $exception = new \RuntimeException('Disco cheio');
+        app(TelegramNotifier::class)->notifyBackupEvent(new BackupHasFailed($exception, 'local', 'DBV Manager'));
+
+        // Falha DEVE disparar Telegram imediatamente
         Http::assertSent(function ($request) {
-            return str_contains($request['text'], 'Backup concluido com sucesso')
-                && str_contains($request['text'], 'DBV Manager')
-                && str_contains($request['text'], 'local');
+            return str_contains($request['text'], 'Falha ao gerar backup')
+                && str_contains($request['text'], 'Disco cheio');
+        });
+
+        // Falha também DEVE registrar no Cache
+        $results = app(ScheduledTaskTracker::class)->getAll();
+        $this->assertArrayHasKey('backup_run', $results);
+        $this->assertSame('failure', $results['backup_run']['status']);
+    }
+
+    public function test_evento_limpeza_sucesso_registra_no_cache_sem_telegram(): void
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled'             => true,
+            'services.telegram.bot_token'           => 'bot-token',
+            'services.telegram.chat_id'             => '123456',
+            'services.telegram.admin_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default'                         => 'array',
+        ]);
+
+        Cache::flush();
+
+        app(TelegramNotifier::class)->notifyBackupEvent(new CleanupWasSuccessful('local', 'DBV Manager'));
+
+        Http::assertNothingSent();
+
+        $results = app(ScheduledTaskTracker::class)->getAll();
+        $this->assertArrayHasKey('backup_clean', $results);
+        $this->assertSame('success', $results['backup_clean']['status']);
+    }
+
+    public function test_evento_limpeza_falha_envia_telegram_imediatamente(): void
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled'             => true,
+            'services.telegram.bot_token'           => 'bot-token',
+            'services.telegram.chat_id'             => '123456',
+            'services.telegram.admin_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default'                         => 'array',
+        ]);
+
+        Cache::flush();
+
+        $exception = new \RuntimeException('Falha de limpeza');
+        app(TelegramNotifier::class)->notifyBackupEvent(new CleanupHasFailed($exception, 'local', 'DBV Manager'));
+
+        Http::assertSent(function ($request) {
+            return str_contains($request['text'], 'Falha na limpeza de backups')
+                && str_contains($request['text'], 'Falha de limpeza');
+        });
+    }
+
+    public function test_evento_monitoramento_saudavel_registra_no_cache_sem_telegram(): void
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled'             => true,
+            'services.telegram.bot_token'           => 'bot-token',
+            'services.telegram.chat_id'             => '123456',
+            'services.telegram.admin_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default'                         => 'array',
+        ]);
+
+        Cache::flush();
+
+        app(TelegramNotifier::class)->notifyBackupEvent(new HealthyBackupWasFound('local', 'DBV Manager'));
+
+        Http::assertNothingSent();
+
+        $results = app(ScheduledTaskTracker::class)->getAll();
+        $this->assertArrayHasKey('backup_monitor', $results);
+        $this->assertSame('success', $results['backup_monitor']['status']);
+    }
+
+    public function test_notify_scheduled_failure_envia_alerta_de_erro(): void
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled'             => true,
+            'services.telegram.bot_token'           => 'bot-token',
+            'services.telegram.chat_id'             => '123456',
+            'services.telegram.admin_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default'                         => 'array',
+        ]);
+
+        app(TelegramNotifier::class)->notifyScheduledFailure('Falha crítica na sincronização', [
+            'Erro' => 'Timeout na API',
+        ]);
+
+        Http::assertSent(function ($request) {
+            return str_contains($request['text'], 'Falha crítica na sincronização')
+                && str_contains($request['text'], 'Timeout na API');
+        });
+    }
+
+    public function test_send_daily_summary_envia_mensagem_consolidada(): void
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled'             => true,
+            'services.telegram.bot_token'           => 'bot-token',
+            'services.telegram.chat_id'             => '123456',
+            'services.telegram.admin_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default'                         => 'array',
+        ]);
+
+        $results = [
+            'backup_run' => [
+                'status'      => 'success',
+                'label'       => 'Geração de Backup',
+                'details'     => ['Backup' => 'dbv', 'Disco' => 's3'],
+                'recorded_at' => now()->toIso8601String(),
+            ],
+            'backup_clean' => [
+                'status'      => 'failure',
+                'label'       => 'Limpeza de Backups',
+                'reason'      => 'Espaço insuficiente',
+                'recorded_at' => now()->toIso8601String(),
+            ],
+        ];
+
+        app(TelegramNotifier::class)->sendDailySummary($results);
+
+        Http::assertSent(function ($request) {
+            $text = $request['text'];
+
+            return str_contains($text, 'Relatório Diário')
+                && str_contains($text, 'Geração de Backup')
+                && str_contains($text, 'Sucesso')
+                && str_contains($text, 'Limpeza de Backups')
+                && str_contains($text, 'Falha')
+                && str_contains($text, 'Espaço insuficiente');
         });
     }
 

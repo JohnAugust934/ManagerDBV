@@ -9,35 +9,86 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
+/**
+ * FilaConviteTest
+ *
+ * DECISÃO ARQUITETURAL (registrada aqui para rastreabilidade):
+ * -------------------------------------------------------------------
+ * O ClubInvitation originalmente implementava ShouldQueue, enfileirando
+ * o envio no driver "database". Isso causava e-mails presos indefinidamente
+ * quando nenhum worker (queue:work) estava ativo em produção.
+ *
+ * CORREÇÃO APLICADA: ShouldQueue foi removido do ClubInvitation.
+ * O InvitationController chama Mail::to()->send() de forma SÍNCRONA,
+ * garantindo que o e-mail seja disparado imediatamente na requisição.
+ *
+ * IMPACTO NOS TESTES:
+ * - Mail::assertQueued()    → NÃO deve ser usado (nada vai para a fila)
+ * - Mail::assertSent()      → CORRETO para o envio síncrono atual
+ * - Mail::assertNothingQueued() → confirma que a fila NÃO é usada
+ * -------------------------------------------------------------------
+ */
 class FilaConviteTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_envio_de_convite_deve_ir_para_a_fila_em_background()
+    // -------------------------------------------------------------------------
+    // CENÁRIO 1 — O e-mail é ENVIADO imediatamente (síncrono, sem fila)
+    // -------------------------------------------------------------------------
+    public function test_convite_e_enviado_sincronamente_sem_passar_pela_fila(): void
     {
-        // 1. Intercepta os envios de e-mail para verificar a fila sem enviar de verdade
+        // 1. Intercepta todos os envios sem enviar de verdade
         Mail::fake();
 
-        // 2. Prepara um usuário Master para enviar o convite
+        // 2. Prepara o clube e o usuário master
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create([
+        $master = User::factory()->create([
             'club_id' => $clube->id,
-            'role' => 'master',
+            'role'    => 'master',
         ]);
 
-        // 3. Executa a ação de criar o convite
-        $response = $this->actingAs($user)->post(route('invites.store'), [
+        // 3. Dispara a criação do convite
+        $response = $this->actingAs($master)->post(route('invites.store'), [
             'email' => 'conselheiro@clube.com',
-            'role' => 'conselheiro',
+            'role'  => 'conselheiro',
         ]);
 
-        // 4. Verifica se a requisição não gerou erros
+        // 4. Verifica HTTP e sessão
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('invites.index'));
+        $response->assertSessionHas('success', 'Convite gerado e enviado com sucesso!');
 
-        // 5. GARANTE que o e-mail da classe ClubInvitation foi colocado na fila
-        Mail::assertQueued(ClubInvitation::class, function ($mail) {
+        // 5. ClubInvitation NÃO implementa ShouldQueue → envio é síncrono
+        //    assertSent() verifica o bucket de envios imediatos
+        Mail::assertSent(ClubInvitation::class, function ($mail) {
             return $mail->hasTo('conselheiro@clube.com');
         });
+
+        // 6. Confirma explicitamente que NADA foi enfileirado
+        //    (protege contra regressão caso ShouldQueue seja reativado sem querer)
+        Mail::assertNothingQueued();
+    }
+
+    // -------------------------------------------------------------------------
+    // CENÁRIO 2 — Apenas UM e-mail é disparado por convite
+    // -------------------------------------------------------------------------
+    public function test_apenas_um_email_e_disparado_por_convite(): void
+    {
+        Mail::fake();
+
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $master = User::factory()->create([
+            'club_id' => $clube->id,
+            'role'    => 'master',
+        ]);
+
+        $this->actingAs($master)->post(route('invites.store'), [
+            'email' => 'instrutor@clube.com',
+            'role'  => 'instrutor',
+        ]);
+
+        // assertSentCount garante idempotência: exatamente 1 e-mail, sem duplicatas
+        Mail::assertSentCount(1);
+        Mail::assertNothingQueued();
     }
 }

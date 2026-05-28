@@ -65,60 +65,149 @@ class TelegramNotifier
             return;
         }
 
+        /** @var ScheduledTaskTracker $tracker */
+        $tracker = app(ScheduledTaskTracker::class);
+
+        // ── SUCESSOS: armazena no Cache silenciosamente ───────────────────────
+        // O resumo consolidado será enviado pelo DailyBackupReport às 05:00.
+
         if ($event instanceof BackupWasSuccessful) {
-            $this->notifyAdministrativeAction('Backup concluido com sucesso', [
+            $tracker->recordSuccess('backup_run', 'Geração de Backup', [
                 'Backup' => $event->backupName,
-                'Disco' => $event->diskName,
-            ], 'success');
-
-            return;
-        }
-
-        if ($event instanceof BackupHasFailed) {
-            $this->notifyAdministrativeAction('Falha ao gerar backup', [
-                'Backup' => $event->backupName ?: 'Nao informado',
-                'Disco' => $event->diskName ?: 'Nao informado',
-                'Erro' => $event->exception->getMessage(),
-            ], 'error');
+                'Disco'  => $event->diskName,
+            ]);
 
             return;
         }
 
         if ($event instanceof CleanupWasSuccessful) {
-            $this->notifyAdministrativeAction('Limpeza de backups concluida', [
+            $tracker->recordSuccess('backup_clean', 'Limpeza de Backups', [
                 'Backup' => $event->backupName,
-                'Disco' => $event->diskName,
-            ], 'success');
-
-            return;
-        }
-
-        if ($event instanceof CleanupHasFailed) {
-            $this->notifyAdministrativeAction('Falha na limpeza de backups', [
-                'Backup' => $event->backupName ?: 'Nao informado',
-                'Disco' => $event->diskName ?: 'Nao informado',
-                'Erro' => $event->exception->getMessage(),
-            ], 'error');
+                'Disco'  => $event->diskName,
+            ]);
 
             return;
         }
 
         if ($event instanceof HealthyBackupWasFound) {
-            $this->notifyAdministrativeAction('Monitoramento de backup saudavel', [
+            $tracker->recordSuccess('backup_monitor', 'Monitoramento de Backup', [
                 'Backup' => $event->backupName,
-                'Disco' => $event->diskName,
-            ], 'success');
+                'Disco'  => $event->diskName,
+            ]);
+
+            return;
+        }
+
+        // ── FALHAS: notifica o Telegram imediatamente ─────────────────────────
+
+        if ($event instanceof BackupHasFailed) {
+            $tracker->recordFailure(
+                'backup_run',
+                'Geração de Backup',
+                $event->exception->getMessage()
+            );
+
+            $this->notifyScheduledFailure('Falha ao gerar backup', [
+                'Backup' => $event->backupName ?: 'Nao informado',
+                'Disco'  => $event->diskName ?: 'Nao informado',
+                'Erro'   => $event->exception->getMessage(),
+            ]);
+
+            return;
+        }
+
+        if ($event instanceof CleanupHasFailed) {
+            $tracker->recordFailure(
+                'backup_clean',
+                'Limpeza de Backups',
+                $event->exception->getMessage()
+            );
+
+            $this->notifyScheduledFailure('Falha na limpeza de backups', [
+                'Backup' => $event->backupName ?: 'Nao informado',
+                'Disco'  => $event->diskName ?: 'Nao informado',
+                'Erro'   => $event->exception->getMessage(),
+            ]);
 
             return;
         }
 
         if ($event instanceof UnhealthyBackupWasFound) {
-            $this->notifyAdministrativeAction('Monitoramento detectou problema no backup', [
+            $tracker->recordFailure(
+                'backup_monitor',
+                'Monitoramento de Backup',
+                $this->formatFailures($event->failureMessages)
+            );
+
+            $this->notifyScheduledFailure('Monitoramento detectou problema no backup', [
                 'Backup' => $event->backupName,
-                'Disco' => $event->diskName,
+                'Disco'  => $event->diskName,
                 'Falhas' => $this->formatFailures($event->failureMessages),
-            ], 'warning');
+            ]);
         }
+    }
+
+    /**
+     * Dispara imediatamente um alerta de falha em tarefa agendada.
+     * Deve ser chamado quando qualquer rotina da madrugada falhar.
+     *
+     * @param  string  $title    Título do alerta
+     * @param  array<string, string>  $details  Contexto adicional
+     */
+    public function notifyScheduledFailure(string $title, array $details = []): void
+    {
+        $this->notifyAdministrativeAction($title, $details, 'error');
+    }
+
+    /**
+     * Envia a mensagem de resumo consolidado ao Telegram.
+     * Chamado exclusivamente pelo DailyBackupReport às 05:00.
+     *
+     * @param  array<string, array{status: string, label: string, details?: array<string, string>, reason?: string, recorded_at: string}>  $results
+     */
+    public function sendDailySummary(array $results): void
+    {
+        if (! $this->adminNotificationsEnabled()) {
+            return;
+        }
+
+        $appName = $this->escape(config('app.name', 'Sistema'));
+        $env     = $this->escape(app()->environment());
+        $date    = Carbon::now(config('app.timezone'))->format('d/m/Y');
+        $time    = Carbon::now(config('app.timezone'))->format('H:i:s');
+
+        $lines = [
+            "<b>📋 Relatório Diário — {$appName}</b>",
+            "<b>Sistema:</b> {$appName} | <b>Ambiente:</b> {$env}",
+            "<b>Data:</b> {$date}",
+            '',
+        ];
+
+        if (empty($results)) {
+            $lines[] = '⚠️ Nenhuma tarefa registrou resultado esta madrugada.';
+        } else {
+            foreach ($results as $entry) {
+                $icon  = $entry['status'] === 'success' ? '✅' : '🔴';
+                $label = $this->escape($entry['label']);
+
+                if ($entry['status'] === 'success') {
+                    $lines[] = "<b>{$icon} {$label}</b> — Sucesso";
+
+                    foreach ($entry['details'] ?? [] as $key => $value) {
+                        $lines[] = "   <b>{$this->escape((string) $key)}:</b> {$this->escape($this->stringify($value))}";
+                    }
+                } else {
+                    $lines[] = "<b>{$icon} {$label}</b> — Falha";
+                    $lines[] = '   <b>Erro:</b> '.$this->escape($this->limit((string) ($entry['reason'] ?? ''), 300));
+                }
+
+                $lines[] = '';
+            }
+        }
+
+        $lines[] = "<i>🕐 Gerado às {$time}</i>";
+
+        $this->send(implode("\n", $lines));
     }
 
     public function notifyException(Throwable $exception): void
