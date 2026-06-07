@@ -30,7 +30,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('desbravadores.update', $desbravador) }}" method="POST" class="space-y-8">
+            <form action="{{ route('desbravadores.update', $desbravador) }}" method="POST" enctype="multipart/form-data" class="space-y-8">
                 @csrf
                 @method('PUT')
 
@@ -204,6 +204,47 @@
                     </div>
                 </div>
 
+                {{-- FOTO DE PERFIL --}}
+                <div x-data="fotoUpload('{{ $desbravador->foto_url }}')" class="p-6 rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+                    <h3 class="text-lg font-black text-[#002F6C] dark:text-blue-400 mb-6 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-[#FCD116]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Foto de Perfil
+                    </h3>
+
+                    <div class="flex flex-col sm:flex-row items-center gap-6">
+                        <div class="relative shrink-0">
+                            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                <template x-if="preview">
+                                    <img :src="preview" class="w-full h-full object-cover" alt="Foto de perfil de {{ $desbravador->nome }}">
+                                </template>
+                                <template x-if="!preview">
+                                    <span class="text-3xl font-black text-slate-300 dark:text-slate-600">{{ mb_strtoupper(substr($desbravador->nome, 0, 2)) }}</span>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 text-center sm:text-left space-y-3">
+                            <p x-show="erro" x-text="erro" class="text-sm font-medium text-red-600 dark:text-red-400"></p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">JPEG, PNG ou WebP · Máximo 5 MB · Será redimensionada para 400×400 px</p>
+                            <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
+                                <label class="ui-btn-secondary cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 text-sm" aria-label="Selecionar nova foto de perfil">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                    <span x-text="fotoAtual ? 'Trocar foto' : 'Escolher foto'">Escolher foto</span>
+                                    <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" class="sr-only" @change="validar($event)">
+                                </label>
+                                <button x-show="fotoAtual || preview" type="button" @click="confirmarRemocao()" class="text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors">
+                                    Remover foto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="remover-foto-form" action="{{ route('desbravadores.remover-foto', $desbravador) }}" method="POST" class="hidden">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                </div>
+
                 {{-- SUBMIT E DANGER ZONE --}}
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-200 dark:border-slate-800">
                     <div class="flex-1 w-full md:w-auto">
@@ -235,4 +276,35 @@
 
         </div>
     </div>
+<script>
+function fotoUpload(urlAtual) {
+    return {
+        preview: urlAtual || null,
+        fotoAtual: !!urlAtual,
+        erro: null,
+        validar(e) {
+            this.erro = null;
+            const file = e.target.files[0];
+            if (!file) return;
+            const tipos = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!tipos.includes(file.type)) {
+                this.erro = 'Formato inválido. Use JPEG, PNG ou WebP.';
+                e.target.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                this.erro = 'A foto não pode ultrapassar 5 MB.';
+                e.target.value = '';
+                return;
+            }
+            this.preview = URL.createObjectURL(file);
+        },
+        confirmarRemocao() {
+            if (confirm('Remover a foto de perfil?')) {
+                document.getElementById('remover-foto-form').submit();
+            }
+        },
+    };
+}
+</script>
 </x-app-layout>
