@@ -90,12 +90,12 @@ class DesbravadorController extends Controller
         ]);
 
         $dados['ativo'] = true;
+        unset($dados['foto']); // UploadedFile não pode ir para create(); tratado abaixo
 
         $desbravador = Desbravador::create($dados);
 
         if ($request->hasFile('foto')) {
-            $desbravador->foto = $this->processarFoto($request->file('foto'));
-            $desbravador->save();
+            $desbravador->update(['foto' => $this->processarFoto($request->file('foto'))]);
         }
 
         return redirect()->route('desbravadores.index')->with('success', 'Desbravador cadastrado com sucesso!');
@@ -154,6 +154,7 @@ class DesbravadorController extends Controller
         ]);
 
         $dados['ativo'] = $request->has('ativo');
+        unset($dados['foto']); // foto é tratada separadamente para não sobrescrever com null
 
         if ($request->hasFile('foto')) {
             if ($desbravador->foto) {

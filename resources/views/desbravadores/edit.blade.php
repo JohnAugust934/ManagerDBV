@@ -239,10 +239,6 @@
                         </div>
                     </div>
 
-                    <form id="remover-foto-form" action="{{ route('desbravadores.remover-foto', $desbravador) }}" method="POST" class="hidden">
-                        @csrf
-                        @method('DELETE')
-                    </form>
                 </div>
 
                 {{-- SUBMIT E DANGER ZONE --}}
@@ -270,6 +266,11 @@
             </form>
 
             <form id="delete-form" action="{{ route('desbravadores.destroy', $desbravador) }}" method="POST" class="hidden">
+                @csrf
+                @method('DELETE')
+            </form>
+
+            <form id="remover-foto-form" action="{{ route('desbravadores.remover-foto', $desbravador) }}" method="POST" class="hidden">
                 @csrf
                 @method('DELETE')
             </form>
