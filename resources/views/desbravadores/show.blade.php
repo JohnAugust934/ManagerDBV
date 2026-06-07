@@ -33,7 +33,8 @@
                     <div class="relative shrink-0 group">
                         <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-[6px] border-white dark:border-[#18181b] bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-xl overflow-hidden relative z-10 transition-transform group-hover:scale-105">
                             @if ($desbravador->foto)
-                                <img class="w-full h-full object-cover" src="{{ asset('storage/' . $desbravador->foto) }}" alt="Foto">
+                                <img class="w-full h-full object-cover" src="{{ asset('storage/' . $desbravador->foto) }}" alt="Foto de perfil de {{ $desbravador->nome }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                                <span class="text-4xl font-black text-slate-300 dark:text-slate-600" style="display:none">{{ mb_strtoupper(substr($desbravador->nome, 0, 2)) }}</span>
                             @else
                                 <span class="text-4xl font-black text-slate-300 dark:text-slate-600">{{ mb_strtoupper(substr($desbravador->nome, 0, 2)) }}</span>
                             @endif
