@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\DesbravadorClubScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,12 +34,18 @@ class Desbravador extends Model
         'alergias',
         'medicamentos_continuos',
         'plano_saude',
+        'foto',
     ];
 
     protected $casts = [
         'data_nascimento' => 'date',
         'ativo' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new DesbravadorClubScope);
+    }
 
     public function unidade(): BelongsTo
     {
@@ -60,6 +67,15 @@ class Desbravador extends Model
     public function frequencias(): HasMany
     {
         return $this->hasMany(Frequencia::class);
+    }
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        if ($this->foto) {
+            return asset('storage/'.$this->foto);
+        }
+
+        return null;
     }
 
     public function getTotalPontosAttribute()
