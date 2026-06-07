@@ -29,6 +29,24 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// Health check — para load balancers, uptime monitors e alertas de disponibilidade.
+Route::get('/health', function () {
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $dbStatus = 'ok';
+    } catch (\Exception) {
+        $dbStatus = 'error';
+    }
+
+    $httpStatus = $dbStatus === 'ok' ? 200 : 503;
+
+    return response()->json([
+        'status' => $dbStatus === 'ok' ? 'healthy' : 'degraded',
+        'database' => $dbStatus,
+        'timestamp' => now()->toIso8601String(),
+    ], $httpStatus);
+})->name('health');
+
 // Publico
 Route::get('/', function () {
     return view('welcome');
@@ -87,6 +105,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Gestao de pessoas
         Route::resource('desbravadores', DesbravadorController::class)->parameters(['desbravadores' => 'desbravador']);
+        Route::delete('desbravadores/{desbravador}/foto', [DesbravadorController::class, 'removerFoto'])->name('desbravadores.remover-foto');
         Route::resource('unidades', UnidadeController::class)->except(['index', 'show']);
 
         // Criacao de eventos
