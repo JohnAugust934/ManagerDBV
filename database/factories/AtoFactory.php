@@ -12,7 +12,8 @@ class AtoFactory extends Factory
             'numero' => $this->faker->numerify('###/'.date('Y')), // Ex: 015/2026
             'data' => $this->faker->date(),
             'tipo' => $this->faker->randomElement(['Nomeação', 'Disciplina', 'Voto']),
-            'descricao' => $this->faker->paragraph(), // Mudou de descricao_resumida para descricao
+            'descricao' => $this->faker->paragraph(),
+            'club_id' => null,
         ];
     }
 }

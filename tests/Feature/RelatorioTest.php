@@ -104,13 +104,14 @@ class RelatorioTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
-    public function test_relatorios_personalizados_funcionam_com_unidades_legadas_sem_club_id()
+    public function test_unidade_sem_club_id_nao_vaza_para_outro_clube()
     {
+        // Unidades sem club_id NÃO devem aparecer para usuários de outros clubes.
+        // Comportamento anterior (whereNull fallback) era uma brecha de segurança — removido.
         $this->unidade->update(['club_id' => null]);
 
         $this->mockPdfLoadView('relatorios.table', function (array $data) {
-            $this->assertCount(1, $data['linhas']);
-            $this->assertSame('Daniel Silva', $data['linhas'][0][0]);
+            $this->assertCount(0, $data['linhas'], 'Unidade sem club_id não deve aparecer para usuários de clube definido.');
         });
 
         $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
@@ -124,11 +125,13 @@ class RelatorioTest extends TestCase
 
     public function test_pode_gerar_relatorio_personalizado_caixa()
     {
+        // GlobalScope ClubScope aplica o filtro — registro deve ter club_id do clube corrente.
         Caixa::create([
             'descricao' => 'Teste',
             'valor' => 50,
             'tipo' => 'entrada',
             'data_movimentacao' => now(),
+            'club_id' => $this->clube->id,
         ]);
 
         $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
@@ -164,6 +167,7 @@ class RelatorioTest extends TestCase
             'data_fim' => now()->addDay(),
             'local' => 'Sitio',
             'valor' => 30,
+            'club_id' => $this->clube->id,
         ]);
 
         $this->desbravador->eventos()->attach($evento->id, [

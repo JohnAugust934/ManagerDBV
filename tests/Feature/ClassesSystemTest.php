@@ -15,38 +15,31 @@ class ClassesSystemTest extends TestCase
 
     public function test_desbravador_aparece_apenas_na_classe_que_esta_vinculado()
     {
-        // 1. Popula as classes
         $this->seed(\Database\Seeders\ClassesSeeder::class);
 
-        // 2. Cria Usuário Instrutor
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
 
-        // 3. Recupera classes do banco
         $classeAmigo = Classe::where('nome', 'Amigo')->first();
         $classeCompanheiro = Classe::where('nome', 'Companheiro')->first();
 
-        // 4. Cria Desbravador vinculado a AMIGO (classe_atual = ID do Amigo)
-        $dbv = Desbravador::factory()->create([
+        // Desbravador deve pertencer ao clube para o GlobalScope encontrá-lo.
+        $dbv = Desbravador::factory()->forClube($clube->id)->create([
             'nome' => 'Joaozinho',
-            'classe_atual' => $classeAmigo->id, // <--- O PULO DO GATO
+            'classe_atual' => $classeAmigo->id,
             'ativo' => true,
         ]);
 
-        // 5. Teste: Acessa tela de AMIGO -> Deve ver Joaozinho
         $response = $this->actingAs($user)->get(route('classes.show', $classeAmigo->id));
         $response->assertStatus(200);
         $response->assertSee('Joaozinho');
 
-        // 6. Teste: Acessa tela de COMPANHEIRO -> NÃO deve ver Joaozinho
         $response = $this->actingAs($user)->get(route('classes.show', $classeCompanheiro->id));
         $response->assertStatus(200);
         $response->assertDontSee('Joaozinho');
 
-        // 7. Teste: Muda Joaozinho para COMPANHEIRO no banco
         $dbv->update(['classe_atual' => $classeCompanheiro->id]);
 
-        // 8. Teste: Acessa tela de COMPANHEIRO -> Agora DEVE ver Joaozinho
         $this->actingAs($user)->get(route('classes.show', $classeCompanheiro->id))
             ->assertSee('Joaozinho');
     }
@@ -60,7 +53,8 @@ class ClassesSystemTest extends TestCase
         $classe = Classe::where('nome', 'Amigo')->first();
         $req = $classe->requisitos->first();
 
-        $dbv = Desbravador::factory()->create([
+        // Desbravador deve pertencer ao clube para o GlobalScope encontrá-lo.
+        $dbv = Desbravador::factory()->forClube($clube->id)->create([
             'classe_atual' => $classe->id,
             'ativo' => true,
         ]);

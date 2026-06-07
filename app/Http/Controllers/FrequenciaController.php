@@ -35,19 +35,19 @@ class FrequenciaController extends Controller
             $ano = (int) now()->year;
         }
 
+        // Datas de reuniões apenas do clube corrente.
         $datasReunioes = Frequencia::whereYear('data', $ano)
             ->whereMonth('data', $mes)
+            ->whereHas('desbravador.unidade', fn ($q) => $q->where('club_id', $clubId))
             ->selectRaw('DATE(data) as data_reuniao')
             ->distinct()
             ->orderBy('data_reuniao')
             ->pluck('data_reuniao');
 
+        // GlobalScope DesbravadorClubScope aplica o filtro de clube automaticamente.
         $desbravadores = Desbravador::with(['unidade', 'frequencias' => function ($query) use ($mes, $ano) {
             $query->whereYear('data', $ano)->whereMonth('data', $mes);
         }])
-            ->whereHas('unidade', function ($query) {
-                $query->where('club_id', auth()->user()->club_id);
-            })
             ->where('ativo', true)
             ->orderBy('nome')
             ->get();
@@ -88,58 +88,54 @@ class FrequenciaController extends Controller
                 ->with('error', 'Usuario sem clube vinculado. Vincule um clube para registrar chamada.');
         }
 
-        // Apenas processar desbravadores das unidades que foram efetivamente submetidas no formulário.
-        // Isso garante que chamadas de outras unidades (feitas por outros usuários no mesmo dia)
-        // não sejam sobrescritas.
         $unidadesSubmetidas = array_map('intval', $request->input('unidades_submetidas', []));
 
-        // Desbravadores válidos: pertencentes às unidades submetidas e ao clube do usuário
-        $desbravadoresValidos = Desbravador::with('unidade')
-            ->whereHas('unidade', function ($query) use ($clubId, $unidadesSubmetidas) {
-                $query->where('club_id', $clubId)
-                      ->whereIn('id', $unidadesSubmetidas);
-            })
+        $desbravadoresValidos = Desbravador::whereHas('unidade', function ($query) use ($clubId, $unidadesSubmetidas) {
+            $query->where('club_id', $clubId)
+                  ->whereIn('id', $unidadesSubmetidas);
+        })
+            ->withoutGlobalScopes() // Evita double-apply do GlobalScope na consulta interna
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->flip()
-            ->all(); // array [id => index] para lookup O(1)
+            ->all();
 
         $presencas = $request->input('presencas', []);
 
         if ($this->attendanceColumnService->usesLegacyColumns()) {
-            foreach ($presencas as $id => $dados) {
-                $id = (int) $id;
+            // Caminho legado — envolto em transação para garantir atomicidade.
+            DB::transaction(function () use ($request, $presencas, $desbravadoresValidos) {
+                foreach ($presencas as $id => $dados) {
+                    $id = (int) $id;
 
-                // Ignorar desbravadores que não pertencem às unidades submetidas
-                if (! array_key_exists($id, $desbravadoresValidos)) {
-                    continue;
+                    if (! array_key_exists($id, $desbravadoresValidos)) {
+                        continue;
+                    }
+
+                    Frequencia::updateOrCreate(
+                        [
+                            'desbravador_id' => $id,
+                            'data' => $request->data,
+                        ],
+                        [
+                            'presente' => isset($dados['presente']),
+                            'pontual' => isset($dados['pontual']),
+                            'biblia' => isset($dados['biblia']),
+                            'uniforme' => isset($dados['uniforme']),
+                        ]
+                    );
                 }
 
-                Frequencia::updateOrCreate(
-                    [
-                        'desbravador_id' => $id,
-                        'data' => $request->data,
-                    ],
-                    [
-                        'presente' => isset($dados['presente']),
-                        'pontual' => isset($dados['pontual']),
-                        'biblia' => isset($dados['biblia']),
-                        'uniforme' => isset($dados['uniforme']),
-                    ]
-                );
-            }
+                $idsEnviados = array_map('intval', array_keys($presencas));
+                $idsAusentesNaoEnviados = array_diff(array_keys($desbravadoresValidos), $idsEnviados);
 
-            // Desbravadores das unidades submetidas que não vieram no POST (nenhuma checkbox marcada)
-            // devem ter a frequência zerada para aquela data
-            $idsEnviados = array_map('intval', array_keys($presencas));
-            $idsAusentesNaoEnviados = array_diff(array_keys($desbravadoresValidos), $idsEnviados);
-
-            foreach ($idsAusentesNaoEnviados as $id) {
-                Frequencia::updateOrCreate(
-                    ['desbravador_id' => $id, 'data' => $request->data],
-                    ['presente' => false, 'pontual' => false, 'biblia' => false, 'uniforme' => false]
-                );
-            }
+                foreach ($idsAusentesNaoEnviados as $id) {
+                    Frequencia::updateOrCreate(
+                        ['desbravador_id' => $id, 'data' => $request->data],
+                        ['presente' => false, 'pontual' => false, 'biblia' => false, 'uniforme' => false]
+                    );
+                }
+            });
 
             return redirect()->route('frequencia.index')->with('success', 'Chamada realizada com sucesso!');
         }
@@ -151,7 +147,6 @@ class FrequenciaController extends Controller
             foreach ($presencas as $id => $dados) {
                 $id = (int) $id;
 
-                // Ignorar desbravadores que não pertencem às unidades submetidas
                 if (! array_key_exists($id, $desbravadoresValidos)) {
                     continue;
                 }
@@ -186,7 +181,6 @@ class FrequenciaController extends Controller
                 }
             }
 
-            // Desbravadores das unidades submetidas sem nenhuma checkbox marcada = ausentes
             $idsEnviados = array_map('intval', array_keys($presencas));
             $idsAusentesNaoEnviados = array_diff(array_keys($desbravadoresValidos), $idsEnviados);
 
@@ -206,6 +200,26 @@ class FrequenciaController extends Controller
         });
 
         return redirect()->route('frequencia.index')->with('success', 'Chamada realizada com sucesso!');
+    }
+
+    public function destroyData(string $data)
+    {
+        $clubId = auth()->user()->club_id;
+
+        $ids = Frequencia::whereDate('data', $data)
+            ->whereHas('desbravador.unidade', fn ($q) => $q->where('club_id', $clubId))
+            ->pluck('id');
+
+        if ($ids->isEmpty()) {
+            return back()->with('error', 'Nenhum registro encontrado para essa data.');
+        }
+
+        \App\Models\FrequenciaColumnValue::whereIn('frequencia_id', $ids)->delete();
+        Frequencia::whereIn('id', $ids)->delete();
+
+        $dataFormatada = \Carbon\Carbon::parse($data)->format('d/m/Y');
+
+        return back()->with('success', "Chamada do dia {$dataFormatada} excluída. Você pode relançá-la agora.");
     }
 
     private function isFixedColumnChecked(string $columnKey, $fixedColumns, array $selectedColumnIds): bool

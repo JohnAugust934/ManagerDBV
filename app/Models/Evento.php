@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\ClubScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,14 +16,20 @@ class Evento extends Model
         'data_fim',
         'local',
         'valor',
-        'descricao'
+        'descricao',
+        'club_id',
     ];
 
     protected $casts = [
         'data_inicio' => 'datetime',
         'data_fim' => 'datetime',
-        'valor' => 'decimal:2'
+        'valor' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new ClubScope);
+    }
 
     public function desbravadores()
     {

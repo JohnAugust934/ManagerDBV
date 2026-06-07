@@ -112,6 +112,30 @@ class InvitationController extends Controller
             : 'Convite gerado e enviado com sucesso!');
     }
 
+    public function resend(Invitation $invite)
+    {
+        $this->authorizeAccessManagement();
+
+        if ($invite->registered_at) {
+            return back()->with('error', 'Este convite já foi utilizado e não pode ser reenviado.');
+        }
+
+        $invite->update([
+            'token' => Str::random(40),
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        try {
+            Mail::to($invite->email)->send(new ClubInvitation($invite->fresh()));
+        } catch (\Exception $e) {
+            Log::error('Erro ao reenviar convite: '.$e->getMessage());
+
+            return back()->with('warning', 'Token renovado, mas o e-mail não pôde ser enviado. Copie o link e envie manualmente.');
+        }
+
+        return back()->with('success', 'Convite reenviado com sucesso para '.$invite->email.'!');
+    }
+
     public function destroy(Invitation $invite)
     {
         $this->authorizeAccessManagement();

@@ -1,7 +1,32 @@
 <x-app-layout>
     <x-slot name="header">Histórico de Frequência</x-slot>
 
-    <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up">
+    <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up"
+        x-data="{
+            deleteModal: false,
+            deleteDate: '',
+            deleteUrl: '',
+            openDelete(date, url) {
+                this.deleteDate = date;
+                this.deleteUrl = url;
+                this.deleteModal = true;
+            },
+            confirmDelete() {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = this.deleteUrl;
+                const csrf = document.createElement('input');
+                csrf.name = '_token';
+                csrf.value = document.querySelector('meta[name=csrf-token]').content;
+                form.appendChild(csrf);
+                const method = document.createElement('input');
+                method.name = '_method';
+                method.value = 'DELETE';
+                form.appendChild(method);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }">
 
         {{-- HERO BANNER FILTRO — compacto no mobile --}}
         <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#001D42] to-[#002F6C] px-5 py-4 shadow-xl shadow-blue-900/30">
@@ -82,7 +107,6 @@
                     {{ mb_strtoupper(\Carbon\Carbon::create()->month($mes)->locale('pt_BR')->monthName) }} / {{ $ano }}
                 </h2>
                 <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{{ $datasReunioes->count() }} reunião(ões) registrada(s)</p>
-            </div>
             </div>
 
             {{-- VISUALIZAÇÃO MOBILE: Cards por Desbravador --}}
@@ -170,9 +194,15 @@
                                 <th class="px-4 py-4 text-[11px] font-black uppercase tracking-wider text-slate-500 whitespace-nowrap">Unidade</th>
                                 @foreach ($datasReunioes as $data)
                                     <th class="px-3 py-4 text-center border-l border-dashed border-slate-200 dark:border-slate-700 min-w-[64px]">
-                                        <div class="flex flex-col items-center">
+                                        <div class="flex flex-col items-center gap-1.5">
                                             <span class="text-lg font-black text-slate-700 dark:text-slate-200 leading-none">{{ \Carbon\Carbon::parse($data)->format('d') }}</span>
-                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{{ \Carbon\Carbon::parse($data)->locale('pt_BR')->shortDayName }}</span>
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">{{ \Carbon\Carbon::parse($data)->locale('pt_BR')->shortDayName }}</span>
+                                            <button type="button"
+                                                title="Excluir chamada deste dia"
+                                                @click="openDelete('{{ \Carbon\Carbon::parse($data)->format('d/m/Y') }}', '{{ route('frequencia.destroy-data', $data) }}')"
+                                                class="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
                                         </div>
                                     </th>
                                 @endforeach
@@ -228,5 +258,76 @@
                 </div>
             </div>
         @endif
+
+        {{-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO --}}
+        <template x-teleport="body">
+        <div x-show="deleteModal" style="display:none;" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true">
+            {{-- Backdrop --}}
+            <div
+                x-show="deleteModal"
+                x-transition:enter="ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+                @click="deleteModal = false">
+            </div>
+
+            {{-- Card do modal --}}
+            <div
+                x-show="deleteModal"
+                x-transition:enter="ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="relative w-full sm:max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl shadow-black/20 border border-slate-100 dark:border-slate-700 overflow-hidden">
+
+                {{-- Faixa vermelha de alerta --}}
+                <div class="bg-red-500 px-6 pt-5 pb-4 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-red-100 uppercase tracking-widest">Ação irreversível</p>
+                        <h3 class="text-base font-black text-white leading-tight">Excluir chamada</h3>
+                    </div>
+                </div>
+
+                {{-- Corpo --}}
+                <div class="px-6 py-5">
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-300">
+                        Tem certeza que deseja excluir a chamada do dia
+                    </p>
+                    <p class="mt-2 text-xl font-black text-slate-800 dark:text-white" x-text="deleteDate"></p>
+                    <p class="mt-2 text-xs font-semibold text-slate-400">
+                        Todos os registros de presença dessa data serão removidos permanentemente.
+                    </p>
+                </div>
+
+                {{-- Botões --}}
+                <div class="px-6 pb-6 flex items-center gap-3">
+                    <button type="button"
+                        @click="deleteModal = false"
+                        class="flex-1 ui-btn-secondary">
+                        Cancelar
+                    </button>
+                    <button type="button"
+                        @click="confirmDelete()"
+                        class="flex-1 ui-btn-danger">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Excluir
+                    </button>
+                </div>
+            </div>
+        </div>
+        </template>
     </div>
 </x-app-layout>

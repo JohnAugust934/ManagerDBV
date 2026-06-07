@@ -17,6 +17,7 @@ class EventoFactory extends Factory
             'data_fim' => (clone $inicio)->modify('+2 days'),
             'valor' => $this->faker->randomFloat(2, 0, 200),
             'descricao' => $this->faker->paragraph,
+            'club_id' => null,
         ];
     }
 }

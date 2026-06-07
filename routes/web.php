@@ -76,6 +76,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/create', [InvitationController::class, 'create'])->name('create');
             Route::post('/', [InvitationController::class, 'store'])->name('store');
             Route::delete('/{invite}', [InvitationController::class, 'destroy'])->name('destroy');
+            Route::post('/{invite}/resend', [InvitationController::class, 'resend'])->name('resend');
         });
     });
 
@@ -106,7 +107,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Gestao de pessoas
         Route::resource('desbravadores', DesbravadorController::class)->parameters(['desbravadores' => 'desbravador']);
         Route::delete('desbravadores/{desbravador}/foto', [DesbravadorController::class, 'removerFoto'])->name('desbravadores.remover-foto');
+        Route::post('desbravadores/{desbravador}/avancar-classe', [DesbravadorController::class, 'avancarClasse'])->name('desbravadores.avancar-classe');
         Route::resource('unidades', UnidadeController::class)->except(['index', 'show']);
+        Route::patch('unidades/{unidade}/toggle-ranking', [UnidadeController::class, 'toggleRanking'])->name('unidades.toggle-ranking');
 
         // Criacao de eventos
         Route::get('/eventos/create', [EventoController::class, 'create'])->name('eventos.create');
@@ -124,6 +127,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // 6. Pedagogico
     Route::middleware('can:pedagogico')->group(function () {
         Route::resource('especialidades', EspecialidadeController::class);
+        Route::get('/especialidades/{especialidade}/historico', [EspecialidadeController::class, 'historico'])->name('especialidades.historico');
+        Route::post('/especialidades/{especialidade}/requisitos', [EspecialidadeController::class, 'storeRequisito'])->name('especialidades.requisitos.store');
+        Route::put('/especialidades/{especialidade}/requisitos/{requisito}', [EspecialidadeController::class, 'updateRequisito'])->name('especialidades.requisitos.update');
+        Route::delete('/especialidades/{especialidade}/requisitos/{requisito}', [EspecialidadeController::class, 'destroyRequisito'])->name('especialidades.requisitos.destroy');
         Route::get('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'gerenciarEspecialidades'])->name('desbravadores.especialidades');
         Route::post('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'salvarEspecialidades'])->name('desbravadores.salvar-especialidades');
         Route::delete('/desbravadores/{desbravador}/especialidades/{especialidade}', [DesbravadorController::class, 'removerEspecialidade'])->name('desbravadores.remover-especialidade');
@@ -132,12 +139,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [ClassesController::class, 'index'])->name('index');
             Route::get('/{classe}', [ClassesController::class, 'show'])->name('show');
             Route::post('/toggle-requisito', [ClassesController::class, 'toggle'])->name('toggle');
+            Route::post('/{classe}/requisitos', [ClassesController::class, 'storeRequisito'])->name('requisitos.store');
+            Route::put('/{classe}/requisitos/{requisito}', [ClassesController::class, 'updateRequisito'])->name('requisitos.update');
+            Route::delete('/{classe}/requisitos/{requisito}', [ClassesController::class, 'destroyRequisito'])->name('requisitos.destroy');
         });
 
         Route::prefix('frequencia')->name('frequencia.')->group(function () {
             Route::get('/', [FrequenciaController::class, 'index'])->name('index');
             Route::get('/chamada', [FrequenciaController::class, 'create'])->name('create');
             Route::post('/store', [FrequenciaController::class, 'store'])->name('store');
+            Route::delete('/data/{data}', [FrequenciaController::class, 'destroyData'])->name('destroy-data');
         });
     });
 
@@ -151,6 +162,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('can:financeiro')->group(function () {
         Route::resource('caixa', CaixaController::class);
         Route::resource('patrimonio', PatrimonioController::class);
+        Route::post('patrimonio/{patrimonio}/manutencoes', [PatrimonioController::class, 'storeManutencao'])->name('patrimonio.manutencoes.store');
+        Route::delete('patrimonio/{patrimonio}/manutencoes/{manutencao}', [PatrimonioController::class, 'destroyManutencao'])->name('patrimonio.manutencoes.destroy');
 
         Route::get('mensalidades', [MensalidadeController::class, 'index'])->name('mensalidades.index');
         Route::post('mensalidades/gerar', [MensalidadeController::class, 'gerarMassivo'])->name('mensalidades.gerar');
@@ -172,6 +185,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('ranking')->name('ranking.')->group(function () {
         Route::get('/unidades', [RankingController::class, 'unidades'])->name('unidades');
         Route::get('/desbravadores', [RankingController::class, 'desbravadores'])->name('desbravadores');
+        Route::post('/snapshot', [RankingController::class, 'salvarSnapshot'])->name('salvar-snapshot');
+        Route::get('/snapshot/{scope}', [RankingController::class, 'verSnapshot'])->name('ver-snapshot')->where('scope', 'unidades|desbravadores');
     });
 
     // 10. Relatorios

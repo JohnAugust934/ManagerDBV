@@ -25,6 +25,7 @@ class CaixaTest extends TestCase
             'tipo' => 'entrada',
             'data_movimentacao' => now()->format('Y-m-d'),
             'categoria' => 'Campanha',
+            'club_id' => $clube->id,
         ]);
 
         Caixa::create([
@@ -33,6 +34,7 @@ class CaixaTest extends TestCase
             'tipo' => 'saida',
             'data_movimentacao' => now()->format('Y-m-d'),
             'categoria' => 'Secretaria',
+            'club_id' => $clube->id,
         ]);
 
         // Saldo esperado: 200 - 50 = 150

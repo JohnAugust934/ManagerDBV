@@ -14,6 +14,7 @@ class CaixaFactory extends Factory
             'tipo' => $this->faker->randomElement(['entrada', 'saida']),
             'data_movimentacao' => $this->faker->date(),
             'categoria' => $this->faker->word(),
+            'club_id' => null,
         ];
     }
 }

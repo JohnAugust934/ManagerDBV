@@ -1,9 +1,5 @@
 ﻿<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
-            Editar Ata
-        </h2>
-    </x-slot>
+    <x-slot name="header">Editar Ata</x-slot>
 
     <div class="ui-page">
         <div class="max-w-4xl mx-auto">
@@ -54,7 +50,7 @@
                         <textarea id="conteudo" name="conteudo" rows="12" class="ui-input mt-1" required>{{ old('conteudo', $ata->conteudo) }}</textarea>
                     </div>
 
-                    <div class="flex flex-col gap-3 pt-4 border-t border-gray-100 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
                         <button type="button"
                             onclick="if(confirm('Excluir esta ata apagara o registro permanentemente. Deseja continuar?')) document.getElementById('delete-ata-form').submit();"
                             class="ui-btn-danger w-full sm:w-auto">

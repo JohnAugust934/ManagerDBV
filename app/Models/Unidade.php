@@ -14,7 +14,12 @@ class Unidade extends Model
         'nome',
         'grito_guerra',
         'conselheiro',
-        'club_id', // <--- ESSENCIAL PARA O VÍNCULO FUNCIONAR
+        'club_id',
+        'no_ranking',
+    ];
+
+    protected $casts = [
+        'no_ranking' => 'boolean',
     ];
 
     // Relacionamento: Uma unidade tem vários desbravadores

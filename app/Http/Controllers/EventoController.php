@@ -41,6 +41,7 @@ class EventoController extends Controller
             'valor' => 'required|numeric|min:0',
             'descricao' => 'nullable|string',
         ]);
+        $dados['club_id'] = auth()->user()->club_id;
         Evento::create($dados);
 
         return redirect()->route('eventos.index')->with('success', 'Evento criado!');
@@ -233,6 +234,7 @@ class EventoController extends Controller
             'categoria' => 'Evento',
             'valor' => $evento->valor,
             'data_movimentacao' => now(),
+            'club_id' => auth()->user()->club_id,
         ]);
     }
 }

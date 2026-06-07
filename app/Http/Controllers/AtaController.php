@@ -47,6 +47,7 @@ class AtaController extends Controller
             'participantes' => 'nullable|string', // Lista de nomes ou ids
         ]);
 
+        $dados['club_id'] = auth()->user()->club_id;
         Ata::create($dados);
 
         return redirect()->route('atas.index')->with('success', 'Ata registrada com sucesso!');

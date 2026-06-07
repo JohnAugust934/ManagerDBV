@@ -6,7 +6,7 @@
             </a>
             <div class="flex items-center gap-4">
                 <div class="w-2.5 h-8 rounded-full shadow-sm" style="background-color: {{ $classe->cor }}"></div>
-                <h2 class="font-black text-2xl text-slate-800 dark:text-gray-100 leading-tight uppercase tracking-tight">
+                <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight uppercase tracking-tight">
                     {{ $classe->nome }}
                 </h2>
             </div>
@@ -38,11 +38,17 @@
                 Controle por Aluno
             </button>
             
-            <button @click="activeTab = 'lote'" 
+            <button @click="activeTab = 'lote'"
                 :class="activeTab === 'lote' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
                 class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all relative">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 Aula em Lote
+            </button>
+            <button @click="activeTab = 'requisitos'"
+                :class="activeTab === 'requisitos' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
+                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all relative">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                Requisitos
             </button>
         </div>
 
@@ -157,6 +163,89 @@
         </div>
 
         {{-- DRAWER LATERAL (SISTEMA DE ASINATURA INDIVIDUAL) --}}
+        {{-- TAB VIEW: REQUISITOS --}}
+        <div x-show="activeTab === 'requisitos'" x-cloak class="ui-animate-fade-up" x-data="{ editandoId: null }">
+            <div class="ui-card p-6 sm:p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-[15px] font-black uppercase tracking-widest text-[#002F6C] dark:text-blue-400">Gerenciar Requisitos</h3>
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-400">{{ $classe->requisitos->count() }} requisito(s)</span>
+                </div>
+
+                @if($classe->requisitos->isEmpty())
+                    <p class="text-sm text-slate-400 font-semibold mb-6">Nenhum requisito cadastrado para esta classe.</p>
+                @else
+                    <div class="space-y-2 mb-8">
+                        @foreach($classe->requisitos->sortBy('categoria') as $req)
+                            <div class="group flex items-start gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-colors">
+                                <div class="flex-1 min-w-0" x-show="editandoId !== {{ $req->id }}">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        @if($req->codigo)
+                                            <span class="text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded font-mono">{{ $req->codigo }}</span>
+                                        @endif
+                                        @if($req->categoria)
+                                            <span class="text-[10px] font-bold text-slate-400">{{ $req->categoria }}</span>
+                                        @endif
+                                    </div>
+                                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ $req->descricao }}</p>
+                                </div>
+
+                                <form action="{{ route('classes.requisitos.update', [$classe, $req]) }}" method="POST"
+                                    class="flex-1 min-w-0 gap-2 flex flex-col" x-show="editandoId === {{ $req->id }}" x-cloak>
+                                    @csrf @method('PUT')
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input name="codigo" value="{{ $req->codigo }}" placeholder="Código" class="ui-input text-xs">
+                                        <input name="categoria" value="{{ $req->categoria }}" placeholder="Categoria" class="ui-input text-xs">
+                                    </div>
+                                    <textarea name="descricao" rows="2" required class="ui-input text-sm resize-none">{{ $req->descricao }}</textarea>
+                                    <div class="flex gap-2">
+                                        <button type="submit" class="px-3 py-1 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600">Salvar</button>
+                                        <button type="button" @click="editandoId = null" class="px-3 py-1 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50">Cancelar</button>
+                                    </div>
+                                </form>
+
+                                <div class="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" x-show="editandoId !== {{ $req->id }}">
+                                    <button type="button" @click="editandoId = {{ $req->id }}"
+                                        class="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Editar">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+                                    <form action="{{ route('classes.requisitos.destroy', [$classe, $req]) }}" method="POST"
+                                        onsubmit="return confirm('Excluir este requisito? Os registros de conclusão dos desbravadores também serão removidos.');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Excluir">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Adicionar novo requisito --}}
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5" x-data="{ aberto: false }">
+                    <button type="button" @click="aberto = !aberto"
+                        class="flex items-center gap-2 text-sm font-bold text-[#002F6C] dark:text-blue-400 hover:text-blue-700 transition-colors">
+                        <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-45': aberto }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        Adicionar requisito
+                    </button>
+                    <form action="{{ route('classes.requisitos.store', $classe) }}" method="POST"
+                        class="mt-4 space-y-3" x-show="aberto" x-cloak>
+                        @csrf
+                        <div class="grid grid-cols-2 gap-2">
+                            <input name="codigo" placeholder="Código (ex: A01)" class="ui-input text-sm">
+                            <input name="categoria" placeholder="Categoria (ex: Espiritual)" class="ui-input text-sm">
+                        </div>
+                        <textarea name="descricao" rows="3" placeholder="Descrição do requisito..." required
+                            class="ui-input text-sm resize-none w-full"></textarea>
+                        <div class="flex gap-2">
+                            <button type="submit" class="ui-btn-primary px-4 py-2 text-sm">Adicionar</button>
+                            <button type="button" @click="aberto = false" class="ui-btn-secondary px-4 py-2 text-sm">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <template x-teleport="body">
             <div x-show="drawerOpen"
                 x-cloak

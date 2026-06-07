@@ -72,6 +72,7 @@ class RelatorioController extends Controller
 
     public function financeiro()
     {
+        // GlobalScope ClubScope aplica o filtro de club_id automaticamente.
         $movimentacoes = Caixa::orderBy('data_movimentacao', 'desc')->get();
 
         return $this->renderTablePdf(
@@ -98,6 +99,7 @@ class RelatorioController extends Controller
 
     public function patrimonio()
     {
+        // GlobalScope ClubScope aplica o filtro de club_id automaticamente.
         $itens = Patrimonio::orderBy('item')->get();
 
         return $this->renderTablePdf(
@@ -496,6 +498,7 @@ class RelatorioController extends Controller
 
     private function relatorioFinanceiroPersonalizado(Request $request)
     {
+        // GlobalScope ClubScope aplica o filtro de club_id automaticamente.
         $query = Caixa::query();
 
         if ($request->filled('data_inicio')) {
@@ -728,16 +731,11 @@ class RelatorioController extends Controller
         $clubId = $this->currentClubId();
 
         if (! $clubId) {
-            return $query;
+            // Sem clube definido — retorna conjunto vazio para não vazar dados de outros clubes.
+            return $query->whereRaw('1 = 0');
         }
 
-        $hasUnitsLinkedToClub = Unidade::where('club_id', $clubId)->exists();
-
-        if ($hasUnitsLinkedToClub) {
-            return $query->where('club_id', $clubId);
-        }
-
-        return $query->whereNull('club_id');
+        return $query->where('club_id', $clubId);
     }
 
     private function formatAge(Desbravador $desbravador): string

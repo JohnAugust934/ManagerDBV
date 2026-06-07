@@ -4,18 +4,16 @@
     <div class="ui-page max-w-6xl mx-auto space-y-12 ui-animate-fade-up">
 
         {{-- Cabeçalho da Gamificação --}}
-        <div class="flex items-center justify-between px-4 sm:px-0">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
-                    <span class="text-3xl">🏆</span> {{ $titulo }}
-                </h1>
-                <p class="text-slate-500 font-medium mt-1">Acompanhe as pontuações e destaque das unidades e desbravadores.</p>
-            </div>
+        <div>
+            <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
+                <span class="text-3xl">🏆</span> {{ $titulo }}
+            </h1>
+            <p class="text-slate-500 font-medium mt-1">Acompanhe as pontuações e destaque das unidades e desbravadores.</p>
         </div>
 
         @if ($top3->count() > 0)
             {{-- Painel do Pódio --}}
-            <div class="relative w-full max-w-4xl mx-auto mt-8 mb-16 px-4">
+            <div class="relative w-full max-w-4xl mx-auto mt-8 mb-16">
                 {{-- Glow background --}}
                 <div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#002F6C]/5 to-transparent dark:from-blue-500/10 pointer-events-none rounded-t-full blur-3xl"></div>
                 
@@ -77,14 +75,45 @@
         @endif
 
         {{-- Tabela do Ranking Geral --}}
-        <div class="ui-card p-0 overflow-hidden px-0 sm:px-0 mx-4 sm:mx-0">
-            <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <div class="ui-card p-0 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center gap-4">
+                {{-- Título --}}
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Classificação Geral</h3>
+                        <p class="text-sm font-medium text-slate-500 mt-0.5">Visão consolidada de toda a pontuação.</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Classificação Geral</h3>
-                    <p class="text-sm font-medium text-slate-500 mt-0.5">Visão consolidada de toda a pontuação.</p>
+
+                {{-- Controles de Snapshot --}}
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    {{-- Ver snapshot de ano anterior --}}
+                    @if($snapshotsDisponiveis->isNotEmpty())
+                        <form action="{{ route('ranking.ver-snapshot', $scope) }}" method="GET" class="flex items-center gap-2">
+                            <select name="year" class="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-all">
+                                @foreach($snapshotsDisponiveis as $snapshotYear)
+                                    <option value="{{ $snapshotYear }}">{{ $snapshotYear }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="h-9 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all whitespace-nowrap flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Ver histórico
+                            </button>
+                        </form>
+                    @endif
+                    {{-- Salvar snapshot do ano atual --}}
+                    <form action="{{ route('ranking.salvar-snapshot') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="scope" value="{{ $scope }}">
+                        <input type="hidden" name="year" value="{{ $ano }}">
+                        <button type="submit" class="h-9 px-4 rounded-xl bg-[#002F6C] dark:bg-blue-600 text-white text-xs font-black hover:bg-[#001D42] dark:hover:bg-blue-700 transition-all whitespace-nowrap flex items-center gap-1.5 shadow-sm shadow-blue-900/20">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                            Salvar {{ $ano }}
+                        </button>
+                    </form>
                 </div>
             </div>
 
@@ -96,7 +125,7 @@
                             <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Nome ou Unidade</th>
                             <th class="hidden md:table-cell px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-center">Uniforme</th>
                             <th class="hidden md:table-cell px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-center">Bíblia</th>
-                            <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-[#002F6C] dark:text-blue-400 text-center bg-[#002F6C]/5 dark:bg-blue-500/10">Total de Pontos</th>
+                            <th class="px-3 sm:px-6 py-4 text-[11px] font-black uppercase tracking-widest text-[#002F6C] dark:text-blue-400 text-center bg-[#002F6C]/5 dark:bg-blue-500/10 w-20 sm:w-auto"><span class="hidden sm:inline">Total de Pontos</span><span class="sm:hidden">Pts</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -128,8 +157,8 @@
                                 <td class="hidden md:table-cell px-6 py-4 text-center">
                                     <span class="text-sm font-bold text-slate-600 dark:text-slate-300">{{ $item->detalhes['biblia'] ?? '-' }}</span>
                                 </td>
-                                <td class="px-6 py-4 text-center bg-[#002F6C]/[0.02] dark:bg-blue-500/5">
-                                    <span class="inline-flex items-center justify-center px-4 py-1.5 rounded-xl border-2 border-[#002F6C] dark:border-blue-500 bg-[#002F6C] text-white font-black text-sm shadow-md shadow-blue-900/20">
+                                <td class="px-3 sm:px-6 py-4 text-center bg-[#002F6C]/[0.02] dark:bg-blue-500/5">
+                                    <span class="inline-flex items-center justify-center px-3 sm:px-4 py-1.5 rounded-xl border-2 border-[#002F6C] dark:border-blue-500 bg-[#002F6C] text-white font-black text-sm shadow-md shadow-blue-900/20">
                                         {{ $item->pontos }}
                                     </span>
                                 </td>

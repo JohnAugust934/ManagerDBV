@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Especialidade;
+use App\Models\EspecialidadeRequisito;
 use App\Support\EspecialidadesCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class EspecialidadeController extends Controller
@@ -164,5 +166,55 @@ class EspecialidadeController extends Controller
         return redirect()
             ->route('especialidades.index')
             ->with('success', 'Especialidade removida com sucesso.');
+    }
+
+    public function storeRequisito(Request $request, Especialidade $especialidade)
+    {
+        $request->validate(['descricao' => 'required|string|max:1000']);
+
+        $proximaOrdem = $especialidade->requisitosOficiais()->max('ordem') + 1;
+
+        $especialidade->requisitosOficiais()->create([
+            'descricao' => $request->descricao,
+            'ordem' => $proximaOrdem,
+        ]);
+
+        return back()->with('success', 'Requisito adicionado com sucesso.');
+    }
+
+    public function updateRequisito(Request $request, Especialidade $especialidade, EspecialidadeRequisito $requisito)
+    {
+        abort_if($requisito->especialidade_id !== $especialidade->id, 404);
+
+        $request->validate(['descricao' => 'required|string|max:1000']);
+
+        $requisito->update(['descricao' => $request->descricao]);
+
+        return back()->with('success', 'Requisito atualizado.');
+    }
+
+    public function destroyRequisito(Especialidade $especialidade, EspecialidadeRequisito $requisito)
+    {
+        abort_if($requisito->especialidade_id !== $especialidade->id, 404);
+
+        $requisito->delete();
+
+        // Reordena os demais para não deixar lacunas
+        $especialidade->requisitosOficiais()->orderBy('ordem')->get()
+            ->each(fn ($r, $i) => $r->update(['ordem' => $i + 1]));
+
+        return back()->with('success', 'Requisito removido.');
+    }
+
+    public function historico(Especialidade $especialidade)
+    {
+        $historico = DB::table('especialidade_auditorias')
+            ->where('especialidade_id', $especialidade->id)
+            ->leftJoin('users', 'users.id', '=', 'especialidade_auditorias.user_id')
+            ->select('especialidade_auditorias.*', 'users.name as user_name')
+            ->orderByDesc('especialidade_auditorias.created_at')
+            ->paginate(20);
+
+        return view('especialidades.historico', compact('especialidade', 'historico'));
     }
 }

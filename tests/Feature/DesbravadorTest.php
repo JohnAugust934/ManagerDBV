@@ -22,7 +22,8 @@ class DesbravadorTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        $unidade = Unidade::factory()->create();
+        // Unidade deve pertencer ao clube do usuário para passar na validação.
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $classe = Classe::factory()->create();
 
         $response = $this->actingAs($user)->post(route('desbravadores.store'), [
@@ -54,7 +55,7 @@ class DesbravadorTest extends TestCase
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
-        $unidade = Unidade::factory()->create();
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $classe = Classe::factory()->create();
 
         $response = $this->actingAs($user)->post(route('desbravadores.store'), [
@@ -74,7 +75,8 @@ class DesbravadorTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        $desbravador = Desbravador::factory()->create();
+        // Desbravador deve pertencer ao clube para o GlobalScope não filtrá-lo.
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create();
         $novaClasse = Classe::factory()->create();
 
         $response = $this->actingAs($user)->put(route('desbravadores.update', $desbravador), [
@@ -109,9 +111,9 @@ class DesbravadorTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Orion', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        // Cria 1 Ativo e 1 Inativo
-        $ativo = Desbravador::factory()->create(['nome' => 'João Ativo', 'ativo' => true]);
-        $inativo = Desbravador::factory()->create(['nome' => 'Maria Inativa', 'ativo' => false]);
+        // Desbravadores devem pertencer ao clube para o GlobalScope não filtrá-los.
+        $ativo = Desbravador::factory()->forClube($clube->id)->create(['nome' => 'João Ativo', 'ativo' => true]);
+        $inativo = Desbravador::factory()->forClube($clube->id)->create(['nome' => 'Maria Inativa', 'ativo' => false]);
 
         // Testa a aba "Ativos" (padrão)
         $response = $this->actingAs($user)->get(route('desbravadores.index'));
@@ -131,14 +133,15 @@ class DesbravadorTest extends TestCase
         $response->assertSee('João Ativo');
         $response->assertSee('Maria Inativa');
     }
+
     public function test_pode_excluir_desbravador_sem_erro_500_e_removendo_vinculos()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        $desbravador = Desbravador::factory()->create();
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create();
         $especialidade = Especialidade::factory()->create();
-        $evento = Evento::factory()->create();
+        $evento = Evento::factory()->create(['club_id' => $clube->id]);
 
         $desbravador->especialidades()->attach($especialidade->id, ['data_conclusao' => now()->toDateString()]);
         $desbravador->eventos()->attach($evento->id, ['pago' => true, 'autorizacao_entregue' => true]);
@@ -166,7 +169,7 @@ class DesbravadorTest extends TestCase
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
-        $desbravador = Desbravador::factory()->create();
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create();
 
         $response = $this->actingAs($user)->get(route('desbravadores.edit', $desbravador));
 
@@ -174,6 +177,7 @@ class DesbravadorTest extends TestCase
         $response->assertSeeText('Excluir remove tudo em definitivo. O mais seguro para o dia a dia é inativar o cadastro.');
         $response->assertSee('O recomendado é apenas inativar o cadastro. Deseja excluir mesmo assim?', false);
     }
+
     public function test_lista_de_desbravadores_nao_repete_alerta_de_sucesso()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
@@ -192,8 +196,8 @@ class DesbravadorTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        Desbravador::factory()->create(['nome' => 'Joao Alves', 'ativo' => true]);
-        Desbravador::factory()->create(['nome' => 'Maria Santos', 'ativo' => true]);
+        Desbravador::factory()->forClube($clube->id)->create(['nome' => 'Joao Alves', 'ativo' => true]);
+        Desbravador::factory()->forClube($clube->id)->create(['nome' => 'Maria Santos', 'ativo' => true]);
 
         $response = $this->actingAs($user)->get(route('desbravadores.index', [
             'search' => 'joAO',

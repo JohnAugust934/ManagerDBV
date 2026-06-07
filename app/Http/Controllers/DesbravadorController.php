@@ -104,9 +104,20 @@ class DesbravadorController extends Controller
     public function show(Desbravador $desbravador)
     {
         // GlobalScope garante que apenas desbravadores do clube são acessíveis.
-        $desbravador->load(['unidade', 'classe', 'especialidades', 'frequencias' => function ($q) {
-            $q->orderBy('data', 'desc')->take(5);
-        }]);
+        $desbravador->load([
+            'unidade',
+            'classe',
+            'especialidades',
+            'frequencias' => function ($q) {
+                $q->orderBy('data', 'desc')->take(5);
+            },
+            'mensalidades' => function ($q) {
+                $q->orderByDesc('ano')->orderByDesc('mes');
+            },
+            'eventos' => function ($q) {
+                $q->orderByDesc('data_inicio');
+            },
+        ]);
 
         return view('desbravadores.show', compact('desbravador'));
     }
@@ -177,6 +188,27 @@ class DesbravadorController extends Controller
         return redirect()
             ->route('desbravadores.index')
             ->with('success', 'Desbravador excluído com sucesso. Todos os dados vinculados foram removidos.');
+    }
+
+    public function avancarClasse(Desbravador $desbravador)
+    {
+        $desbravador->load('classe');
+
+        if (! $desbravador->classe) {
+            return back()->with('error', 'Este desbravador não possui classe atual definida.');
+        }
+
+        $proximaClasse = Classe::where('ordem', '>', $desbravador->classe->ordem)
+            ->orderBy('ordem')
+            ->first();
+
+        if (! $proximaClasse) {
+            return back()->with('error', 'Este desbravador já está na classe mais avançada.');
+        }
+
+        $desbravador->update(['classe_atual' => $proximaClasse->id]);
+
+        return back()->with('success', "Classe avançada para {$proximaClasse->nome} com sucesso!");
     }
 
     public function removerFoto(Desbravador $desbravador)

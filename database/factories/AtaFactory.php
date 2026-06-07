@@ -13,6 +13,7 @@ class AtaFactory extends Factory
             'tipo' => $this->faker->randomElement(['Regular', 'Diretoria']),
             'secretario_responsavel' => $this->faker->name(),
             'conteudo' => $this->faker->paragraphs(3, true),
+            'club_id' => null,
         ];
     }
 }

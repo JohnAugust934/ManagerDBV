@@ -42,6 +42,7 @@ class AtoController extends Controller
             'descricao' => 'required|string',
         ]);
 
+        $dados['club_id'] = auth()->user()->club_id;
         Ato::create($dados);
 
         return redirect()->route('atos.index')->with('success', 'Ato publicado com sucesso!');

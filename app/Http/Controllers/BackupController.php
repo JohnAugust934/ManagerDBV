@@ -166,7 +166,7 @@ class BackupController extends Controller
                 'Erro' => $e->getMessage(),
             ], 'error');
 
-            return back()->with('error', 'Falha ao salvar o arquivo enviado: '.$e->getMessage());
+            return back()->with('error', 'Falha ao salvar o arquivo enviado. Verifique os logs do sistema.');
         }
     }
 
@@ -319,7 +319,7 @@ class BackupController extends Controller
                 'Erro' => $e->getMessage(),
             ], 'error');
 
-            return back()->with('error', 'Erro na restauração: '.$e->getMessage());
+            return back()->with('error', 'Erro ao restaurar o backup. Verifique os logs do sistema para mais detalhes.');
         }
     }
 

@@ -1,7 +1,5 @@
 ﻿<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">Ata de Reuniao</h2>
-    </x-slot>
+    <x-slot name="header">Ata de Reunião</x-slot>
 
     @php
         $clubeNome = auth()->user()?->club?->nome?? 'Clube de Desbravadores';
@@ -26,7 +24,7 @@
 
         <div class="print-report-shell max-w-5xl mx-auto">
             <article class="print-report-card ui-card overflow-hidden">
-                <header class="px-8 py-8 border-b border-gray-200 dark:border-slate-700">
+                <header class="px-8 py-8 border-b border-slate-200 dark:border-slate-700">
                     <div class="text-xs font-bold uppercase tracking-[0.28em] text-teal-700 dark:text-teal-400">Desbravadores Manager</div>
                     <h1 class="mt-3 text-3xl font-black text-slate-900 dark:text-white">Ata de Reuniao</h1>
                     <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Documento oficial padronizado para secretaria</p>

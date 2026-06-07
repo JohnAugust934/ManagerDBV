@@ -43,7 +43,7 @@ class RankingTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        $unidade = Unidade::factory()->create();
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
 
         // Desbravador 1: Full (30 pts)
         $dbv1 = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'nome' => 'Campeão', 'ativo' => true]);
@@ -69,7 +69,7 @@ class RankingTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Ano', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        $unidade = Unidade::factory()->create();
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $dbv = Desbravador::factory()->create([
             'unidade_id' => $unidade->id,
             'nome' => 'Pontuacao Atual',

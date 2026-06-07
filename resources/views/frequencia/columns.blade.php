@@ -1,9 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-200 leading-tight">
-            {{ __('Gerenciar Colunas da Chamada') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">Gerenciar Colunas da Chamada</x-slot>
 
     <div class="ui-page space-y-6">
         @if (!empty($legacyMode) && $legacyMode)
@@ -15,7 +11,7 @@
         @endif
 
         <div class="ui-card p-6">
-            <p class="text-sm text-gray-600 dark:text-gray-300">
+            <p class="text-sm text-slate-600 dark:text-slate-300">
                 Configure os campos exibidos na Nova Chamada. O nome e mostrado em MAIUSCULO com a pontuacao.
             </p>
         </div>
@@ -26,7 +22,7 @@
                 @method('PUT')
 
                 <div class="space-y-4">
-                    <h3 class="text-base font-bold text-gray-800 dark:text-gray-100">Colunas existentes</h3>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white">Colunas existentes</h3>
                     <div class="space-y-3">
                         @foreach ($columns as $column)
                             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
@@ -44,7 +40,7 @@
                                 </div>
                                 <div class="md:col-span-2">
                                     <span
-                                        class="inline-flex px-3 py-2 rounded-lg text-xs font-semibold {{ $column->is_fixed ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200' }}">
+                                        class="inline-flex px-3 py-2 rounded-lg text-xs font-semibold {{ $column->is_fixed ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' }}">
                                         {{ $column->is_fixed ? 'Fixa' : 'Adicional' }}
                                     </span>
                                 </div>
@@ -56,7 +52,7 @@
                                             Remover
                                         </button>
                                     @elseif (!$column->is_fixed)
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                                        <span class="text-xs text-slate-500 dark:text-slate-400">
                                             Ja utilizada
                                         </span>
                                     @endif
@@ -66,9 +62,9 @@
                     </div>
                 </div>
 
-                <div class="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <div class="space-y-4 border-t border-slate-200 dark:border-slate-700 pt-6">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-base font-bold text-gray-800 dark:text-gray-100">Novas colunas</h3>
+                        <h3 class="text-base font-bold text-slate-800 dark:text-white">Novas colunas</h3>
                         <button type="button"
                             class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold bg-dbv-blue text-white hover:bg-blue-800 transition-colors disabled:opacity-60"
                             @click="rows.push({ name: '', points: 1 })"

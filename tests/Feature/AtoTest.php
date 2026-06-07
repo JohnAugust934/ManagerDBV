@@ -17,8 +17,7 @@ class AtoTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        // A Factory agora criará os dados corretos (numero e descricao)
-        Ato::factory()->count(2)->create();
+        Ato::factory()->count(2)->create(['club_id' => $clube->id]);
 
         $response = $this->actingAs($user)->get(route('atos.index'));
         $response->assertStatus(200);
@@ -30,10 +29,9 @@ class AtoTest extends TestCase
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
         $dados = [
-            'numero' => '001/2026', // Campo obrigatório adicionado
+            'numero' => '001/2026',
             'tipo' => 'Nomeação',
             'data' => now()->format('Y-m-d'),
-            // Unificamos descricao_resumida e texto_completo em 'descricao'
             'descricao' => 'Fica nomeado fulano de tal para o cargo de conselheiro.',
         ];
 
@@ -41,10 +39,10 @@ class AtoTest extends TestCase
 
         $response->assertRedirect(route('atos.index'));
 
-        // Verifica se gravou usando a coluna correta
         $this->assertDatabaseHas('atos', [
             'numero' => '001/2026',
             'descricao' => 'Fica nomeado fulano de tal para o cargo de conselheiro.',
+            'club_id' => $clube->id,
         ]);
     }
 
@@ -56,6 +54,7 @@ class AtoTest extends TestCase
             'numero' => '001/2026',
             'tipo' => 'Nomeacao',
             'descricao' => 'Texto original',
+            'club_id' => $clube->id,
         ]);
 
         $response = $this->actingAs($user)->put(route('atos.update', $ato), [
@@ -78,7 +77,7 @@ class AtoTest extends TestCase
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
-        $ato = Ato::factory()->create();
+        $ato = Ato::factory()->create(['club_id' => $clube->id]);
 
         $response = $this->actingAs($user)->delete(route('atos.destroy', $ato));
 

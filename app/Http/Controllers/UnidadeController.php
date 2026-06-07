@@ -97,6 +97,17 @@ class UnidadeController extends Controller
             ->with('success', 'Unidade excluída com sucesso!');
     }
 
+    public function toggleRanking(Unidade $unidade)
+    {
+        $this->authorizeAccess($unidade);
+
+        $unidade->update(['no_ranking' => ! $unidade->no_ranking]);
+
+        $status = $unidade->no_ranking ? 'incluída no' : 'excluída do';
+
+        return back()->with('success', "Unidade \"{$unidade->nome}\" {$status} ranking.");
+    }
+
     /**
      * Verifica se a unidade pertence ao clube do usuário
      */

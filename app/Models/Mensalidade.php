@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 
 class Mensalidade extends Model
 {
@@ -31,8 +31,21 @@ class Mensalidade extends Model
     }
 
     /**
-     * Scope: Filtra mensalidades pendentes de meses anteriores ao atual.
-     * Útil para cobrar quem está devendo.
+     * Scope: filtra mensalidades do clube do usuário autenticado.
+     */
+    public function scopeDoClube($query, ?int $clubId = null)
+    {
+        $clubId ??= auth()->user()?->club_id;
+
+        if (! $clubId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('desbravador.unidade', fn ($q) => $q->where('club_id', $clubId));
+    }
+
+    /**
+     * Scope: mensalidades pendentes de meses anteriores ao atual.
      */
     public function scopeInadimplentes($query)
     {
@@ -40,7 +53,6 @@ class Mensalidade extends Model
 
         return $query->where('status', 'pendente')
             ->where(function ($q) use ($now) {
-                // Anos anteriores OU (Mesmo ano mas meses anteriores)
                 $q->where('ano', '<', $now->year)
                     ->orWhere(function ($sub) use ($now) {
                         $sub->where('ano', '=', $now->year)

@@ -1,14 +1,5 @@
 ﻿<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-200 leading-tight flex items-center gap-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
-                </path>
-            </svg>
-            {{ __('Recuperação de Desastres (Backups)') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">Recuperação de Desastres (Backups)</x-slot>
 
     <div class="ui-page" x-data="{
         isBackingUp: false,
@@ -62,7 +53,7 @@
 
                         <button onclick="document.getElementById('backupFile').click();" type="button"
                             :disabled="isImporting || isBackingUp || isRestoring"
-                            class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-3 px-6 rounded-lg border border-gray-200 shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                            class="ui-btn-secondary disabled:opacity-50">
                             <span x-show="!isImporting" class="flex items-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -96,8 +87,8 @@
             {{-- LISTA DE BACKUPS --}}
             <div
                 class="ui-card overflow-hidden">
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-white">Arquivos Disponíveis</h3>
+                <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Arquivos Disponíveis</h3>
                     <span
                         class="text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full">
                         {{ count($backups) }} encontrados
@@ -122,7 +113,7 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
                             <thead
-                                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-300 hidden md:table-header-group">
+                                class="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-700/50 dark:text-slate-300 hidden md:table-header-group">
                                 <tr>
                                     <th scope="col" class="px-6 py-4 font-bold">Arquivo</th>
                                     <th scope="col" class="px-6 py-4 font-bold">Local</th>
@@ -132,30 +123,29 @@
                                 </tr>
                             </thead>
                             <tbody
-                                class="divide-y divide-gray-100 dark:divide-gray-700 flex flex-col md:table-row-group">
+                                class="divide-y divide-slate-100 dark:divide-slate-700 flex flex-col md:table-row-group">
                                 @foreach ($backups as $bkp)
                                     <tr
-                                        class="flex flex-col md:table-row bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors p-4 md:p-0 gap-3 md:gap-0">
-                                        <td class="px-2 md:px-6 py-2 md:py-4 font-semibold text-gray-900 dark:text-white truncate"
+                                        class="flex flex-col md:table-row bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors p-4 md:p-0 gap-3 md:gap-0">
+                                        <td class="px-2 md:px-6 py-2 md:py-4 font-semibold text-slate-900 dark:text-white truncate"
                                             style="max-width: 250px;">
                                             {{ $bkp['name'] }}
                                         </td>
                                         <td class="px-2 md:px-6 py-1 md:py-4">
                                             @if ($bkp['disk'] === 'local')
                                                 <span
-                                                    class="px-2.5 py-1 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300 text-[10px] font-bold rounded uppercase flex items-center inline-flex w-max">Local</span>
+                                                    class="ui-badge bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-300">Local</span>
                                             @else
                                                 <span
-                                                    class="px-2.5 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 text-[10px] font-bold rounded uppercase flex items-center inline-flex w-max">Nuvem
-                                                    (R2)</span>
+                                                    class="ui-badge bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400">Nuvem (R2)</span>
                                             @endif
                                         </td>
-                                        <td class="px-2 md:px-6 py-1 md:py-4 text-gray-600 dark:text-gray-400">
+                                        <td class="px-2 md:px-6 py-1 md:py-4 text-slate-600 dark:text-slate-400">
                                             <span class="md:hidden text-xs font-semibold uppercase mr-2">Tam:</span>
                                             <strong
-                                                class="text-gray-800 dark:text-gray-200">{{ $bkp['size'] }}</strong> MB
+                                                class="text-slate-800 dark:text-slate-200">{{ $bkp['size'] }}</strong> MB
                                         </td>
-                                        <td class="px-2 md:px-6 py-1 md:py-4 text-gray-600 dark:text-gray-400">
+                                        <td class="px-2 md:px-6 py-1 md:py-4 text-slate-600 dark:text-slate-400">
                                             <span class="md:hidden text-xs font-semibold uppercase mr-2">Data:</span>
                                             {{ $bkp['date']->format('d/m/Y H:i') }}
                                         </td>
@@ -180,7 +170,7 @@
                                             {{-- BOTÃO DE BAIXAR --}}
                                             <a href="{{ route('backups.download', ['disk' => $bkp['disk'], 'path' => $bkp['path']]) }}"
                                                 target="_blank" download="{{ $bkp['name'] }}"
-                                                class="p-1.5 text-dbv-blue bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 rounded transition-colors disabled:opacity-50"
+                                                class="p-1.5 text-[#002F6C] bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 rounded transition-colors disabled:opacity-50"
                                                 title="Baixar">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
@@ -222,10 +212,10 @@
             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-            <div class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm" @click="showRestoreConfirm = false"></div>
+            <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" @click="showRestoreConfirm = false"></div>
 
             <div
-                class="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-xl p-8 transform transition-all animate-fade-in-up">
+                class="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-xl p-8 transform transition-all animate-fade-in-up">
                 <div class="flex flex-col items-center text-center">
                     <div
                         class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6 text-red-600">
@@ -235,9 +225,9 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="text-3xl font-black text-gray-900 dark:text-white mb-3">⚠ï¸ Atenção! Ação Crítica</h3>
-                    <p class="text-base text-gray-600 dark:text-gray-400 mb-8 max-w-md">
-                        Esta ação apagará <strong class="text-gray-800 dark:text-white">TODO</strong> o banco de dados
+                    <h3 class="text-3xl font-black text-slate-900 dark:text-white mb-3">⚠ï¸ Atenção! Ação Crítica</h3>
+                    <p class="text-base text-slate-600 dark:text-slate-400 mb-8 max-w-md">
+                        Esta ação apagará <strong class="text-slate-800 dark:text-white">TODO</strong> o banco de dados
                         atual e substituirá por este backup. Você será desconectado se a sua senha na época for
                         diferente. Deseja prosseguir?
                     </p>
@@ -251,7 +241,7 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <button type="button" @click="showRestoreConfirm = false"
-                            class="bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold py-4 px-8 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm transition-all flex items-center justify-center">
+                            class="bg-white ui-btn-secondary py-4 px-8">
                             Não, Cancelar
                         </button>
                         <button type="submit"
@@ -276,10 +266,10 @@
             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-            <div class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm" @click="showDeleteConfirm = false"></div>
+            <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" @click="showDeleteConfirm = false"></div>
 
             <div
-                class="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg p-8 transform transition-all animate-fade-in-up">
+                class="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg p-8 transform transition-all animate-fade-in-up">
                 <div class="flex flex-col items-center text-center">
                     <div
                         class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6 text-red-600">
@@ -289,13 +279,13 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2">Excluir Arquivo?</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-2">Excluir Arquivo?</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
                         Você está prestes a excluir permanentemente o backup:
                     </p>
                     <div
-                        class="w-full bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 mb-6 border border-gray-100 dark:border-gray-600">
-                        <strong class="text-gray-900 dark:text-gray-200 break-all text-sm"
+                        class="w-full bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 mb-6 border border-slate-100 dark:border-slate-600">
+                        <strong class="text-slate-900 dark:text-slate-200 break-all text-sm"
                             x-text="deleteName"></strong>
                     </div>
                     <div
@@ -313,7 +303,7 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <button type="button" @click="showDeleteConfirm = false"
-                            class="bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold py-3 px-4 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm transition-all flex items-center justify-center">
+                            class="bg-white ui-btn-secondary py-3 px-4">
                             Cancelar
                         </button>
                         <button type="submit" @click="showDeleteConfirm = false"
@@ -335,9 +325,9 @@
         {{-- OVERLAY DE CARREGAMENTO GLOBAL CORRIGIDO   --}}
         {{-- ========================================== --}}
         <div x-show="isBackingUp || isImporting || isRestoring" x-transition.opacity.duration.300ms
-            class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm" x-cloak>
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm" x-cloak>
             <div
-                class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-md text-center m-4">
+                class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-md text-center m-4">
 
                 {{-- Novo Ícone de Carregamento (Tailwind Padrão Seguro) --}}
                 <div class="flex justify-center items-center mb-6">
@@ -351,9 +341,9 @@
                     </svg>
                 </div>
 
-                <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2"
+                <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-2"
                     x-text="isRestoring? 'Restaurando Sistema...' : 'Processando Arquivos...'"></h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-6"
+                <p class="text-sm text-slate-600 dark:text-slate-400 mb-6"
                     x-text="isRestoring? 'Apagando banco atual e injetando dados do backup. Isso vai demorar um pouco.' : 'Aguarde o envio ou a geração dos arquivos em segurança.'">
                 </p>
 

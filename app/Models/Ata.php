@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\ClubScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -9,7 +10,13 @@ class Ata extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new ClubScope);
+    }
+
     protected $fillable = [
+        'club_id',
         'titulo',       // Adicionado
         'data_reuniao',
         'hora_inicio',  // Adicionado

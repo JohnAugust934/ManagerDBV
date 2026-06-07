@@ -20,11 +20,10 @@ class EventoTest extends TestCase
     public function test_pode_ver_lista_de_eventos()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-
-        // CORREÇÃO: O instrutor não tem mais acesso a eventos, mudamos para 'secretario'
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
 
-        Evento::factory()->count(3)->create();
+        // Eventos devem ter club_id para o GlobalScope retorná-los.
+        Evento::factory()->count(3)->create(['club_id' => $clube->id]);
 
         $response = $this->actingAs($user)->get(route('eventos.index'));
 
@@ -53,13 +52,14 @@ class EventoTest extends TestCase
         ]);
 
         $response->assertRedirect(route('eventos.index'));
-        $this->assertDatabaseHas('eventos', ['nome' => 'Acampamento de Verão']);
+        $this->assertDatabaseHas('eventos', ['nome' => 'Acampamento de Verão', 'club_id' => $clube->id]);
     }
 
     public function test_apenas_secretaria_pode_editar_evento()
     {
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
-        $evento = Evento::factory()->create(['nome' => 'Original']);
+        // Evento deve ter club_id para o GlobalScope encontrá-lo.
+        $evento = Evento::factory()->create(['nome' => 'Original', 'club_id' => $clube->id]);
 
         // 1. Instrutor tenta editar (Deve falhar)
         $instrutor = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
@@ -85,17 +85,9 @@ class EventoTest extends TestCase
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
-        $unidade = Unidade::factory()->create();
-        $classe = Classe::factory()->create();
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento = Evento::factory()->create(['club_id' => $clube->id]);
 
-        $dbv = Desbravador::factory()->create([
-            'unidade_id' => $unidade->id,
-            'classe_atual' => $classe->id,
-        ]);
-
-        $evento = Evento::factory()->create();
-
-        // Inscrição Individual
         $this->actingAs($user)->post(route('eventos.inscrever', $evento->id), [
             'desbravador_id' => $dbv->id,
         ]);
@@ -112,7 +104,7 @@ class EventoTest extends TestCase
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
-        $unidade = Unidade::factory()->create();
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $classe = Classe::factory()->create();
 
         $dbvs = Desbravador::factory()->count(3)->create([
@@ -120,7 +112,7 @@ class EventoTest extends TestCase
             'classe_atual' => $classe->id,
         ]);
 
-        $evento = Evento::factory()->create(['valor' => 50]);
+        $evento = Evento::factory()->create(['valor' => 50, 'club_id' => $clube->id]);
 
         $response = $this->actingAs($user)->post(route('eventos.inscrever-lote', $evento->id), [
             'desbravadores' => $dbvs->pluck('id')->toArray(),
@@ -135,15 +127,8 @@ class EventoTest extends TestCase
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
-        $unidade = Unidade::factory()->create();
-        $classe = Classe::factory()->create();
-
-        $dbv = Desbravador::factory()->create([
-            'unidade_id' => $unidade->id,
-            'classe_atual' => $classe->id,
-        ]);
-
-        $evento = Evento::factory()->create(['valor' => 100.00]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento = Evento::factory()->create(['valor' => 100.00, 'club_id' => $clube->id]);
         $evento->desbravadores()->attach($dbv->id, ['pago' => false]);
 
         $response = $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
@@ -176,15 +161,8 @@ class EventoTest extends TestCase
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
-        $unidade = Unidade::factory()->create();
-        $classe = Classe::factory()->create();
-
-        $dbv = Desbravador::factory()->create([
-            'unidade_id' => $unidade->id,
-            'classe_atual' => $classe->id,
-        ]);
-
-        $evento = Evento::factory()->create(['valor' => 100.00]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento = Evento::factory()->create(['valor' => 100.00, 'club_id' => $clube->id]);
         $evento->desbravadores()->attach($dbv->id, ['pago' => false]);
 
         $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
@@ -212,15 +190,8 @@ class EventoTest extends TestCase
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
-        $unidade = Unidade::factory()->create();
-        $classe = Classe::factory()->create();
-
-        $dbv = Desbravador::factory()->create([
-            'unidade_id' => $unidade->id,
-            'classe_atual' => $classe->id,
-        ]);
-
-        $evento = Evento::factory()->create(['valor' => 80.00]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento = Evento::factory()->create(['valor' => 80.00, 'club_id' => $clube->id]);
         $evento->desbravadores()->attach($dbv->id, ['pago' => true]);
 
         $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
@@ -255,15 +226,8 @@ class EventoTest extends TestCase
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
-        $unidade = Unidade::factory()->create();
-        $classe = Classe::factory()->create();
-
-        $dbv = Desbravador::factory()->create([
-            'unidade_id' => $unidade->id,
-            'classe_atual' => $classe->id,
-        ]);
-
-        $evento = Evento::factory()->create(['valor' => 65.00]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento = Evento::factory()->create(['valor' => 65.00, 'club_id' => $clube->id]);
 
         $response = $this->actingAs($user)->patchJson(route('eventos.status', [$evento->id, $dbv->id]), [
             'campo' => 'pago',
@@ -275,12 +239,13 @@ class EventoTest extends TestCase
 
         $this->assertDatabaseCount('caixas', 0);
     }
+
     public function test_pode_gerar_autorizacao_de_evento_com_dados_do_desbravador()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
 
-        $unidade = Unidade::factory()->create(['nome' => 'Lobos']);
+        $unidade = Unidade::factory()->create(['nome' => 'Lobos', 'club_id' => $clube->id]);
         $classe = Classe::factory()->create(['nome' => 'Companheiro']);
 
         $dbv = Desbravador::factory()->create([
@@ -298,6 +263,7 @@ class EventoTest extends TestCase
         $evento = Evento::factory()->create([
             'nome' => 'Acampamento de Outono',
             'local' => 'Sitio Esperanca',
+            'club_id' => $clube->id,
         ]);
 
         $pdfWrapper = \Mockery::mock(DomPdfWrapper::class);

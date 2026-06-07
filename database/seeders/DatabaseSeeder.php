@@ -323,6 +323,7 @@ class DatabaseSeeder extends Seeder
                 'data_inicio' => date('Y-m-d H:i:s', strtotime($evt['inicio'])),
                 'data_fim' => date('Y-m-d H:i:s', strtotime($evt['fim'])),
                 'descricao' => 'Evento oficial do calendário anual.',
+                'club_id' => $clube->id,
             ]);
 
             // Inscreve alguns desbravadores aleatoriamente
@@ -356,6 +357,7 @@ class DatabaseSeeder extends Seeder
                 'categoria' => $tipo == 'entrada' ? 'Receitas Diversas' : 'Despesas Operacionais',
                 'valor' => fake()->randomFloat(2, 20, 300),
                 'data_movimentacao' => fake()->dateTimeBetween('-6 months', 'now'),
+                'club_id' => $clube->id,
             ]);
         }
 
@@ -403,6 +405,7 @@ class DatabaseSeeder extends Seeder
                 'data_aquisicao' => fake()->dateTimeBetween('-3 years', '-1 month'),
                 'local_armazenamento' => 'Almoxarifado Sede',
                 'observacoes' => 'Inventário Inicial 2026',
+                'club_id' => $clube->id,
             ]);
         }
         $this->command->info('📦 Inventário de Patrimônio criado.');
@@ -421,6 +424,7 @@ class DatabaseSeeder extends Seeder
                 'secretario_responsavel' => 'Secretária Ana',
                 'participantes' => 'Diretoria completa e Conselheiros.',
                 'conteudo' => fake()->paragraphs(3, true),
+                'club_id' => $clube->id,
             ]);
         }
 
@@ -431,6 +435,7 @@ class DatabaseSeeder extends Seeder
                 'data' => fake()->dateTimeBetween('-6 months', 'now'),
                 'descricao' => fake()->sentence(10),
                 'desbravador_id' => $desbravadores->random()->id,
+                'club_id' => $clube->id,
             ]);
         }
         $this->command->info('📂 Documentos de Secretaria gerados.');

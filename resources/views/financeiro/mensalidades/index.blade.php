@@ -107,6 +107,29 @@
             </div>
         </div>
 
+        <!-- Painel de Inadimplência por Unidade -->
+        @if($inadimplenciaPorUnidade->isNotEmpty())
+        <div class="ui-card p-6">
+            <h3 class="text-[13px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                Inadimplência por Unidade
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                @foreach($inadimplenciaPorUnidade as $unidadeInfo)
+                    <div class="flex items-center justify-between p-4 rounded-2xl border border-red-100 dark:border-red-800/30 bg-red-50 dark:bg-red-900/10">
+                        <div>
+                            <p class="font-black text-sm text-slate-700 dark:text-slate-200">{{ $unidadeInfo->nome }}</p>
+                            <p class="text-xs text-red-500 font-bold mt-0.5">{{ $unidadeInfo->qtd }} pendência{{ $unidadeInfo->qtd !== 1 ? 's' : '' }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-red-600 dark:text-red-400">R$ {{ number_format($unidadeInfo->total, 2, ',', '.') }}</p>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         <!-- Área de Listagem (Grid) -->
         <h3 class="text-[13px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-black/5 dark:border-white/5 pb-2">Status Individual</h3>
         

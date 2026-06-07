@@ -1,9 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
-            {{ __('Registrar Ata') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">Registrar Ata</x-slot>
 
     <div class="ui-page">
         <div class="max-w-4xl mx-auto">
@@ -55,7 +51,7 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
                         <a href="{{ route('atas.index') }}" class="ui-btn-secondary w-full sm:w-auto">Cancelar</a>
                         <button type="submit" class="ui-btn-primary w-full sm:w-auto">Salvar Ata</button>
                     </div>

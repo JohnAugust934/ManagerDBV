@@ -4,7 +4,7 @@
             <a href="{{ route('unidades.index') }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             </a>
-            <h2 class="font-black text-2xl text-slate-800 dark:text-gray-100 leading-tight">
+            <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">
                 Editar Unidade
             </h2>
         </div>
@@ -62,6 +62,27 @@
                         <div>
                             <label for="grito_guerra" class="ui-input-label">Grito de Guerra</label>
                             <textarea id="grito_guerra" name="grito_guerra" rows="4" class="ui-input" placeholder="Digite o grito de guerra aqui...">{{ old('grito_guerra', $unidade->grito_guerra) }}</textarea>
+                        </div>
+
+                        {{-- Toggle ranking --}}
+                        <div class="pt-6 border-t border-slate-100 dark:border-slate-800 mt-8">
+                            <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Participação no Ranking</p>
+                            <form method="POST" action="{{ route('unidades.toggle-ranking', $unidade) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full text-[13px] font-black uppercase tracking-widest py-3 px-4 rounded-2xl border-2 transition-colors flex items-center justify-center gap-2
+                                    {{ $unidade->no_ranking
+                                        ? 'border-emerald-200 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 hover:text-red-500'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-400 bg-slate-50 dark:bg-slate-900/30 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 hover:text-emerald-600' }}">
+                                    @if ($unidade->no_ranking)
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                                        Participando do Ranking — Clique para excluir
+                                    @else
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                        Fora do Ranking — Clique para incluir
+                                    @endif
+                                </button>
+                            </form>
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-slate-100 dark:border-slate-800 mt-8">

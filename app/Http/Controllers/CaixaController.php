@@ -12,16 +12,13 @@ class CaixaController extends Controller
     {
         Gate::authorize('financeiro');
 
-        // Otimização: Se houver relacionamentos futuros (ex: 'criado_por', 'categoria'),
-        // adicione dentro do array with([]) para evitar queries N+1.
-        $query = Caixa::query()->with([]);
+        // GlobalScope ClubScope aplica o filtro de club_id automaticamente.
+        $query = Caixa::query();
 
-        // Totais (Calculados no banco para performance)
         $entradas = (clone $query)->where('tipo', 'entrada')->sum('valor');
         $saidas = (clone $query)->where('tipo', 'saida')->sum('valor');
         $saldoAtual = $entradas - $saidas;
 
-        // Listagem Paginada
         $lancamentos = $query->orderBy('data_movimentacao', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
@@ -48,7 +45,8 @@ class CaixaController extends Controller
             'categoria' => 'nullable|string|max:100',
         ]);
 
-        // Garante que o valor seja salvo corretamente (se vier formatado pt-BR, precisaria tratar aqui)
+        $validado['club_id'] = auth()->user()->club_id;
+
         Caixa::create($validado);
 
         return redirect()->route('caixa.index')

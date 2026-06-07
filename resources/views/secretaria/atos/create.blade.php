@@ -1,9 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
-            {{ __('Publicar Ato Oficial') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">Publicar Ato Oficial</x-slot>
 
     <div class="ui-page">
         <div class="max-w-2xl mx-auto">
@@ -39,7 +35,7 @@
                         <textarea id="descricao" name="descricao" rows="4" class="ui-input mt-1" required>{{ old('descricao') }}</textarea>
                     </div>
 
-                    <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
                         <a href="{{ route('atos.index') }}" class="ui-btn-secondary w-full sm:w-auto">Cancelar</a>
                         <button type="submit" class="ui-btn-primary w-full sm:w-auto">Publicar Ato</button>
                     </div>

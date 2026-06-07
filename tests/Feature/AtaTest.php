@@ -24,6 +24,7 @@ class AtaTest extends TestCase
             'hora_fim' => '21:00',
             'local' => 'Sala principal',
             'conteudo' => 'Conteudo original',
+            'club_id' => $clube->id,
         ]);
 
         $response = $this->actingAs($user)->put(route('atas.update', $ata), [
@@ -53,6 +54,7 @@ class AtaTest extends TestCase
             'hora_inicio' => '19:30',
             'hora_fim' => '21:00',
             'local' => 'Sala principal',
+            'club_id' => $clube->id,
         ]);
 
         $response = $this->actingAs($user)->delete(route('atas.destroy', $ata));
@@ -70,6 +72,7 @@ class AtaTest extends TestCase
             'hora_inicio' => '19:30',
             'hora_fim' => '21:00',
             'local' => 'Sala principal',
+            'club_id' => $clube->id,
         ]);
 
         $response = $this->actingAs($user)->get(route('atas.show', $ata));
@@ -90,6 +93,7 @@ class AtaTest extends TestCase
             'hora_inicio' => '19:30',
             'hora_fim' => '21:00',
             'local' => 'Sala principal',
+            'club_id' => $clube->id,
         ]);
 
         $pdfWrapper = \Mockery::mock(DomPdfWrapper::class);

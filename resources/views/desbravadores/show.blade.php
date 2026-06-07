@@ -4,7 +4,7 @@
             <a href="{{ route('desbravadores.index') }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             </a>
-            <h2 class="font-black text-2xl text-slate-800 dark:text-gray-100 leading-tight">
+            <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">
                 Perfil do Desbravador
             </h2>
         </div>
@@ -277,6 +277,146 @@
                         <div class="ui-empty mt-0 shadow-none bg-slate-50/50 dark:bg-slate-900/20 max-h-[250px] min-h-[200px]">
                             <h3 class="font-black text-slate-400 mb-2">Uniforme Vazio</h3>
                             <p class="text-sm text-slate-500">Nenhuma especialidade registrada até o momento.</p>
+                        </div>
+                    @endif
+                </div>
+
+            </div>
+        </div>
+
+        {{-- Progresso de Classe --}}
+        @if($desbravador->classe)
+        @php
+            $progresso = $desbravador->progresso_classe;
+        @endphp
+        <div class="ui-card p-6 ui-animate-fade-up" style="animation-delay: 225ms;">
+            <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="text-[15px] font-black uppercase tracking-widest text-[#002F6C] dark:text-blue-400 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                    Progressão de Classe
+                </h3>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Classe Atual</p>
+                        <p class="font-black text-slate-700 dark:text-white" style="color: {{ $desbravador->classe->cor ?? '#334155' }}">
+                            {{ $desbravador->classe->nome }}
+                        </p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shadow"
+                        style="background: {{ $desbravador->classe->cor ?? '#334155' }}">
+                        {{ $progresso }}%
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-500">Requisitos cumpridos</span>
+                    <span class="text-xs font-black text-slate-700 dark:text-slate-200">{{ $progresso }}%</span>
+                </div>
+                <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-700
+                        {{ $progresso >= 100 ? 'bg-emerald-500' : ($progresso >= 50 ? 'bg-blue-500' : 'bg-amber-400') }}"
+                        style="width: {{ $progresso }}%">
+                    </div>
+                </div>
+            </div>
+
+            @if($progresso >= 100)
+                <form action="{{ route('desbravadores.avancar-classe', $desbravador) }}" method="POST"
+                    onsubmit="return confirm('Avançar {{ $desbravador->nome }} para a próxima classe?');">
+                    @csrf
+                    <button type="submit" class="w-full ui-btn-primary py-2.5 flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                        Avançar para Próxima Classe
+                    </button>
+                </form>
+            @else
+                <p class="text-xs text-slate-400 font-semibold text-center">
+                    Complete todos os requisitos da classe <strong>{{ $desbravador->classe->nome }}</strong> para habilitar o avanço.
+                </p>
+            @endif
+        </div>
+        @endif
+
+        {{-- Histórico Financeiro --}}
+        <div class="ui-card p-6 ui-animate-fade-up" style="animation-delay: 250ms;">
+            <h3 class="text-[15px] font-black uppercase tracking-widest text-[#002F6C] dark:text-blue-400 mb-6 pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Histórico Financeiro
+            </h3>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {{-- Mensalidades --}}
+                <div>
+                    <h4 class="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Mensalidades</h4>
+                    @if($desbravador->mensalidades->isEmpty())
+                        <p class="text-sm text-slate-400 font-semibold">Nenhuma mensalidade registrada.</p>
+                    @else
+                        @php
+                            $mesesNome = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                        @endphp
+                        <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            @foreach($desbravador->mensalidades as $mens)
+                                <div class="flex items-center justify-between px-4 py-2.5 rounded-xl border {{ $mens->status === 'pago' ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-900/10' : 'border-amber-200 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-900/10' }}">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-sm font-black text-slate-600 dark:text-slate-300">
+                                            {{ $mesesNome[$mens->mes] ?? $mens->mes }}/{{ $mens->ano }}
+                                        </span>
+                                        @if($mens->data_pagamento)
+                                            <span class="text-xs text-slate-400">
+                                                pago em {{ \Carbon\Carbon::parse($mens->data_pagamento)->format('d/m/Y') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-black text-slate-700 dark:text-slate-200">
+                                            R$ {{ number_format($mens->valor, 2, ',', '.') }}
+                                        </span>
+                                        <span class="text-xs font-black px-2 py-0.5 rounded-full {{ $mens->status === 'pago' ? 'text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/40' : 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40' }}">
+                                            {{ $mens->status === 'pago' ? 'Pago' : 'Pendente' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        @php
+                            $totalPendente = $desbravador->mensalidades->where('status', 'pendente')->sum('valor');
+                            $totalPago = $desbravador->mensalidades->where('status', 'pago')->sum('valor');
+                        @endphp
+                        <div class="mt-3 flex gap-4 text-xs font-bold text-slate-500">
+                            <span class="text-emerald-600">Pago: R$ {{ number_format($totalPago, 2, ',', '.') }}</span>
+                            @if($totalPendente > 0)
+                                <span class="text-amber-600">Pendente: R$ {{ number_format($totalPendente, 2, ',', '.') }}</span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+
+                {{-- Eventos --}}
+                <div>
+                    <h4 class="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Eventos Inscritos</h4>
+                    @if($desbravador->eventos->isEmpty())
+                        <p class="text-sm text-slate-400 font-semibold">Nenhuma inscrição em eventos.</p>
+                    @else
+                        <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            @foreach($desbravador->eventos as $evento)
+                                <div class="flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{{ $evento->nome }}</p>
+                                        <p class="text-xs text-slate-400">{{ \Carbon\Carbon::parse($evento->data_inicio)->format('d/m/Y') }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2 ml-3 shrink-0">
+                                        <span class="text-xs font-black px-2 py-0.5 rounded-full {{ $evento->pivot->pago ? 'text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/40' : 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40' }}">
+                                            {{ $evento->pivot->pago ? 'Pago' : 'Pendente' }}
+                                        </span>
+                                        @if($evento->pivot->autorizacao_entregue)
+                                            <span class="text-xs font-black px-2 py-0.5 rounded-full text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/40">Aut.</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     @endif
                 </div>

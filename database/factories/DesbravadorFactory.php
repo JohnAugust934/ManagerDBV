@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Classe;
+use App\Models\Club;
 use App\Models\Unidade;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -33,5 +34,22 @@ class DesbravadorFactory extends Factory
             'cpf' => $this->faker->unique()->numerify('###.###.###-##'),
             'rg' => $this->faker->numerify('##.###.###-X'),
         ];
+    }
+
+    /**
+     * Estado que vincula o desbravador a uma unidade do clube especificado.
+     * Necessário para que o GlobalScope DesbravadorClubScope encontre o registro.
+     */
+    public function forClube(int $clubId): static
+    {
+        return $this->state(function () use ($clubId) {
+            $classe = Classe::inRandomOrder()->first() ?? Classe::factory()->create();
+            $unidade = Unidade::factory()->create(['club_id' => $clubId]);
+
+            return [
+                'unidade_id' => $unidade->id,
+                'classe_atual' => $classe->id,
+            ];
+        });
     }
 }

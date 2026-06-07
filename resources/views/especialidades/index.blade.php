@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center gap-3">
-            <h2 class="font-black text-2xl text-slate-800 dark:text-gray-100 leading-tight">
+            <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">
                 Biblioteca de Especialidades
             </h2>
         </div>

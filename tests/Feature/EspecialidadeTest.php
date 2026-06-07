@@ -117,7 +117,8 @@ class EspecialidadeTest extends TestCase
             'area_search' => 'artes e habilidades manuais',
         ]);
 
-        $desbravador = Desbravador::factory()->create();
+        // Desbravador deve pertencer ao clube do usuário para aparecer nos filtros de "investidos".
+        $desbravador = Desbravador::factory()->forClube($user->club_id)->create();
         $desbravador->especialidades()->attach($avancada->id, ['data_conclusao' => now()->toDateString()]);
 
         $response = $this->actingAs($user)->get(route('especialidades.index', [

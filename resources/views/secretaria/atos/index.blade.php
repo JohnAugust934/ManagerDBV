@@ -35,35 +35,35 @@
                         <table class="ui-table w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                                    <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest w-24">Protocolo</th>
-                                    <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest w-32">Classificação</th>
-                                    <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Resumo da Decisão</th>
-                                    <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest w-32">Publicação</th>
-                                    <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-right w-24">Ações</th>
+                                    <th class="px-3 sm:px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Protocolo</th>
+                                    <th class="px-3 sm:px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Classificação</th>
+                                    <th class="hidden sm:table-cell px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Resumo da Decisão</th>
+                                    <th class="hidden md:table-cell px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest w-32">Publicação</th>
+                                    <th class="px-3 sm:px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-right w-20 sm:w-24">Ações</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-50 dark:divide-slate-800/50 bg-white dark:bg-slate-800">
                                 @foreach ($atos as $ato)
                                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors group">
-                                        <td class="px-6 py-4">
+                                        <td class="px-3 sm:px-6 py-4 whitespace-nowrap">
                                             <span class="font-mono font-black text-[#002F6C] dark:text-blue-400">#{{ str_pad($ato->numero, 3, '0', STR_PAD_LEFT) }}</span>
                                         </td>
-                                        <td class="px-6 py-4">
+                                        <td class="px-3 sm:px-6 py-4">
                                             <span class="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-100 dark:border-blue-800/30">
                                                 {{ $ato->tipo }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4">
+                                        <td class="hidden sm:table-cell px-6 py-4">
                                             <p class="text-sm font-bold text-slate-700 dark:text-slate-300">
                                                 {{ Str::limit($ato->descricao, 90) }}
                                             </p>
                                         </td>
-                                        <td class="px-6 py-4">
+                                        <td class="hidden md:table-cell px-6 py-4">
                                             <span class="text-sm font-bold text-slate-500 dark:text-slate-400">
                                                 {{ $ato->data?->format('d/m/Y') }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 text-right">
+                                        <td class="px-3 sm:px-6 py-4 text-right">
                                             <div class="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                 <a href="{{ route('atos.edit', $ato) }}" class="p-2 rounded-xl bg-slate-50 hover:bg-amber-50 dark:bg-slate-700 dark:hover:bg-amber-900/30 text-slate-400 hover:text-amber-500 transition-colors" title="Editar">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>

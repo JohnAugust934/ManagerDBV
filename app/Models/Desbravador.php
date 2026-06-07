@@ -125,4 +125,9 @@ class Desbravador extends Model
             ->withPivot('pago', 'autorizacao_entregue')
             ->withTimestamps();
     }
+
+    public function mensalidades(): HasMany
+    {
+        return $this->hasMany(Mensalidade::class);
+    }
 }

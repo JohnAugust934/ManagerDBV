@@ -14,6 +14,7 @@ class PatrimonioFactory extends Factory
             'valor_estimado' => $this->faker->randomFloat(2, 50, 2000),
             'estado_conservacao' => $this->faker->randomElement(['Novo', 'Bom', 'Ruim']),
             'local_armazenamento' => 'Sede',
+            'club_id' => null,
         ];
     }
 }
