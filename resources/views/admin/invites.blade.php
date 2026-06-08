@@ -3,11 +3,6 @@
     <div class="ui-page space-y-6">
         <div class="ui-card p-6">
             <h3 class="ui-title text-lg mb-4">Gerar Novo Convite (Diretor)</h3>
-            @if(session('success'))
-                <div class="mb-4 p-4 rounded-xl bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                    {{ session('success') }}
-                </div>
-            @endif
             <form action="{{ route('master.invites.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
                 @csrf
                 <div>

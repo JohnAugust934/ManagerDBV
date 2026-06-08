@@ -72,4 +72,69 @@ class UnidadeManagementTest extends TestCase
             'conselheiro' => 'Maria',
         ]);
     }
+
+    public function test_pode_listar_unidades()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+        Unidade::create(['nome' => 'Unidade Visível', 'conselheiro' => 'Ana', 'club_id' => $club->id]);
+
+        $response = $this->actingAs($user)->get(route('unidades.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Unidade Visível');
+    }
+
+    public function test_pode_ver_detalhes_da_unidade()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+        $unidade = Unidade::create(['nome' => 'Unidade Delta', 'conselheiro' => 'Carlos', 'club_id' => $club->id]);
+
+        $response = $this->actingAs($user)->get(route('unidades.show', $unidade));
+
+        $response->assertStatus(200);
+        $response->assertSee('Unidade Delta');
+    }
+
+    public function test_instrutor_nao_pode_listar_unidades()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'instrutor']);
+
+        $response = $this->actingAs($user)->get(route('unidades.index'));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_unidade_de_outro_clube_nao_aparece()
+    {
+        $club = Club::create(['nome' => 'Meu Clube', 'cidade' => 'SP']);
+        $outroClub = Club::create(['nome' => 'Outro Clube', 'cidade' => 'RJ']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+        Unidade::create(['nome' => 'Minha Unidade', 'conselheiro' => 'X', 'club_id' => $club->id]);
+        Unidade::create(['nome' => 'Unidade Alheia', 'conselheiro' => 'Y', 'club_id' => $outroClub->id]);
+
+        $response = $this->actingAs($user)->get(route('unidades.index'));
+
+        $response->assertSee('Minha Unidade');
+        $response->assertDontSee('Unidade Alheia');
+    }
+
+    public function test_pode_ativar_ranking_da_unidade()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+        $unidade = Unidade::create([
+            'nome' => 'Unidade Rank',
+            'conselheiro' => 'X',
+            'club_id' => $club->id,
+            'no_ranking' => false,
+        ]);
+
+        $response = $this->actingAs($user)->patch(route('unidades.toggle-ranking', $unidade));
+
+        $response->assertRedirect();
+        $this->assertTrue($unidade->fresh()->no_ranking);
+    }
 }

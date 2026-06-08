@@ -288,4 +288,71 @@ class EventoTest extends TestCase
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    public function test_pode_ver_detalhes_do_evento()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $evento = Evento::factory()->create(['nome' => 'Acampamento Anual', 'club_id' => $clube->id]);
+
+        $response = $this->actingAs($user)->get(route('eventos.show', $evento));
+
+        $response->assertStatus(200);
+        $response->assertSee('Acampamento Anual');
+    }
+
+    public function test_pode_acessar_formulario_de_edicao_do_evento()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $evento = Evento::factory()->create(['nome' => 'Rally', 'club_id' => $clube->id]);
+
+        $response = $this->actingAs($user)->get(route('eventos.edit', $evento));
+
+        $response->assertStatus(200);
+        $response->assertSee('Rally');
+    }
+
+    public function test_nao_pode_excluir_evento_com_inscritos()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $evento = Evento::factory()->create(['club_id' => $clube->id]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento->desbravadores()->attach($dbv->id, ['pago' => false, 'autorizacao_entregue' => false]);
+
+        $response = $this->actingAs($user)->delete(route('eventos.destroy', $evento));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('eventos', ['id' => $evento->id]);
+    }
+
+    public function test_pode_excluir_evento_sem_inscritos()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $evento = Evento::factory()->create(['club_id' => $clube->id]);
+
+        $this->actingAs($user)->delete(route('eventos.destroy', $evento));
+
+        $this->assertDatabaseMissing('eventos', ['id' => $evento->id]);
+    }
+
+    public function test_pode_remover_inscricao()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $evento = Evento::factory()->create(['club_id' => $clube->id]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento->desbravadores()->attach($dbv->id, ['pago' => false, 'autorizacao_entregue' => false]);
+
+        $response = $this->actingAs($user)->delete(route('eventos.remover-inscricao', [$evento, $dbv]));
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('desbravador_evento', [
+            'evento_id' => $evento->id,
+            'desbravador_id' => $dbv->id,
+        ]);
+    }
 }

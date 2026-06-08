@@ -210,6 +210,12 @@
         color: rgb(var(--ui-danger));
     }
 
+    /* Flash Alerts */
+    .ui-alert {
+        @apply rounded-2xl border px-4 py-3.5 transition-all duration-300;
+        box-shadow: 0 4px 20px -4px rgb(0 0 0 / 0.08);
+    }
+
     /* Badges */
     .ui-badge {
         @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider;

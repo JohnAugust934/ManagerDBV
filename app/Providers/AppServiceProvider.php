@@ -12,6 +12,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\QueueBusy;
@@ -33,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (app()->isProduction()) {
+            URL::forceScheme('https');
+        }
+
         $this->configureBrazilianLocale();
         $this->configureAuthNotifications();
         $this->registerTelegramBackupListeners();

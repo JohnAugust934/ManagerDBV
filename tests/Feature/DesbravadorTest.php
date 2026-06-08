@@ -11,6 +11,7 @@ use App\Models\Frequencia;
 use App\Models\Unidade;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DesbravadorTest extends TestCase
@@ -207,5 +208,100 @@ class DesbravadorTest extends TestCase
         $response->assertOk();
         $response->assertSee('Joao Alves');
         $response->assertDontSee('Maria Santos');
+    }
+
+    public function test_pode_remover_foto_do_desbravador()
+    {
+        Storage::fake('public');
+
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        Storage::disk('public')->put('fotos/foto-teste.jpg', 'conteudo-fake');
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create(['foto' => 'fotos/foto-teste.jpg']);
+
+        $response = $this->actingAs($user)->delete(route('desbravadores.remover-foto', $desbravador));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertNull($desbravador->fresh()->foto);
+        Storage::disk('public')->assertMissing('fotos/foto-teste.jpg');
+    }
+
+    public function test_pode_acessar_pagina_de_gerenciar_especialidades()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create();
+
+        $response = $this->actingAs($user)->get(route('desbravadores.especialidades', $desbravador));
+
+        $response->assertStatus(200);
+    }
+
+    public function test_pode_salvar_especialidades()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create();
+        $especialidade = Especialidade::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('desbravadores.salvar-especialidades', $desbravador), [
+            'especialidades' => [$especialidade->id],
+            'data_conclusao' => '2025-06-01',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('desbravador_especialidade', [
+            'desbravador_id' => $desbravador->id,
+            'especialidade_id' => $especialidade->id,
+            'data_conclusao' => '2025-06-01',
+        ]);
+    }
+
+    public function test_pode_remover_especialidade()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create();
+        $especialidade = Especialidade::factory()->create();
+        $desbravador->especialidades()->attach($especialidade->id, ['data_conclusao' => '2025-01-01']);
+
+        $response = $this->actingAs($user)->delete(route('desbravadores.remover-especialidade', [$desbravador, $especialidade->id]));
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('desbravador_especialidade', [
+            'desbravador_id' => $desbravador->id,
+            'especialidade_id' => $especialidade->id,
+        ]);
+    }
+
+    public function test_pode_avancar_para_proxima_classe()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $classeAtual = Classe::factory()->create(['ordem' => 1]);
+        $proximaClasse = Classe::factory()->create(['ordem' => 2]);
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create(['classe_atual' => $classeAtual->id]);
+
+        $response = $this->actingAs($user)->post(route('desbravadores.avancar-classe', $desbravador));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertEquals($proximaClasse->id, $desbravador->fresh()->classe_atual);
+    }
+
+    public function test_nao_pode_avancar_se_ja_na_maior_classe()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $ultimaClasse = Classe::factory()->create(['ordem' => 99]);
+        $desbravador = Desbravador::factory()->forClube($clube->id)->create(['classe_atual' => $ultimaClasse->id]);
+
+        $response = $this->actingAs($user)->post(route('desbravadores.avancar-classe', $desbravador));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertEquals($ultimaClasse->id, $desbravador->fresh()->classe_atual);
     }
 }

@@ -71,4 +71,87 @@ class ClassesSystemTest extends TestCase
             'requisito_id' => $req->id,
         ]);
     }
+
+    public function test_instrutor_pode_desmarcar_requisito()
+    {
+        $this->seed(\Database\Seeders\ClassesSeeder::class);
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $classe = Classe::where('nome', 'Amigo')->first();
+        $req = $classe->requisitos->first();
+        $dbv = Desbravador::factory()->forClube($clube->id)->create(['classe_atual' => $classe->id, 'ativo' => true]);
+        $dbv->requisitosCumpridos()->attach($req->id, ['user_id' => $user->id, 'data_conclusao' => now()->toDateString()]);
+
+        $response = $this->actingAs($user)->postJson(route('classes.toggle'), [
+            'desbravador_id' => $dbv->id,
+            'requisito_id' => $req->id,
+            'concluido' => false,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseMissing('desbravador_requisito', [
+            'desbravador_id' => $dbv->id,
+            'requisito_id' => $req->id,
+        ]);
+    }
+
+    public function test_pode_criar_requisito_em_classe()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $classe = Classe::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('classes.requisitos.store', $classe), [
+            'descricao' => 'Aprender nó quadrado',
+            'codigo' => 'REQ-01',
+            'categoria' => 'Habilidades',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('requisitos', [
+            'classe_id' => $classe->id,
+            'descricao' => 'Aprender nó quadrado',
+        ]);
+    }
+
+    public function test_pode_atualizar_requisito()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $classe = Classe::factory()->create();
+        $requisito = $classe->requisitos()->create([
+            'descricao' => 'Descrição original',
+            'codigo' => 'R01',
+            'categoria' => 'Geral',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('classes.requisitos.update', [$classe, $requisito]), [
+            'descricao' => 'Descrição atualizada',
+            'codigo' => 'R01',
+            'categoria' => 'Geral',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('requisitos', [
+            'id' => $requisito->id,
+            'descricao' => 'Descrição atualizada',
+        ]);
+    }
+
+    public function test_pode_excluir_requisito()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $classe = Classe::factory()->create();
+        $requisito = $classe->requisitos()->create([
+            'descricao' => 'Requisito a excluir',
+            'codigo' => 'R99',
+            'categoria' => 'Geral',
+        ]);
+
+        $response = $this->actingAs($user)->delete(route('classes.requisitos.destroy', [$classe, $requisito]));
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('requisitos', ['id' => $requisito->id]);
+    }
 }

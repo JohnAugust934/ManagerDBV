@@ -162,6 +162,12 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->isProduction()) {
+            $this->call(\Database\Seeders\MasterOnlySeeder::class);
+
+            return;
+        }
+
         $this->command->info('🌱 Iniciando população do banco de dados...');
 
         // ---------------------------------------------------------
