@@ -35,7 +35,7 @@
                                     <div class="absolute inset-0 bg-gradient-to-tr from-slate-100 to-white dark:from-slate-800 dark:to-slate-700/50 rounded-2xl shadow-inner border border-slate-200 dark:border-slate-700 -z-10"></div>
                                     <img src="{{ asset('storage/' . $club->logo) }}" alt="Brasão do Clube" class="h-48 w-full object-contain p-4 drop-shadow-xl transition-transform group-hover:scale-105 duration-300">
                                 </div>
-                                <button type="button" onclick="if(confirm('Tem certeza que deseja remover o brasão do clube?')) document.getElementById('form-remove-logo').submit();" class="w-full px-4 py-3 rounded-xl bg-red-50 text-red-600 font-bold hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition text-sm flex justify-center items-center gap-2">
+                                <button type="button" onclick="confirmAction({ title: 'Remover Brasão', message: 'Tem certeza que deseja remover o brasão do clube?', formId: 'form-remove-logo', confirmText: 'Remover', variant: 'danger' })" class="w-full px-4 py-3 rounded-xl bg-red-50 text-red-600 font-bold hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition text-sm flex justify-center items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     Remover Brasão
                                 </button>

@@ -323,10 +323,9 @@
             </div>
 
             @if($progresso >= 100)
-                <form action="{{ route('desbravadores.avancar-classe', $desbravador) }}" method="POST"
-                    onsubmit="return confirm('Avançar {{ $desbravador->nome }} para a próxima classe?');">
+                <form id="avancar-classe" action="{{ route('desbravadores.avancar-classe', $desbravador) }}" method="POST">
                     @csrf
-                    <button type="submit" class="w-full ui-btn-primary py-2.5 flex items-center justify-center gap-2">
+                    <button type="button" onclick="confirmAction({ title: 'Avançar Classe', message: {{ Js::from('Avançar ' . $desbravador->nome . ' para a próxima classe?') }}, formId: 'avancar-classe', confirmText: 'Avançar', variant: 'primary' })" class="w-full ui-btn-primary py-2.5 flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
                         Avançar para Próxima Classe
                     </button>

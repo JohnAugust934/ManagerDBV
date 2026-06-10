@@ -37,7 +37,7 @@
 
                     <div class="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
                         <button type="button"
-                            onclick="if(confirm('Excluir este ato apagara o registro permanentemente. Deseja continuar?')) document.getElementById('delete-ato-form').submit();"
+                            onclick="confirmAction({ title: 'Excluir Ato', message: 'Excluir este ato apagará o registro permanentemente. Deseja continuar?', formId: 'delete-ato-form', confirmText: 'Excluir', variant: 'danger' })"
                             class="ui-btn-danger w-full sm:w-auto">
                             Excluir Ato
                         </button>

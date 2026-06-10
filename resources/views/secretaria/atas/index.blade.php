@@ -66,10 +66,10 @@
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </a>
                                 </div>
-                                <form action="{{ route('atas.destroy', $ata) }}" method="POST" onsubmit="return confirm('Confirma a exclusão deste documento oficial?');">
+                                <form id="del-ata-{{ $ata->id }}" action="{{ route('atas.destroy', $ata) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="h-10 px-4 flex items-center justify-center gap-2 rounded-xl bg-white dark:bg-slate-800 text-red-500 font-bold text-xs uppercase tracking-widest border border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                    <button type="button" onclick="confirmAction({ title: 'Excluir Documento', message: 'Confirma a exclusão deste documento oficial?', formId: 'del-ata-{{ $ata->id }}', confirmText: 'Excluir', variant: 'danger' })" class="h-10 px-4 flex items-center justify-center gap-2 rounded-xl bg-white dark:bg-slate-800 text-red-500 font-bold text-xs uppercase tracking-widest border border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                         Excluir
                                     </button>
                                 </form>

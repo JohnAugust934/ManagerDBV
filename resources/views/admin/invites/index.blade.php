@@ -39,11 +39,10 @@
                                     <span class="ui-badge bg-[#002F6C]/10 text-[#002F6C] dark:bg-blue-500/20 dark:text-blue-400">{{ $invite->role }}</span>
                                     <span class="ui-badge {{ $statusColor }}">{{ $statusText }}</span>
                                 </div>
-                                <form action="{{ route('invites.destroy', $invite->id) }}" method="POST"
-                                    onsubmit="return confirm('{{ $isUsed ? 'Excluir este registro do histórico?' : 'Cancelar este convite imediatamente? O link para de funcionar.' }}');">
+                                <form id="del-invite-{{ $invite->id }}" action="{{ route('invites.destroy', $invite->id) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Excluir Convite">
+                                    <button type="button" onclick="confirmAction({ title: {{ Js::from($isUsed ? 'Excluir Registro' : 'Cancelar Convite') }}, message: {{ Js::from($isUsed ? 'Excluir este registro do histórico?' : 'Cancelar este convite imediatamente? O link para de funcionar.') }}, formId: 'del-invite-{{ $invite->id }}', confirmText: {{ Js::from($isUsed ? 'Excluir' : 'Cancelar Convite') }}, variant: 'danger' })" class="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Excluir Convite">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </form>

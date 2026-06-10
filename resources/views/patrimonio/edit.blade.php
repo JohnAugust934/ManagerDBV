@@ -11,9 +11,9 @@
                 </div>
                 Voltar ao Inventário
             </a>
-            <form action="{{ route('patrimonio.destroy', $patrimonio->id) }}" method="POST" onsubmit="return confirm('Excluir este item permanentemente?')">
+            <form id="del-patrimonio" action="{{ route('patrimonio.destroy', $patrimonio->id) }}" method="POST">
                 @csrf @method('DELETE')
-                <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors">
+                <button type="button" onclick="confirmAction({ title: 'Excluir Item', message: 'Excluir este item permanentemente?', formId: 'del-patrimonio', confirmText: 'Excluir', variant: 'danger' })" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     Excluir
                 </button>
@@ -185,11 +185,10 @@
                                     </div>
                                     <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">{{ $man->descricao }}</p>
                                 </div>
-                                <form action="{{ route('patrimonio.manutencoes.destroy', [$patrimonio, $man]) }}" method="POST"
-                                    class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onsubmit="return confirm('Remover este registro?');">
+                                <form id="del-manutencao-{{ $man->id }}" action="{{ route('patrimonio.manutencoes.destroy', [$patrimonio, $man]) }}" method="POST"
+                                    class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                    <button type="button" onclick="confirmAction({ title: 'Remover Registro', message: 'Remover este registro?', formId: 'del-manutencao-{{ $man->id }}', confirmText: 'Remover', variant: 'danger' })" class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </form>

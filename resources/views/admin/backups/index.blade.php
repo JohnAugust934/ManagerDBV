@@ -324,42 +324,52 @@
         {{-- ========================================== --}}
         {{-- OVERLAY DE CARREGAMENTO GLOBAL CORRIGIDO   --}}
         {{-- ========================================== --}}
+        <template x-teleport="body">
         <div x-show="isBackingUp || isImporting || isRestoring" x-transition.opacity.duration.300ms
-            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm" x-cloak>
-            <div
-                class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-md text-center m-4">
+            class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/75 dark:bg-black/80 backdrop-blur-sm" x-cloak>
+            <div x-show="isBackingUp || isImporting || isRestoring"
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                class="bg-white dark:bg-slate-800 p-8 sm:p-10 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-700 flex flex-col items-center max-w-md w-full text-center">
 
-                {{-- Novo Ícone de Carregamento (Tailwind Padrão Seguro) --}}
-                <div class="flex justify-center items-center mb-6">
-                    <svg class="animate-spin h-16 w-16 text-blue-600 dark:text-blue-400"
-                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                            stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                        </path>
-                    </svg>
+                {{-- Loader de marca: anel girando + ícone pulsando no centro --}}
+                <div class="relative flex justify-center items-center mb-7 w-20 h-20">
+                    <div class="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-slate-700"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#002F6C] dark:border-t-blue-400 animate-spin"></div>
+                    <div class="w-11 h-11 rounded-2xl bg-[#002F6C]/10 dark:bg-blue-500/20 text-[#002F6C] dark:text-blue-400 flex items-center justify-center animate-pulse">
+                        <template x-if="isRestoring">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                        </template>
+                        <template x-if="!isRestoring">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </template>
+                    </div>
                 </div>
 
-                <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-2"
+                <h3 class="text-2xl font-black tracking-tight text-slate-800 dark:text-white mb-2"
                     x-text="isRestoring? 'Restaurando Sistema...' : 'Processando Arquivos...'"></h3>
-                <p class="text-sm text-slate-600 dark:text-slate-400 mb-6"
+                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-7"
                     x-text="isRestoring? 'Apagando banco atual e injetando dados do backup. Isso vai demorar um pouco.' : 'Aguarde o envio ou a geração dos arquivos em segurança.'">
                 </p>
 
                 <div
-                    class="bg-red-50 dark:bg-red-900/20 border border-red-100 p-4 rounded-xl w-full flex items-start gap-3">
-                    <svg class="w-5 h-5 text-red-600 mt-0.5 shrink-0" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                        </path>
-                    </svg>
-                    <p class="text-xs text-red-800 dark:text-red-400 font-bold text-left">Não feche nem recarregue a
-                        página!</p>
+                    class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 p-3.5 rounded-2xl w-full flex items-center gap-3 text-left">
+                    <div class="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-500 dark:text-red-400 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                    </div>
+                    <p class="text-xs text-red-800 dark:text-red-300 font-bold">Não feche nem recarregue a página!</p>
                 </div>
             </div>
         </div>
+        </template>
     </div>
 </x-app-layout>
 

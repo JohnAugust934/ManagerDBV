@@ -114,10 +114,10 @@
                                     <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mt-0.5">Criada em: {{ \Carbon\Carbon::parse($esp->pivot->data_conclusao)->format('d/m/Y') }}</span>
                                 </div>
 
-                                <form action="{{ route('desbravadores.remover-especialidade', ['desbravador' => $desbravador->id, 'especialidade' => $esp->id]) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja desinvestir esta especialidade?');" class="shrink-0">
+                                <form id="del-dbv-esp-{{ $esp->id }}" action="{{ route('desbravadores.remover-especialidade', ['desbravador' => $desbravador->id, 'especialidade' => $esp->id]) }}" method="POST" class="shrink-0">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100" title="Revogar Especialidade">
+                                    <button type="button" onclick="confirmAction({ title: 'Revogar Especialidade', message: 'Tem certeza que deseja desinvestir esta especialidade?', formId: 'del-dbv-esp-{{ $esp->id }}', confirmText: 'Desinvestir', variant: 'danger' })" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100" title="Revogar Especialidade">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>

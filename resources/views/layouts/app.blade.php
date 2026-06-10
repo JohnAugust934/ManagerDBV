@@ -329,6 +329,10 @@
             </main>
         </div>
 
+        <!-- Alertas & Confirmações globais -->
+        <x-confirm-dialog />
+        <x-toast-host />
+
         <!-- Bottom Navigation Bar for Mobile -->
         <div class="lg:hidden fixed bottom-4 inset-x-3 sm:inset-x-6 z-40 ui-glass rounded-[28px] h-20 shadow-2xl flex items-center justify-around px-2 pb-1 border border-white/50 dark:border-white/10">
             <a href="{{ route('dashboard') }}" class="flex flex-col items-center justify-center w-16 h-16 rounded-2xl {{ request()->routeIs('dashboard') ? 'bg-gradient-to-t from-blue-500/10 to-transparent text-[#002F6C] dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors' }}">

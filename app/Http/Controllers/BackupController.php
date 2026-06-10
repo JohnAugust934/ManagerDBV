@@ -43,7 +43,7 @@ class BackupController extends Controller
                         ];
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::error("Erro ao ler backups do disco {$disk}: ".$e->getMessage());
                 $errosDiscos[] = strtoupper($disk).' falhou';
             }
@@ -291,7 +291,7 @@ class BackupController extends Controller
 
             return redirect('/login')->with('success', "Restauração Finalizada! [{$statusDB}] e [{$filesRestored} imagens restauradas]. Faça login com os dados da época do backup.");
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if ($databaseWasWiped && $emergencySnapshotCreated) {
                 try {
                     $this->restoreDatabaseFromEmergencySnapshot($emergencySnapshotPath);

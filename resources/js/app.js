@@ -4,6 +4,17 @@ import Alpine from "alpinejs";
 window.Alpine = Alpine;
 Alpine.start();
 
+// --- ALERTAS & CONFIRMAÇÕES PADRONIZADOS ---
+// Diálogo de confirmação (<x-confirm-dialog />)
+// Uso: confirmAction({ message, formId, title, confirmText, cancelText, variant, payload })
+window.confirmAction = (opts = {}) =>
+    window.dispatchEvent(new CustomEvent("open-confirm", { detail: opts }));
+
+// Toast de aviso (<x-toast-host />)
+// Uso: notify('Mensagem', 'success' | 'error' | 'warning' | 'info')
+window.notify = (message, type = "info") =>
+    window.dispatchEvent(new CustomEvent("app-notify", { detail: { message, type } }));
+
 // --- CORREÇÃO DA TELA BRANCA E TRANSIÇÃO ---
 
 function mostrarPagina() {

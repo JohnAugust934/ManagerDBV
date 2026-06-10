@@ -67,8 +67,8 @@
 
                         <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-slate-100 dark:border-slate-800 mt-8">
                             
-                            <button type="button" 
-                                onclick="if(confirm('Tem certeza? Isso pode afetar os desbravadores vinculados à unidade.')) document.getElementById('delete-form').submit()"
+                            <button type="button"
+                                onclick="confirmAction({ title: 'Excluir Unidade', message: 'Tem certeza? Isso pode afetar os desbravadores vinculados à unidade.', formId: 'delete-form', confirmText: 'Excluir', variant: 'danger' })"
                                 class="ui-btn-danger w-full sm:w-auto px-6 text-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 Excluir Unidade

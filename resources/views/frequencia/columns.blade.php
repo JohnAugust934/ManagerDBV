@@ -46,8 +46,8 @@
                                 </div>
                                 <div class="md:col-span-2">
                                     @if (empty($legacyMode) && !empty($column->can_delete) && $column->can_delete)
-                                        <button type="submit" form="delete-column-{{ $column->id }}"
-                                            onclick="return confirm('Deseja remover esta coluna?');"
+                                        <button type="button"
+                                            onclick="confirmAction({ title: 'Remover Coluna', message: 'Deseja remover esta coluna?', formId: 'delete-column-{{ $column->id }}', confirmText: 'Remover', variant: 'danger' })"
                                             class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/40 transition-colors">
                                             Remover
                                         </button>

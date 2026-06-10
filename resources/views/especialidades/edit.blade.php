@@ -51,10 +51,10 @@
                     </div>
                 </form>
 
-                <form method="POST" action="{{ route('especialidades.destroy', $especialidade) }}" class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800" onsubmit="return confirm('Tem certeza que deseja excluir esta especialidade?');">
+                <form id="del-especialidade" method="POST" action="{{ route('especialidades.destroy', $especialidade) }}" class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="px-5 py-2 rounded-xl font-bold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200">Excluir Especialidade</button>
+                    <button type="button" onclick="confirmAction({ title: 'Excluir Especialidade', message: 'Tem certeza que deseja excluir esta especialidade?', formId: 'del-especialidade', confirmText: 'Excluir', variant: 'danger' })" class="px-5 py-2 rounded-xl font-bold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200">Excluir Especialidade</button>
                 </form>
             </div>
         </div>

@@ -16,9 +16,9 @@
                     Editar
                 </a>
                 @if ($evento->desbravadores->count() == 0)
-                <form action="{{ route('eventos.destroy', $evento->id) }}" method="POST" onsubmit="return confirm('Excluir este evento permanentemente?')">
+                <form id="del-evento-{{ $evento->id }}" action="{{ route('eventos.destroy', $evento->id) }}" method="POST">
                     @csrf @method('DELETE')
-                    <button type="submit" class="flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-400 transition-colors">
+                    <button type="button" onclick="confirmAction({ title: 'Excluir Evento', message: 'Excluir este evento permanentemente?', formId: 'del-evento-{{ $evento->id }}', confirmText: 'Excluir', variant: 'danger' })" class="flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-400 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         Excluir
                     </button>
@@ -186,9 +186,9 @@
                                             </a>
                                         </td>
                                         <td class="px-4 py-3.5 text-right">
-                                            <form action="{{ route('eventos.remover-inscricao', [$evento->id, $dbv->id]) }}" method="POST" onsubmit="return confirm('Remover {{ $dbv->nome }} do evento?')">
+                                            <form id="del-insc-{{ $dbv->id }}" action="{{ route('eventos.remover-inscricao', [$evento->id, $dbv->id]) }}" method="POST">
                                                 @csrf @method('DELETE')
-                                                <button type="submit" class="p-2 rounded-xl text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors opacity-50 group-hover:opacity-100">
+                                                <button type="button" onclick="confirmAction({ title: 'Remover Inscrição', message: {{ Js::from('Remover ' . $dbv->nome . ' do evento?') }}, formId: 'del-insc-{{ $dbv->id }}', confirmText: 'Remover', variant: 'danger' })" class="p-2 rounded-xl text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors opacity-50 group-hover:opacity-100">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                 </button>
                                             </form>
