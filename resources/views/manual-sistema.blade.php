@@ -87,7 +87,7 @@
                     'Conselheiro e Instrutor: módulo Pedagógico (classes, requisitos e especialidades).',
                 ]],
                 ['titulo' => 'Permissões extras por usuário', 'desc' => 'Além do padrão do cargo, o administrador pode conceder permissões adicionais marcando caixas no cadastro do usuário (ex.: liberar Relatórios para um Conselheiro). Assim você ajusta acessos sem mudar o cargo da pessoa.', 'nota' => 'A permissão de "Gestão de Acessos" (criar usuários e convites) só pode ser concedida pelo Master.'],
-                ['titulo' => 'Regras específicas de Conselheiro e Instrutor', 'desc' => 'O Conselheiro pode gerir a unidade da qual é responsável (quando o nome dele consta como conselheiro da unidade). O Instrutor é bloqueado de visualizar a listagem de Unidades, mantendo o foco no acompanhamento pedagógico.'],
+                ['titulo' => 'Regras específicas de Conselheiro e Instrutor', 'desc' => 'O conselheiro responsável por uma unidade pode ser vinculado a um usuário do sistema (campo opcional no cadastro da unidade) — é esse vínculo, e não apenas o nome digitado, que identifica o responsável de forma confiável. A gestão das unidades em si (criar, editar e excluir) exige a permissão de Unidades/Secretaria. O Instrutor é bloqueado de visualizar a listagem de Unidades, mantendo o foco no acompanhamento pedagógico.'],
                 ['titulo' => 'Quem pode gerenciar colunas da chamada', 'desc' => 'A personalização dos critérios de frequência (colunas e pontuação) é restrita a Master, Diretor e Secretário, pois afeta o cálculo de pontos de todo o clube.'],
             ]],
 
@@ -104,6 +104,7 @@
                 ['titulo' => 'Gerenciar unidades', 'desc' => 'Em Unidades você cadastra nome, grito de guerra e conselheiro responsável. A contagem de membros é calculada em tempo real e cada unidade pode ser incluída ou removida do ranking.', 'nota' => 'Uma unidade só pode ser excluída se não tiver nenhum desbravador vinculado. Reatribua os membros antes de excluir.'],
                 ['titulo' => 'Atas e Atos oficiais', 'desc' => 'Registre as atas de reunião e os atos administrativos do clube. As atas podem ser impressas/exportadas diretamente para documentação e arquivo da secretaria.'],
                 ['titulo' => 'Excluir um desbravador', 'desc' => 'A exclusão é definitiva e remove, em uma única transação, todos os dados vinculados ao membro (frequências, mensalidades, inscrições, especialidades). Prefira inativar quando quiser preservar o histórico.'],
+                ['titulo' => 'Trilha de autoria', 'desc' => 'O sistema registra automaticamente quem cadastrou e quem fez a última atualização de cada desbravador (e também das movimentações de caixa). No perfil do desbravador essa informação aparece no rodapé — útil para auditoria e para saber a quem recorrer em caso de dúvida sobre um cadastro.'],
             ]],
 
             // 4. PEDAGÓGICO
@@ -142,7 +143,7 @@
                     'Clique no status de pagamento para alternar entre Pendente e Pago.',
                     'Para eventos com valor, marcar "Pago" lança automaticamente uma ENTRADA no caixa.',
                     'Desmarcar "Pago" gera um estorno (SAÍDA) correspondente no caixa.',
-                ], 'nota' => 'A alteração do status de pagamento exige permissão Financeira, pois movimenta o caixa do clube.'],
+                ], 'nota' => 'A alteração do status de pagamento exige permissão Financeira, pois movimenta o caixa do clube. Remover um inscrito que já estava pago também gera o estorno correspondente no caixa e, por isso, exige a mesma permissão.'],
                 ['titulo' => 'Gerar a autorização parental', 'desc' => 'Para cada inscrito é possível gerar a autorização parental em PDF, pronta para impressão e assinatura dos responsáveis.'],
                 ['titulo' => 'Excluir um evento', 'desc' => 'Um evento só pode ser excluído depois que todas as inscrições forem removidas. Isso evita perda acidental de dados de participação e pagamento.'],
             ]],
