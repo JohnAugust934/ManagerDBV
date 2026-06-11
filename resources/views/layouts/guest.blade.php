@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="antialiased">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="antialiased dark">
 
 <head>
     <meta charset="utf-8">
@@ -14,7 +14,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="font-sans antialiased bg-slate-900 text-slate-100 min-h-screen overflow-x-hidden">
+<body class="ui-guest font-sans antialiased bg-slate-900 text-slate-100 min-h-screen overflow-x-hidden">
 
     {{-- Background --}}
     <div class="fixed inset-0 z-0">

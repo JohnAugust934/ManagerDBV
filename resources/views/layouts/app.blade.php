@@ -32,7 +32,7 @@
     </script>
 </head>
 
-<body class="font-sans antialiased text-slate-800 dark:text-slate-200" style="margin:0; padding:0; background: rgb(var(--ui-bg));">
+<body class="ui-app font-sans antialiased text-slate-800 dark:text-slate-200" style="margin:0; padding:0; background: rgb(var(--ui-bg));">
     <a href="#app-content" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] ui-btn-primary">
         Pular para o conteúdo
     </a>

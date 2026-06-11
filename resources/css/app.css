@@ -10,7 +10,7 @@
         --ui-surface-muted: 241 245 249;
         --ui-border: 226 232 240;
         --ui-text: 15 23 42;
-        --ui-text-muted: 100 116 139;
+        --ui-text-muted: 71 85 105; /* slate-600: AA mesmo sobre surface-muted */
         
         /* Desbravadores Accent Colors */
         --ui-primary: 0 47 108; /* dbv-blue */
@@ -74,6 +74,15 @@
         outline: 2px solid rgb(var(--ui-primary) / 0.6);
         outline-offset: 3px;
         transition: outline-offset 0.2s ease;
+    }
+
+    /* Layout guest e permanentemente escuro: foco amarelo DBV garante contraste */
+    .ui-guest a:focus-visible,
+    .ui-guest button:focus-visible,
+    .ui-guest input:focus-visible,
+    .ui-guest select:focus-visible,
+    .ui-guest textarea:focus-visible {
+        outline-color: rgb(var(--ui-yellow));
     }
 
     [x-cloak] {
@@ -288,6 +297,20 @@
 }
 
 @layer utilities {
+    /*
+     * Acessibilidade (WCAG AA): no app, `text-slate-400`/`text-gray-400`/`text-zinc-400`
+     * viraram o "token" de texto secundário (muted). Sobre os cards/sidebar BRANCOS do
+     * modo claro, o tom -400 fica em ~2.6:1 e reprova. Aqui subimos para o -500
+     * (~4.8:1, aprova AA) apenas no modo claro e apenas dentro do shell do app (`.ui-app`).
+     * Não afeta: o modo escuro (onde -400 já tem contraste sobre superfícies escuras),
+     * nem páginas públicas escuras como `welcome` (que não usam `.ui-app`),
+     * nem o layout guest (que carrega a classe `dark`). Estados hover (`hover:text-*-400`)
+     * não casam com este seletor e ficam preservados.
+     */
+    html:not(.dark) .ui-app .text-slate-400 { color: rgb(100 116 139); } /* slate-500 */
+    html:not(.dark) .ui-app .text-gray-400  { color: rgb(107 114 128); } /* gray-500  */
+    html:not(.dark) .ui-app .text-zinc-400  { color: rgb(113 113 122); } /* zinc-500  */
+
     .text-gradient {
         @apply bg-clip-text text-transparent bg-gradient-to-r;
     }
