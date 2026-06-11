@@ -76,10 +76,17 @@
                         {{ Auth::user()->role === 'master' ? 'Master Admin' : 'Sistema de Gestão' }}
                     </span>
                 </div>
+
+                <!-- Desktop Toggle (Recolher / Expandir Menu) -->
+                <button @click="sidebarExpanded = !sidebarExpanded"
+                    class="hidden lg:flex absolute top-2 right-2 p-1.5 rounded-lg text-slate-400 hover:text-[#002F6C] dark:hover:text-blue-400 hover:bg-slate-100/70 dark:hover:bg-white/5 focus:outline-none transition-colors z-10"
+                    title="Recolher Menu">
+                    <svg class="w-5 h-5 transition-transform duration-300" :class="!sidebarExpanded && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h10M4 18h16" /></svg>
+                </button>
             </div>
 
             <!-- Navigation Links -->
-            <nav class="flex-1 w-full px-4 py-6 overflow-y-auto custom-scrollbar space-y-1" :class="!sidebarExpanded && 'lg:px-2'">
+            <nav id="sidebar-nav" class="flex-1 w-full px-4 py-6 overflow-y-auto custom-scrollbar space-y-1" :class="!sidebarExpanded && 'lg:px-2'">
                 @php
                     $linkBase = 'flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-bold transition-all duration-300 relative group overflow-hidden whitespace-nowrap';
                     $activeClass = 'bg-gradient-to-r from-[#002F6C]/10 to-transparent dark:from-blue-500/10 text-[#002F6C] dark:text-blue-400';
@@ -271,7 +278,19 @@
             </nav>
 
             <!-- Bottom Profile Area -->
-            <div class="w-full px-4 py-4 border-t border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 shrink-0" :class="!sidebarExpanded && 'lg:px-2'">
+            <div class="w-full px-4 py-4 border-t border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 shrink-0 space-y-3" :class="!sidebarExpanded && 'lg:px-2'">
+                <!-- Theme Toggle -->
+                <div class="flex items-center gap-3" :class="!sidebarExpanded && 'lg:justify-center'">
+                    <button @click="darkMode = !darkMode" class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors shadow-inner shrink-0" title="Alternar Tema">
+                        <svg x-show="!darkMode" class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <svg x-show="darkMode" x-cloak class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                    </button>
+                    <span class="flex-1 text-[13px] font-bold text-slate-500 dark:text-slate-400" x-show="sidebarExpanded" x-transition.opacity.duration.300ms>
+                        <span x-show="!darkMode">Tema Claro</span>
+                        <span x-show="darkMode" x-cloak>Tema Escuro</span>
+                    </span>
+                </div>
+
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
                     <div class="flex items-center gap-3" :class="!sidebarExpanded && 'lg:justify-center'">
@@ -292,33 +311,9 @@
 
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col min-w-0 transition-all duration-300">
-            
-            <!-- Sleek Header -->
-            <header class="h-16 sm:h-20 px-4 sm:px-8 mt-2 sm:mt-4 mx-4 md:mx-6 lg:ml-0 ui-glass rounded-[20px] sm:rounded-[28px] shadow-sm flex items-center justify-between sticky top-2 sm:top-4 z-30 shrink-0 border-b-0 border-white/40 dark:border-white/5">
-                <div class="flex items-center gap-3 sm:gap-6">
-                    <!-- Mobile trigger -->
-                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 -ml-2 text-slate-500 hover:text-[#002F6C] dark:text-slate-400 dark:hover:text-blue-400 focus:outline-none transition-colors">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h8m-8 6h16" /></svg>
-                    </button>
-                    <!-- Desktop Toggle (Retrátil) -->
-                    <button @click="sidebarExpanded = !sidebarExpanded" class="hidden lg:flex p-2 -ml-2 text-slate-400 hover:text-[#002F6C] dark:hover:text-blue-400 focus:outline-none transition-colors group" title="Recolher Menu">
-                        <svg class="w-5 h-5 transition-transform duration-300" :class="!sidebarExpanded && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h10M4 18h16" /></svg>
-                    </button>
-                    <h1 class="text-lg sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight">
-                        {{ $header ?? 'Gestão DBV' }}
-                    </h1>
-                </div>
-
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <button @click="darkMode = !darkMode" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors shadow-inner" title="Alternar Tema">
-                        <svg x-show="!darkMode" class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                        <svg x-show="darkMode" x-cloak class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                    </button>
-                </div>
-            </header>
 
             <!-- Page Content -->
-            <main id="app-content" class="flex-1 overflow-x-hidden overflow-y-auto px-4 sm:px-6 md:px-8 pb-32 sm:pb-12 pt-6 transition-all scroll-smooth relative z-20">
+            <main id="app-content" class="flex-1 overflow-x-hidden overflow-y-auto px-4 sm:px-6 md:px-8 pb-32 sm:pb-12 pt-[max(1.5rem,env(safe-area-inset-top))] transition-all scroll-smooth relative z-20">
                 <div class="mb-6 ui-animate-fade-up">
                     <x-flash-messages />
                 </div>

@@ -22,11 +22,44 @@ function mostrarPagina() {
     document.body.style.opacity = "1";
 }
 
-// 1. Ao carregar o DOM (HTML pronto), mostra a tela
-window.addEventListener("DOMContentLoaded", mostrarPagina);
+// --- PERSISTÊNCIA DA ROLAGEM DA SIDEBAR ---
+// Mantém a posição de scroll do menu lateral entre navegações de página,
+// evitando que a sidebar volte ao topo a cada troca de tela.
+const SIDEBAR_SCROLL_KEY = "sidebarScroll";
 
-// 2. Ao usar o botão "Voltar" do navegador (BFCache), garante que mostre
-window.addEventListener("pageshow", mostrarPagina);
+function restaurarScrollSidebar() {
+    const nav = document.getElementById("sidebar-nav");
+    if (!nav) return;
+    const salvo = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+    if (salvo !== null) nav.scrollTop = parseInt(salvo, 10) || 0;
+}
+
+function monitorarScrollSidebar() {
+    const nav = document.getElementById("sidebar-nav");
+    if (!nav) return;
+    let ticking = false;
+    nav.addEventListener("scroll", () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+            sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(nav.scrollTop));
+            ticking = false;
+        });
+    });
+}
+
+// 1. Ao carregar o DOM (HTML pronto), restaura o scroll (antes do fade-in) e mostra a tela
+window.addEventListener("DOMContentLoaded", () => {
+    restaurarScrollSidebar();
+    monitorarScrollSidebar();
+    mostrarPagina();
+});
+
+// 2. Ao usar o botão "Voltar" do navegador (BFCache), garante que mostre e restaura o scroll
+window.addEventListener("pageshow", () => {
+    restaurarScrollSidebar();
+    mostrarPagina();
+});
 
 // 3. Ao clicar em links (Saída Suave)
 document.addEventListener("click", (e) => {
