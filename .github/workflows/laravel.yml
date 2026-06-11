@@ -21,8 +21,8 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, fileinfo
           coverage: none
 
-      - name: Copiar arquivo .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+      - name: Preparar arquivo .env
+        run: printf 'APP_NAME=ManagerDBV\nAPP_ENV=testing\nAPP_KEY=\nAPP_DEBUG=true\n' > .env
 
       - name: Instalar Dependências do Composer
         run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
