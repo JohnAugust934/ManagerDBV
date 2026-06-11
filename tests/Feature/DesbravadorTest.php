@@ -52,6 +52,34 @@ class DesbravadorTest extends TestCase
         ]);
     }
 
+    public function test_nao_pode_cadastrar_com_unidade_de_outro_clube()
+    {
+        $clube = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);
+        $outroClube = Club::create(['nome' => 'Clube B', 'cidade' => 'RJ']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        // Unidade pertence a OUTRO clube — o Rule UnidadePertenceAoClube deve rejeitar.
+        $unidadeOutroClube = Unidade::factory()->create(['club_id' => $outroClube->id]);
+        $classe = Classe::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('desbravadores.store'), [
+            'nome' => 'João Intruso',
+            'data_nascimento' => '2010-01-01',
+            'sexo' => 'M',
+            'cpf' => '111.222.333-44',
+            'unidade_id' => $unidadeOutroClube->id,
+            'classe_atual' => $classe->id,
+            'email' => 'joao@teste.com',
+            'nome_responsavel' => 'Mãe do João',
+            'telefone_responsavel' => '11999999999',
+            'numero_sus' => '12345678900',
+            'endereco' => 'Rua Teste, 123',
+        ]);
+
+        $response->assertSessionHasErrors('unidade_id');
+        $this->assertDatabaseMissing('desbravadores', ['nome' => 'João Intruso']);
+    }
+
     public function test_nao_pode_criar_sem_sus_ou_responsavel_ou_cpf()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);

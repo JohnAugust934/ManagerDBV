@@ -233,4 +233,57 @@ class PatrimonioTest extends TestCase
         $response->assertSee('Item do Meu Clube');
         $response->assertDontSee('Item do Outro Clube');
     }
+
+    public function test_usuario_sem_financeiro_nao_acessa_patrimonio()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        // Secretário não possui permissão de financeiro.
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'secretario']);
+
+        $this->actingAs($user)->get(route('patrimonio.index'))->assertForbidden();
+    }
+
+    public function test_editar_sem_mudar_estado_nao_gera_manutencao()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'tesoureiro']);
+        $patrimonio = Patrimonio::create([
+            'item' => 'Bandeira',
+            'quantidade' => 1,
+            'estado_conservacao' => 'Bom',
+            'club_id' => $club->id,
+        ]);
+
+        $this->actingAs($user)->put(route('patrimonio.update', $patrimonio), [
+            'item' => 'Bandeira Nova',
+            'quantidade' => 1,
+            'estado_conservacao' => 'Bom',
+        ])->assertRedirect(route('patrimonio.index'));
+
+        $this->assertDatabaseCount('patrimonio_manutencoes', 0);
+    }
+
+    public function test_remover_manutencao_de_outro_item_retorna_404()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'tesoureiro']);
+
+        $patrimonioA = Patrimonio::create(['item' => 'A', 'quantidade' => 1, 'estado_conservacao' => 'Bom', 'club_id' => $club->id]);
+        $patrimonioB = Patrimonio::create(['item' => 'B', 'quantidade' => 1, 'estado_conservacao' => 'Bom', 'club_id' => $club->id]);
+        $manutencao = PatrimonioManutencao::create([
+            'patrimonio_id' => $patrimonioB->id,
+            'user_id' => $user->id,
+            'data' => '2025-01-01',
+            'estado_anterior' => 'Bom',
+            'estado_novo' => 'Ruim',
+            'descricao' => 'Teste',
+        ]);
+
+        // URL usa o patrimônio errado: deve recusar com 404 e preservar o registro.
+        $this->actingAs($user)
+            ->delete(route('patrimonio.manutencoes.destroy', [$patrimonioA, $manutencao]))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('patrimonio_manutencoes', ['id' => $manutencao->id]);
+    }
 }

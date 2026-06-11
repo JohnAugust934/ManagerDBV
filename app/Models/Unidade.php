@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Unidade extends Model
@@ -14,6 +15,7 @@ class Unidade extends Model
         'nome',
         'grito_guerra',
         'conselheiro',
+        'conselheiro_user_id',
         'club_id',
         'no_ranking',
     ];
@@ -26,6 +28,12 @@ class Unidade extends Model
     public function desbravadores(): HasMany
     {
         return $this->hasMany(Desbravador::class);
+    }
+
+    // Conselheiro responsável vinculado a um usuário do sistema (opcional).
+    public function conselheiroUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'conselheiro_user_id');
     }
 
     public function getPontuacaoTotalAttribute()

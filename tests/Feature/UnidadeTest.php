@@ -79,4 +79,37 @@ class UnidadeTest extends TestCase
         $response->assertSessionHas('success');
         $this->assertDatabaseMissing('unidades', ['id' => $unidade->id]);
     }
+
+    public function test_instrutor_nao_pode_listar_unidades()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $instrutor = User::factory()->create(['club_id' => $club->id, 'role' => 'instrutor']);
+
+        $this->actingAs($instrutor)->get(route('unidades.index'))->assertForbidden();
+    }
+
+    public function test_instrutor_nao_pode_ver_detalhe_da_unidade()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $instrutor = User::factory()->create(['club_id' => $club->id, 'role' => 'instrutor']);
+        $unidade = Unidade::create(['nome' => 'Alpha', 'conselheiro' => 'João', 'club_id' => $club->id]);
+
+        $this->actingAs($instrutor)->get(route('unidades.show', $unidade))->assertForbidden();
+    }
+
+    public function test_nao_pode_editar_unidade_de_outro_clube()
+    {
+        $club = Club::create(['nome' => 'Meu Clube', 'cidade' => 'SP']);
+        $outroClube = Club::create(['nome' => 'Outro Clube', 'cidade' => 'RJ']);
+        $diretor = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+
+        $unidadeAlheia = Unidade::create(['nome' => 'Beta', 'conselheiro' => 'Maria', 'club_id' => $outroClube->id]);
+
+        $this->actingAs($diretor)->get(route('unidades.edit', $unidadeAlheia))->assertForbidden();
+        $this->actingAs($diretor)->put(route('unidades.update', $unidadeAlheia), [
+            'nome' => 'Hackeada',
+            'conselheiro' => 'Intruso',
+        ])->assertForbidden();
+        $this->assertDatabaseHas('unidades', ['id' => $unidadeAlheia->id, 'nome' => 'Beta']);
+    }
 }

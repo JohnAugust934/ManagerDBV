@@ -44,6 +44,19 @@
                         </div>
 
                         <div>
+                            <label for="conselheiro_user_id" class="ui-input-label">Vincular a um usuário do sistema (opcional)</label>
+                            <select id="conselheiro_user_id" name="conselheiro_user_id" class="ui-input">
+                                <option value="">Nenhum — apenas o nome acima</option>
+                                @foreach ($usuarios as $usuario)
+                                    <option value="{{ $usuario->id }}" @selected(old('conselheiro_user_id', $unidade->conselheiro_user_id) == $usuario->id)>
+                                        {{ $usuario->name }} ({{ ucfirst($usuario->role) }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-slate-500 mt-1">Concede a este usuário a gestão desta unidade quando ele for Conselheiro/Instrutor.</p>
+                        </div>
+
+                        <div>
                             <label for="grito_guerra" class="ui-input-label">Grito de Guerra</label>
                             <textarea id="grito_guerra" name="grito_guerra" rows="4" class="ui-input" placeholder="Digite o grito de guerra aqui...">{{ old('grito_guerra', $unidade->grito_guerra) }}</textarea>
                         </div>

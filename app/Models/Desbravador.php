@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraAutoria;
 use App\Models\Scopes\DesbravadorClubScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Desbravador extends Model
 {
-    use HasFactory;
+    use HasFactory, RegistraAutoria;
 
     protected $table = 'desbravadores';
 

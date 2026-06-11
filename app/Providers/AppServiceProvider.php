@@ -2,22 +2,22 @@
 
 namespace App\Providers;
 
-use App\Models\User;
+use App\Models\Desbravador;
 use App\Models\RankingSnapshot;
+use App\Models\Unidade;
+use App\Models\User;
 use App\Services\TelegramNotifier;
 use Carbon\Carbon;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\QueueBusy;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Queue\Events\JobFailed;
-use Illuminate\Queue\Events\QueueBusy;
-use App\Models\Desbravador;
-use App\Models\Unidade;
 use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Events\BackupWasSuccessful;
 use Spatie\Backup\Events\CleanupHasFailed;
@@ -62,6 +62,12 @@ class AppServiceProvider extends ServiceProvider
             }
 
             if ($unidade && ($user->role === 'conselheiro' || $user->role === 'instrutor')) {
+                // Prefere o vínculo robusto por usuário; cai no nome apenas por compatibilidade
+                // com unidades cadastradas antes da coluna conselheiro_user_id.
+                if (! is_null($unidade->conselheiro_user_id)) {
+                    return (int) $unidade->conselheiro_user_id === (int) $user->id;
+                }
+
                 return $unidade->conselheiro === $user->name;
             }
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreEventoRequest;
+use App\Http\Requests\UpdateEventoRequest;
 use App\Models\Caixa;
 use App\Models\Desbravador;
 use App\Models\Evento;
@@ -29,18 +31,11 @@ class EventoController extends Controller
         return view('eventos.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreEventoRequest $request)
     {
         Gate::authorize('secretaria');
 
-        $dados = $request->validate([
-            'nome' => 'required|string|max:255',
-            'local' => 'required|string|max:255',
-            'data_inicio' => 'required|date',
-            'data_fim' => 'required|date|after_or_equal:data_inicio',
-            'valor' => 'required|numeric|min:0',
-            'descricao' => 'nullable|string',
-        ]);
+        $dados = $request->validated();
         $dados['club_id'] = auth()->user()->club_id;
         Evento::create($dados);
 
@@ -70,20 +65,11 @@ class EventoController extends Controller
         return view('eventos.edit', compact('evento'));
     }
 
-    public function update(Request $request, Evento $evento)
+    public function update(UpdateEventoRequest $request, Evento $evento)
     {
         Gate::authorize('secretaria');
 
-        $dados = $request->validate([
-            'nome' => 'required|string|max:255',
-            'local' => 'required|string|max:255',
-            'data_inicio' => 'required|date',
-            'data_fim' => 'required|date|after_or_equal:data_inicio',
-            'valor' => 'required|numeric|min:0',
-            'descricao' => 'nullable|string',
-        ]);
-
-        $evento->update($dados);
+        $evento->update($request->validated());
 
         // ALTERADO: Redireciona para a tela de visualização (show) do evento
         return redirect()->route('eventos.show', $evento->id)->with('success', 'Evento atualizado!');
@@ -140,10 +126,29 @@ class EventoController extends Controller
     {
         Gate::authorize('eventos');
 
-        // Se estava pago, deveríamos estornar do caixa?
-        // Por simplicidade, assumimos que o tesoureiro ajusta manual se necessário, ou removemos aqui.
-        // Vamos apenas remover a inscrição.
-        $evento->desbravadores()->detach($desbravador->id);
+        DB::transaction(function () use ($evento, $desbravador) {
+            $pivot = DB::table('desbravador_evento')
+                ->where('evento_id', $evento->id)
+                ->where('desbravador_id', $desbravador->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $pivot) {
+                return;
+            }
+
+            // Remover um inscrito pago estorna dinheiro do caixa: exige permissao financeira
+            // e registra a saida correspondente para manter o caixa consistente.
+            if ($pivot->pago) {
+                Gate::authorize('financeiro');
+
+                if ($evento->valor > 0) {
+                    $this->registrarMovimentacaoFinanceiraDoEvento($evento, $desbravador, false);
+                }
+            }
+
+            $evento->desbravadores()->detach($desbravador->id);
+        });
 
         return back()->with('success', 'Removido do evento.');
     }

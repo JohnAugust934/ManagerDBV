@@ -200,4 +200,47 @@ class RankingTest extends TestCase
         $this->assertEquals('Sem Recalculo', $dados->first()->nome);
         $this->assertEquals(24, $dados->first()->pontos);
     }
+
+    public function test_snapshot_de_unidades_ordena_por_pontos_e_numera_posicoes()
+    {
+        $ano = now()->subYear()->year;
+        $data = now()->subYear();
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+
+        $unidadeForte = Unidade::factory()->create(['nome' => 'Águias', 'club_id' => $clube->id]);
+        $unidadeFraca = Unidade::factory()->create(['nome' => 'Lobos', 'club_id' => $clube->id]);
+
+        $dbvForte = Desbravador::factory()->create(['unidade_id' => $unidadeForte->id, 'ativo' => true]);
+        $dbvFraco = Desbravador::factory()->create(['unidade_id' => $unidadeFraca->id, 'ativo' => true]);
+
+        // Águias: 30 pts; Lobos: 10 pts.
+        Frequencia::create(['desbravador_id' => $dbvForte->id, 'data' => $data, 'presente' => true, 'pontual' => true, 'biblia' => true, 'uniforme' => true]);
+        Frequencia::create(['desbravador_id' => $dbvFraco->id, 'data' => $data, 'presente' => true, 'pontual' => false, 'biblia' => false, 'uniforme' => false]);
+
+        $this->artisan('ranking:snapshot '.$ano)->assertExitCode(0);
+
+        $entries = RankingSnapshot::where('year', $ano)->where('scope', 'unidades')->firstOrFail()->entries;
+
+        $this->assertSame($unidadeForte->id, $entries[0]['id']);
+        $this->assertSame(30, $entries[0]['points']);
+        $this->assertSame(1, $entries[0]['position']);
+
+        $this->assertSame($unidadeFraca->id, $entries[1]['id']);
+        $this->assertSame(10, $entries[1]['points']);
+        $this->assertSame(2, $entries[1]['position']);
+    }
+
+    public function test_snapshot_anual_e_idempotente_por_ano_e_escopo()
+    {
+        $ano = now()->subYear()->year;
+        $unidade = Unidade::factory()->create();
+        $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
+        Frequencia::create(['desbravador_id' => $dbv->id, 'data' => now()->subYear(), 'presente' => true, 'pontual' => true, 'biblia' => true, 'uniforme' => true]);
+
+        $this->artisan('ranking:snapshot '.$ano)->assertExitCode(0);
+        $this->artisan('ranking:snapshot '.$ano)->assertExitCode(0);
+
+        // updateOrCreate por (year, scope): dois escopos, sem duplicar em rodadas repetidas.
+        $this->assertDatabaseCount('ranking_snapshots', 2);
+    }
 }

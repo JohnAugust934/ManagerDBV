@@ -423,5 +423,17 @@
             </div>
         </div>
 
+        {{-- Trilha de auditoria --}}
+        @if ($desbravador->criadoPor || $desbravador->atualizadoPor)
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 px-2 pt-2 text-[11px] font-semibold text-slate-400 ui-animate-fade-up" style="animation-delay: 275ms;">
+                @if ($desbravador->criadoPor)
+                    <span>Cadastrado por <span class="text-slate-500 dark:text-slate-300">{{ $desbravador->criadoPor->name }}</span>@if ($desbravador->created_at) em {{ $desbravador->created_at->format('d/m/Y') }}@endif</span>
+                @endif
+                @if ($desbravador->atualizadoPor)
+                    <span>Última atualização por <span class="text-slate-500 dark:text-slate-300">{{ $desbravador->atualizadoPor->name }}</span>@if ($desbravador->updated_at) em {{ $desbravador->updated_at->format('d/m/Y H:i') }}@endif</span>
+                @endif
+            </div>
+        @endif
+
     </div>
 </x-app-layout>

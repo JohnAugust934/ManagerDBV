@@ -182,7 +182,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // 9. Ranking
-    Route::prefix('ranking')->name('ranking.')->group(function () {
+    Route::prefix('ranking')->name('ranking.')->middleware('can:relatorios')->group(function () {
         Route::get('/unidades', [RankingController::class, 'unidades'])->name('unidades');
         Route::get('/desbravadores', [RankingController::class, 'desbravadores'])->name('desbravadores');
         Route::post('/snapshot', [RankingController::class, 'salvarSnapshot'])->name('salvar-snapshot');

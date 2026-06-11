@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Unidade;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UnidadeController extends Controller
 {
@@ -39,16 +41,12 @@ class UnidadeController extends Controller
 
     public function create()
     {
-        return view('unidades.create');
+        return view('unidades.create', ['usuarios' => $this->usuariosDoClube()]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'nome' => 'required|string|max:255',
-            'grito_guerra' => 'nullable|string',
-            'conselheiro' => 'required|string|max:255',
-        ]);
+        $validated = $request->validate($this->regras());
 
         // Força o vínculo com o clube do usuário logado
         $validated['club_id'] = auth()->user()->club_id;
@@ -63,18 +61,17 @@ class UnidadeController extends Controller
     {
         $this->authorizeAccess($unidade);
 
-        return view('unidades.edit', compact('unidade'));
+        return view('unidades.edit', [
+            'unidade' => $unidade,
+            'usuarios' => $this->usuariosDoClube(),
+        ]);
     }
 
     public function update(Request $request, Unidade $unidade)
     {
         $this->authorizeAccess($unidade);
 
-        $validated = $request->validate([
-            'nome' => 'required|string|max:255',
-            'grito_guerra' => 'nullable|string',
-            'conselheiro' => 'required|string|max:255',
-        ]);
+        $validated = $request->validate($this->regras());
 
         $unidade->update($validated);
 
@@ -116,5 +113,32 @@ class UnidadeController extends Controller
         if ($unidade->club_id !== auth()->user()->club_id) {
             abort(403, 'Acesso não autorizado a esta unidade.');
         }
+    }
+
+    /**
+     * Regras de validação compartilhadas entre store e update.
+     */
+    private function regras(): array
+    {
+        return [
+            'nome' => 'required|string|max:255',
+            'grito_guerra' => 'nullable|string',
+            'conselheiro' => 'required|string|max:255',
+            // Vínculo opcional a um usuário do próprio clube (para conceder a gestão da unidade).
+            'conselheiro_user_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where('club_id', auth()->user()->club_id),
+            ],
+        ];
+    }
+
+    /**
+     * Usuários do clube disponíveis para vincular como conselheiro responsável.
+     */
+    private function usuariosDoClube()
+    {
+        return User::where('club_id', auth()->user()->club_id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'role']);
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Club;
 use App\Models\Unidade;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
 
 class UnidadeManagementTest extends TestCase
@@ -136,5 +137,74 @@ class UnidadeManagementTest extends TestCase
 
         $response->assertRedirect();
         $this->assertTrue($unidade->fresh()->no_ranking);
+    }
+
+    public function test_pode_vincular_unidade_a_usuario_conselheiro()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $diretor = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+        $conselheiro = User::factory()->create(['club_id' => $club->id, 'role' => 'conselheiro', 'name' => 'Pedro']);
+
+        $response = $this->actingAs($diretor)->post(route('unidades.store'), [
+            'nome' => 'Águias',
+            'conselheiro' => 'Pedro',
+            'conselheiro_user_id' => $conselheiro->id,
+        ]);
+
+        $response->assertRedirect(route('unidades.index'));
+        $this->assertDatabaseHas('unidades', [
+            'nome' => 'Águias',
+            'conselheiro_user_id' => $conselheiro->id,
+        ]);
+    }
+
+    public function test_nao_pode_vincular_usuario_de_outro_clube()
+    {
+        $club = Club::create(['nome' => 'Meu Clube', 'cidade' => 'SP']);
+        $outroClube = Club::create(['nome' => 'Outro Clube', 'cidade' => 'RJ']);
+        $diretor = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+        $usuarioAlheio = User::factory()->create(['club_id' => $outroClube->id, 'role' => 'conselheiro']);
+
+        $response = $this->actingAs($diretor)->post(route('unidades.store'), [
+            'nome' => 'Lobos',
+            'conselheiro' => 'Fulano',
+            'conselheiro_user_id' => $usuarioAlheio->id,
+        ]);
+
+        $response->assertSessionHasErrors('conselheiro_user_id');
+    }
+
+    public function test_gate_gerir_unidade_prioriza_vinculo_por_usuario()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        // Dois conselheiros com o MESMO nome — só o vínculo por FK distingue.
+        $titular = User::factory()->create(['club_id' => $club->id, 'role' => 'conselheiro', 'name' => 'Pedro']);
+        $homonimo = User::factory()->create(['club_id' => $club->id, 'role' => 'conselheiro', 'name' => 'Pedro']);
+
+        $unidade = Unidade::create([
+            'nome' => 'Águias',
+            'conselheiro' => 'Pedro',
+            'conselheiro_user_id' => $titular->id,
+            'club_id' => $club->id,
+        ]);
+
+        $this->assertTrue(Gate::forUser($titular)->allows('gerir-unidade', $unidade));
+        // O homônimo NÃO deve passar: o gate agora compara por id, não por nome.
+        $this->assertFalse(Gate::forUser($homonimo)->allows('gerir-unidade', $unidade));
+    }
+
+    public function test_gate_gerir_unidade_cai_no_nome_quando_sem_vinculo()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $conselheiro = User::factory()->create(['club_id' => $club->id, 'role' => 'conselheiro', 'name' => 'Lucas']);
+
+        // Unidade antiga, sem conselheiro_user_id: compatibilidade pelo nome.
+        $unidade = Unidade::create([
+            'nome' => 'Falcões',
+            'conselheiro' => 'Lucas',
+            'club_id' => $club->id,
+        ]);
+
+        $this->assertTrue(Gate::forUser($conselheiro)->allows('gerir-unidade', $unidade));
     }
 }

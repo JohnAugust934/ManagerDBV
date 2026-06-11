@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreDesbravadorRequest;
+use App\Http\Requests\UpdateDesbravadorRequest;
 use App\Models\Classe;
 use App\Models\Desbravador;
 use App\Models\Especialidade;
@@ -55,39 +57,9 @@ class DesbravadorController extends Controller
         return view('desbravadores.create', compact('unidades', 'classes'));
     }
 
-    public function store(Request $request)
+    public function store(StoreDesbravadorRequest $request)
     {
-        $clubId = auth()->user()->club_id;
-
-        $dados = $request->validate([
-            'nome' => 'required|string|max:255',
-            'data_nascimento' => 'required|date',
-            'sexo' => 'required|in:M,F',
-            'cpf' => 'required|string|max:14|unique:desbravadores,cpf',
-            'rg' => 'nullable|string|max:20',
-            'unidade_id' => [
-                'required',
-                'exists:unidades,id',
-                // Garante que a unidade pertence ao clube do usuário.
-                function ($attribute, $value, $fail) use ($clubId) {
-                    if (! \App\Models\Unidade::where('id', $value)->where('club_id', $clubId)->exists()) {
-                        $fail('A unidade selecionada não pertence ao seu clube.');
-                    }
-                },
-            ],
-            'classe_atual' => 'nullable|exists:classes,id',
-            'email' => 'required|email',
-            'telefone' => 'nullable|string',
-            'endereco' => 'required|string|max:500',
-            'nome_responsavel' => 'required|string|max:255',
-            'telefone_responsavel' => 'required|string',
-            'numero_sus' => 'required|string|max:50',
-            'tipo_sanguineo' => 'nullable|string|max:3',
-            'alergias' => 'nullable|string',
-            'medicamentos_continuos' => 'nullable|string',
-            'plano_saude' => 'nullable|string',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-        ]);
+        $dados = $request->validated();
 
         $dados['ativo'] = true;
         unset($dados['foto']); // UploadedFile não pode ir para create(); tratado abaixo
@@ -107,6 +79,8 @@ class DesbravadorController extends Controller
         $desbravador->load([
             'unidade',
             'classe',
+            'criadoPor:id,name',
+            'atualizadoPor:id,name',
             'especialidades',
             'frequencias' => function ($q) {
                 $q->orderBy('data', 'desc')->take(5);
@@ -130,39 +104,9 @@ class DesbravadorController extends Controller
         return view('desbravadores.edit', compact('desbravador', 'unidades', 'classes'));
     }
 
-    public function update(Request $request, Desbravador $desbravador)
+    public function update(UpdateDesbravadorRequest $request, Desbravador $desbravador)
     {
-        $clubId = auth()->user()->club_id;
-
-        $dados = $request->validate([
-            'nome' => 'required|string|max:255',
-            'ativo' => 'boolean',
-            'data_nascimento' => 'required|date',
-            'sexo' => 'required|in:M,F',
-            'cpf' => 'required|string|max:14|unique:desbravadores,cpf,'.$desbravador->id,
-            'rg' => 'nullable|string|max:20',
-            'unidade_id' => [
-                'required',
-                'exists:unidades,id',
-                function ($attribute, $value, $fail) use ($clubId) {
-                    if (! \App\Models\Unidade::where('id', $value)->where('club_id', $clubId)->exists()) {
-                        $fail('A unidade selecionada não pertence ao seu clube.');
-                    }
-                },
-            ],
-            'classe_atual' => 'nullable|exists:classes,id',
-            'email' => 'required|email',
-            'telefone' => 'nullable|string',
-            'endereco' => 'required|string',
-            'nome_responsavel' => 'required|string',
-            'telefone_responsavel' => 'required|string',
-            'numero_sus' => 'required|string',
-            'tipo_sanguineo' => 'nullable|string|max:3',
-            'alergias' => 'nullable|string',
-            'medicamentos_continuos' => 'nullable|string',
-            'plano_saude' => 'nullable|string',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-        ]);
+        $dados = $request->validated();
 
         $dados['ativo'] = $request->has('ativo');
         unset($dados['foto']); // foto é tratada separadamente para não sobrescrever com null

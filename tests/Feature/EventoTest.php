@@ -355,4 +355,64 @@ class EventoTest extends TestCase
             'desbravador_id' => $dbv->id,
         ]);
     }
+
+    public function test_remover_inscricao_paga_gera_estorno_no_caixa()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $evento = Evento::factory()->create(['valor' => 120.00, 'club_id' => $clube->id]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento->desbravadores()->attach($dbv->id, ['pago' => true, 'autorizacao_entregue' => false]);
+
+        $response = $this->actingAs($user)->delete(route('eventos.remover-inscricao', [$evento, $dbv]));
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('desbravador_evento', [
+            'evento_id' => $evento->id,
+            'desbravador_id' => $dbv->id,
+        ]);
+        $this->assertDatabaseHas('caixas', [
+            'tipo' => 'saida',
+            'valor' => 120.00,
+            'categoria' => 'Evento',
+            'descricao' => "Estorno Evento: {$evento->nome} - {$dbv->nome}",
+        ]);
+    }
+
+    public function test_remover_inscricao_nao_paga_nao_mexe_no_caixa()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'diretor']);
+        $evento = Evento::factory()->create(['valor' => 100.00, 'club_id' => $clube->id]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento->desbravadores()->attach($dbv->id, ['pago' => false, 'autorizacao_entregue' => false]);
+
+        $this->actingAs($user)->delete(route('eventos.remover-inscricao', [$evento, $dbv]))->assertRedirect();
+
+        $this->assertDatabaseMissing('desbravador_evento', [
+            'evento_id' => $evento->id,
+            'desbravador_id' => $dbv->id,
+        ]);
+        $this->assertDatabaseCount('caixas', 0);
+    }
+
+    public function test_usuario_sem_financeiro_nao_remove_inscricao_paga()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        // Secretário tem permissão de eventos, mas não de financeiro.
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $evento = Evento::factory()->create(['valor' => 100.00, 'club_id' => $clube->id]);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create();
+        $evento->desbravadores()->attach($dbv->id, ['pago' => true, 'autorizacao_entregue' => false]);
+
+        $response = $this->actingAs($user)->delete(route('eventos.remover-inscricao', [$evento, $dbv]));
+
+        $response->assertForbidden();
+        // A transação deve ter sido revertida: inscrição permanece e nenhum estorno foi lançado.
+        $this->assertDatabaseHas('desbravador_evento', [
+            'evento_id' => $evento->id,
+            'desbravador_id' => $dbv->id,
+        ]);
+        $this->assertDatabaseCount('caixas', 0);
+    }
 }
