@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\TelegramNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
@@ -15,7 +16,7 @@ use Symfony\Component\Process\Process;
 
 class BackupController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         Gate::authorize('master');
 
@@ -27,21 +28,20 @@ class BackupController extends Controller
 
         foreach ($disks as $disk) {
             try {
-                $files = Storage::disk($disk)->files($backupName);
-                if (empty($files)) {
-                    $files = Storage::disk($disk)->allFiles($backupName);
-                }
-
-                foreach ($files as $file) {
-                    if (str_ends_with(strtolower($file), '.zip')) {
-                        $backups[] = [
-                            'disk' => $disk,
-                            'path' => $file,
-                            'name' => basename($file),
-                            'size' => round(Storage::disk($disk)->size($file) / 1048576, 2),
-                            'date' => Carbon::createFromTimestamp(Storage::disk($disk)->lastModified($file)),
-                        ];
+                // listContents() traz tamanho e data na propria listagem (uma operacao
+                // por disco), evitando o N+1 de requisicoes HEAD ao R2 por arquivo.
+                foreach (Storage::disk($disk)->listContents($backupName, false) as $item) {
+                    if (! $item->isFile() || ! str_ends_with(strtolower($item->path()), '.zip')) {
+                        continue;
                     }
+
+                    $backups[] = [
+                        'disk' => $disk,
+                        'path' => $item->path(),
+                        'name' => basename($item->path()),
+                        'size' => round(($item->fileSize() ?? 0) / 1048576, 2),
+                        'date' => Carbon::createFromTimestamp($item->lastModified() ?? 0),
+                    ];
                 }
             } catch (\Throwable $e) {
                 Log::error("Erro ao ler backups do disco {$disk}: ".$e->getMessage());
@@ -54,6 +54,17 @@ class BackupController extends Controller
         if (! empty($errosDiscos)) {
             session()->flash('warning', 'Aviso: Falha de leitura em alguns discos ('.implode(', ', $errosDiscos).')');
         }
+
+        // Paginacao manual (dados vem de dois discos mesclados, nao de uma query).
+        $perPage = 10;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $total = count($backups);
+        $itens = array_slice($backups, ($page - 1) * $perPage, $perPage);
+
+        $backups = new LengthAwarePaginator($itens, $total, $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
 
         return view('admin.backups.index', compact('backups'));
     }

@@ -91,11 +91,11 @@
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white">Arquivos Disponíveis</h3>
                     <span
                         class="text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full">
-                        {{ count($backups) }} encontrados
+                        {{ $backups->total() }} encontrados
                     </span>
                 </div>
 
-                @if (empty($backups))
+                @if ($backups->isEmpty())
                     <div class="p-6">
                         <x-empty-state
                             title="Nenhum backup encontrado"
@@ -201,6 +201,12 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @if ($backups->hasPages())
+                        <div class="p-4 border-t border-slate-200 dark:border-slate-700">
+                            {{ $backups->withQueryString()->links() }}
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>
