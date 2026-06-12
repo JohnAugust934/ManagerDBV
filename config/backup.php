@@ -60,7 +60,16 @@ return [
                 'exclude' => [
                     base_path('vendor'),
                     base_path('node_modules'),
+                    base_path('.git'),
+                    base_path('bootstrap/cache'),
                     storage_path('framework'),
+                    // Diretorios volateis/auto-referenciados: incluir qualquer um
+                    // deles faz o zip tentar compactar arquivos que mudam durante
+                    // a propria execucao (o zip temporario, backups antigos e logs
+                    // ativos), gerando "ZipArchive::close(): Invalid argument".
+                    storage_path('logs'),
+                    storage_path('app/backup-temp'),
+                    storage_path('app/private'),
                 ],
                 'follow_links' => false,
                 'ignore_unreadable_directories' => false,

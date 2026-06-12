@@ -147,6 +147,21 @@ class BackupSystemTest extends TestCase
         Storage::disk('local')->assertMissing($caminho);
     }
 
+    public function test_backup_exclui_diretorios_volateis_e_autorreferenciados()
+    {
+        // Garante que o zip nunca tente compactar arquivos que mudam durante a
+        // propria execucao (causa do "ZipArchive::close(): Invalid argument" em
+        // producao): o diretorio temporario do backup, os backups antigos e os
+        // logs ativos. O storage/app/public deve permanecer incluido pois a
+        // restauracao depende dele.
+        $exclude = config('backup.backup.source.files.exclude');
+
+        $this->assertContains(storage_path('logs'), $exclude);
+        $this->assertContains(storage_path('app/backup-temp'), $exclude);
+        $this->assertContains(storage_path('app/private'), $exclude);
+        $this->assertNotContains(storage_path('app/public'), $exclude);
+    }
+
     public function test_rotinas_de_backup_estao_agendadas()
     {
         $schedule = app()->make(\Illuminate\Console\Scheduling\Schedule::class);
@@ -189,6 +204,9 @@ class BackupSystemTest extends TestCase
         $this->assertTrue(config('backup.backup.verify_backup'));
         $this->assertSame(['local', 'r2'], config('backup.backup.destination.disks'));
         $this->assertSame(['local', 'r2'], config('backup.monitor_backups.0.disks'));
+        // Resiliencia: por padrao a falha de um destino (ex.: R2) nao deve
+        // abortar o backup local. Ver test_disco_r2_sem_bucket_e_descartado.
+        $this->assertTrue(config('backup.backup.destination.continue_on_failure'));
         $this->assertSame('default', config('backup.backup.encryption'));
         $this->assertIsArray(config('backup.notifications.mail.to'));
         $this->assertNotEmpty(config('backup.notifications.mail.to'));
