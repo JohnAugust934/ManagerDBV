@@ -1,14 +1,34 @@
 <?php
 
-$backupDestinationDisks = array_values(array_filter(array_map(
+/*
+ * Descarta discos de nuvem (s3/r2) sem bucket configurado. Sem isso, um disco
+ * de nuvem mal configurado deixa o bucket nulo e o Flysystem lanca TypeError ao
+ * inicializar, abortando o backup inteiro (inclusive o local). Discos locais
+ * sao sempre mantidos.
+ */
+$keepUsableDisks = static function (array $disks): array {
+    $cloudBucketEnv = ['s3' => 'AWS_BUCKET', 'r2' => 'R2_BUCKET'];
+
+    return array_values(array_filter($disks, static function (string $disk) use ($cloudBucketEnv): bool {
+        if (! isset($cloudBucketEnv[$disk])) {
+            return true;
+        }
+
+        $bucket = env($cloudBucketEnv[$disk]);
+
+        return is_string($bucket) && trim($bucket) !== '';
+    }));
+};
+
+$backupDestinationDisks = $keepUsableDisks(array_values(array_filter(array_map(
     'trim',
     explode(',', (string) env('BACKUP_DESTINATION_DISKS', 'local,r2'))
-)));
+))));
 
-$backupMonitorDisks = array_values(array_filter(array_map(
+$backupMonitorDisks = $keepUsableDisks(array_values(array_filter(array_map(
     'trim',
     explode(',', (string) env('BACKUP_MONITOR_DISKS', implode(',', $backupDestinationDisks ?: ['local'])))
-)));
+))));
 
 $backupNotificationMailFallback = env('MAIL_FROM_ADDRESS', 'hello@example.com');
 if (! is_string($backupNotificationMailFallback) || trim($backupNotificationMailFallback) === '') {
@@ -63,7 +83,7 @@ return [
             'disks' => [
                 ...($backupDestinationDisks ?: ['local']),
             ],
-            'continue_on_failure' => false,
+            'continue_on_failure' => filter_var(env('BACKUP_CONTINUE_ON_FAILURE', true), FILTER_VALIDATE_BOOL),
         ],
 
         'temporary_directory' => storage_path('app/backup-temp'),

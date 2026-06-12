@@ -227,6 +227,32 @@ class BackupSystemTest extends TestCase
         $this->setBackupEnv('BACKUP_MONITOR_MAX_STORAGE_MB', null);
     }
 
+    public function test_disco_r2_sem_bucket_e_descartado_para_nao_quebrar_o_backup()
+    {
+        // Reproduz o cenario de producao que derrubava o backup: r2 listado nos
+        // destinos mas sem R2_BUCKET configurado. O disco de nuvem deve ser
+        // descartado em vez de gerar bucket nulo (TypeError no AwsS3V3Adapter),
+        // degradando para o disco local.
+        $this->setBackupEnv('BACKUP_DESTINATION_DISKS', 'local,r2');
+        $this->setBackupEnv('BACKUP_MONITOR_DISKS', 'local,r2');
+        $this->setBackupEnv('R2_BUCKET', null);
+
+        $config = require base_path('config/backup.php');
+
+        $this->assertSame(['local'], $config['backup']['destination']['disks']);
+        $this->assertSame(['local'], $config['monitor_backups'][0]['disks']);
+
+        // Com o bucket presente o r2 volta a ser mantido nos destinos.
+        $this->setBackupEnv('R2_BUCKET', 'managerdbv-test-bucket');
+
+        $configComR2 = require base_path('config/backup.php');
+
+        $this->assertSame(['local', 'r2'], $configComR2['backup']['destination']['disks']);
+
+        $this->setBackupEnv('BACKUP_DESTINATION_DISKS', null);
+        $this->setBackupEnv('BACKUP_MONITOR_DISKS', null);
+    }
+
     private function setBackupEnv(string $key, ?string $value): void
     {
         if ($value === null) {
