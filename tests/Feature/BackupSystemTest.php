@@ -163,19 +163,16 @@ class BackupSystemTest extends TestCase
         $response->assertSee('2026-06-12-08-22-23.zip');
     }
 
-    public function test_backup_exclui_diretorios_volateis_e_autorreferenciados()
+    public function test_backup_de_arquivos_inclui_apenas_uploads()
     {
-        // Garante que o zip nunca tente compactar arquivos que mudam durante a
-        // propria execucao (causa do "ZipArchive::close(): Invalid argument" em
-        // producao): o diretorio temporario do backup, os backups antigos e os
-        // logs ativos. O storage/app/public deve permanecer incluido pois a
-        // restauracao depende dele.
-        $exclude = config('backup.backup.source.files.exclude');
-
-        $this->assertContains(storage_path('logs'), $exclude);
-        $this->assertContains(storage_path('app/backup-temp'), $exclude);
-        $this->assertContains(storage_path('app/private'), $exclude);
-        $this->assertNotContains(storage_path('app/public'), $exclude);
+        // O zip deve conter apenas os uploads dos usuarios (storage/app/public),
+        // unica parte de arquivos que a restauracao consome. Zipar base_path()
+        // inteiro arrastava arquivos volateis (sessao, cache, logs, .git, o proprio
+        // zip temporario) que mudavam durante a execucao e quebravam o fechamento
+        // do arquivo com "ZipArchive::close(): Invalid argument". O banco continua
+        // sendo salvo separadamente (source.databases).
+        $this->assertSame([storage_path('app/public')], config('backup.backup.source.files.include'));
+        $this->assertTrue(config('backup.backup.source.files.ignore_unreadable_directories'));
     }
 
     public function test_normalize_backup_selection_bloqueia_traversal_mas_aceita_legados()

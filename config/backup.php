@@ -54,25 +54,21 @@ return [
 
         'source' => [
             'files' => [
+                // Faz backup APENAS dos uploads dos usuarios. O codigo da aplicacao
+                // esta versionado no Git (recuperavel) e a restauracao so consome o
+                // dump do banco + arquivos sob /app/public/ (ver BackupController::
+                // restore). Zipar base_path() inteiro era desnecessario e fragil:
+                // arquivos volateis (sessao, cache, logs, .git, o proprio zip
+                // temporario) mudavam durante a execucao e quebravam o fechamento
+                // do arquivo com "ZipArchive::close(): Invalid argument".
                 'include' => [
-                    base_path(),
+                    storage_path('app/public'),
                 ],
-                'exclude' => [
-                    base_path('vendor'),
-                    base_path('node_modules'),
-                    base_path('.git'),
-                    base_path('bootstrap/cache'),
-                    storage_path('framework'),
-                    // Diretorios volateis/auto-referenciados: incluir qualquer um
-                    // deles faz o zip tentar compactar arquivos que mudam durante
-                    // a propria execucao (o zip temporario, backups antigos e logs
-                    // ativos), gerando "ZipArchive::close(): Invalid argument".
-                    storage_path('logs'),
-                    storage_path('app/backup-temp'),
-                    storage_path('app/private'),
-                ],
+                'exclude' => [],
                 'follow_links' => false,
-                'ignore_unreadable_directories' => false,
+                // Resiliencia: um diretorio sem permissao de leitura nao deve
+                // abortar o backup inteiro.
+                'ignore_unreadable_directories' => true,
                 'relative_path' => null,
             ],
             'databases' => [
