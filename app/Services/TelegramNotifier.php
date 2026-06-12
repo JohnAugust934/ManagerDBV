@@ -53,7 +53,7 @@ class TelegramNotifier
                 continue;
             }
 
-            $lines[] = "<b>{$this->escape((string) $label)}:</b> {$this->escape($this->stringify($value))}";
+            $lines[] = "<b>{$this->escape((string) $label)}:</b> {$this->escape($this->limit($this->stringify($value), 800))}";
         }
 
         $this->send(implode("\n", $lines));
@@ -264,6 +264,11 @@ class TelegramNotifier
         if (! $this->isEnabled()) {
             return;
         }
+
+        // O Telegram rejeita mensagens acima de 4096 caracteres (HTTP 400
+        // "message is too long"). Truncamos como rede de seguranca para que
+        // nenhuma notificacao com payload grande derrube o fluxo principal.
+        $message = $this->limit($message, 4096);
 
         try {
             Http::asForm()

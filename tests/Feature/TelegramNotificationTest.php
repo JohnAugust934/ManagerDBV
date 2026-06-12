@@ -260,6 +260,40 @@ class TelegramNotificationTest extends TestCase
         });
     }
 
+    public function test_notificador_trunca_mensagem_que_excede_limite_do_telegram()
+    {
+        Http::fake();
+
+        config([
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
+            'services.telegram.admin_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'cache.default' => 'array',
+        ]);
+
+        $erroEnorme = str_repeat('Stack trace gigante do backup. ', 1000);
+
+        // 1) Caminho real do incidente: a saida bruta do processo (stack trace
+        //    gigante) caindo em um detalhe da notificacao. O detalhe deve ser
+        //    capado para nao inflar a mensagem.
+        app(TelegramNotifier::class)->notifyAdministrativeAction('Falha no backup manual', [
+            'Erro' => $erroEnorme,
+        ], 'error');
+
+        // 2) Rede de seguranca do send(): mesmo uma mensagem crua acima do limite
+        //    (via publish, que nao passa pelo cap de detalhe) precisa ser
+        //    truncada para os 4096 caracteres que o Telegram aceita.
+        app(TelegramNotifier::class)->publish($erroEnorme);
+
+        // Ambas as chamadas devem respeitar o teto do Telegram (HTTP 400
+        // "message is too long" caso contrario). assertNotSent garante que
+        // NENHUM request excedeu o limite — assertSent passaria com so um casando.
+        Http::assertSentCount(2);
+        Http::assertNotSent(fn ($request) => mb_strlen($request['text']) > 4096);
+    }
+
     public function test_notificador_nao_envia_quando_telegram_esta_desabilitado()
     {
         Http::fake();
