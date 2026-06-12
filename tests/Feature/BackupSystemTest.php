@@ -147,6 +147,22 @@ class BackupSystemTest extends TestCase
         Storage::disk('local')->assertMissing($caminho);
     }
 
+    public function test_listagem_exibe_backups_guardados_sob_pasta_de_nome_antigo()
+    {
+        Storage::fake('local');
+        Storage::fake('r2');
+        $master = User::factory()->create(['role' => 'master']);
+
+        // Backup criado quando o APP_NAME (e, portanto, a pasta de destino) era
+        // diferente do atual. A listagem recursiva deve continuar exibindo-o.
+        Storage::disk('local')->put('NomeAntigoDoClube/2026-06-12-08-22-23.zip', 'conteudo-fake');
+
+        $response = $this->actingAs($master)->get(route('backups.index'));
+
+        $response->assertOk();
+        $response->assertSee('2026-06-12-08-22-23.zip');
+    }
+
     public function test_backup_exclui_diretorios_volateis_e_autorreferenciados()
     {
         // Garante que o zip nunca tente compactar arquivos que mudam durante a
@@ -160,6 +176,41 @@ class BackupSystemTest extends TestCase
         $this->assertContains(storage_path('app/backup-temp'), $exclude);
         $this->assertContains(storage_path('app/private'), $exclude);
         $this->assertNotContains(storage_path('app/public'), $exclude);
+    }
+
+    public function test_normalize_backup_selection_bloqueia_traversal_mas_aceita_legados()
+    {
+        $controller = new \App\Http\Controllers\BackupController;
+        $method = new \ReflectionMethod($controller, 'normalizeBackupSelection');
+        $method->setAccessible(true);
+
+        // Aceita backup sob qualquer pasta (inclusive nomes antigos), sem exigir
+        // mais um prefixo fixo de pasta.
+        $this->assertSame(
+            ['local', 'NomeAntigoDoClube/2026-06-12-08-22-23.zip'],
+            $method->invoke($controller, 'local', 'NomeAntigoDoClube/2026-06-12-08-22-23.zip')
+        );
+
+        // Ainda bloqueia path traversal e caminhos absolutos.
+        $maliciosos = [
+            '../../etc/passwd.zip',
+            'Laravel/../../secret.zip',
+            'pasta/./oculto.zip',
+            'C:/Windows/system32/config.zip',
+        ];
+
+        foreach ($maliciosos as $caminho) {
+            try {
+                $method->invoke($controller, 'local', $caminho);
+                $this->fail("Path traversal não foi bloqueado para: {$caminho}");
+            } catch (\RuntimeException $e) {
+                $this->assertStringContainsString('fora do diretório', $e->getMessage());
+            }
+        }
+
+        // Disco fora da allowlist tambem e rejeitado.
+        $this->expectException(\RuntimeException::class);
+        $method->invoke($controller, 'disco_invalido', 'Laravel/x.zip');
     }
 
     public function test_rotinas_de_backup_estao_agendadas()

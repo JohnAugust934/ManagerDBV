@@ -24,13 +24,14 @@ class BackupController extends Controller
         $backups = [];
         $errosDiscos = [];
 
-        $backupName = config('backup.backup.name', 'Laravel');
-
         foreach ($disks as $disk) {
             try {
-                // listContents() traz tamanho e data na propria listagem (uma operacao
-                // por disco), evitando o N+1 de requisicoes HEAD ao R2 por arquivo.
-                foreach (Storage::disk($disk)->listContents($backupName, false) as $item) {
+                // Lista recursivamente a partir da raiz do disco (uma operacao por
+                // disco, sem N+1 de HEAD no R2). A varredura recursiva garante que
+                // backups guardados sob qualquer nome de pasta — inclusive os
+                // antigos, criados quando o APP_NAME era diferente — continuem
+                // aparecendo na lista.
+                foreach (Storage::disk($disk)->listContents('', true) as $item) {
                     if (! $item->isFile() || ! str_ends_with(strtolower($item->path()), '.zip')) {
                         continue;
                     }
@@ -704,11 +705,11 @@ class BackupController extends Controller
             throw new \RuntimeException('Arquivo de backup inválido.');
         }
 
-        $backupRoot = trim((string) config('backup.backup.name', 'Laravel'), '/\\');
-        $backupRoot = $backupRoot === '' ? 'Laravel' : str_replace('\\', '/', $backupRoot);
-        $expectedPrefix = $backupRoot.'/';
-
-        if (! str_starts_with($normalizedPath, $expectedPrefix)) {
+        // Bloqueia path traversal e caminhos absolutos. Nao exigimos mais um
+        // prefixo fixo de pasta para que backups sob nomes antigos tambem possam
+        // ser baixados/restaurados/excluidos; a raiz do disco ja confina o acesso
+        // a area de backups.
+        if (str_contains($normalizedPath, '../') || str_contains($normalizedPath, './') || preg_match('#^[A-Za-z]:/#', $normalizedPath)) {
             throw new \RuntimeException('Arquivo fora do diretório de backups permitido.');
         }
 
