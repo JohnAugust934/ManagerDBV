@@ -4,7 +4,6 @@ use App\Providers\AppServiceProvider;
 use App\Support\OperationalWindow;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Schedule;
 
 // ==== BACKUP AUTOMATED SCHEDULES ====
@@ -24,6 +23,22 @@ Schedule::command('backup:monitor')
     ->timezone('America/Sao_Paulo')
     ->dailyAt('04:30')
     ->withoutOverlapping(60)
+    ->onOneServer();
+
+// Remove manifests orfaos (.manifest.json sem zip) deixados apos o backup:clean
+// e poda o historico antigo de backup_logs. Roda logo apos a limpeza do spatie.
+Schedule::command('backup:prune-manifests')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('04:10')
+    ->withoutOverlapping(60)
+    ->onOneServer();
+
+// Verificacao PROFUNDA mensal: abre e le o dump do banco dentro do backup mais
+// recente para detectar corrupcao silenciosa (alem das checagens diarias).
+Schedule::command('backup:deep-verify')
+    ->timezone('America/Sao_Paulo')
+    ->monthlyOn(1, '04:45')
+    ->withoutOverlapping(120)
     ->onOneServer();
 
 // ==== DAILY REPORT (TELEGRAM) ====

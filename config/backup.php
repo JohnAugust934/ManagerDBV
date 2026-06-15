@@ -175,21 +175,47 @@ return [
 
         'default_strategy' => [
             /*
-             * TEMPO DE RETENÇÃO DE BACKUP:
-             * Mantém rigidamente os backups dos últimos 7 dias.
-             * Tudo mais antigo que 7 dias será automaticamente deletado.
+             * TEMPO DE RETENÇÃO DE BACKUP (configurável por .env, sem deploy de codigo):
+             *
+             * - BACKUP_RETENTION_DAYS: knob principal — mantem TODOS os backups
+             *   dos ultimos N dias (default 15). A ROTACAO em si e feita pelo
+             *   comando `backup:clean` do spatie (agendado as 04:00), nao por
+             *   logica propria — evita duplicar/competir com o pacote.
+             * - BACKUP_KEEP_ALL_DAYS: override avancado; se definido, prevalece
+             *   sobre BACKUP_RETENTION_DAYS para esta regra especifica.
+             * - As regras granulares (daily/weekly/monthly/yearly) ficam em 0 por
+             *   padrao. Para reter historico de longo prazo sem acumular tudo,
+             *   ative-as no .env (ex.: KEEP_MONTHLY_MONTHS=6 guarda 1 backup por
+             *   mes nos ultimos 6 meses). Como os uploads sao pequenos (backup
+             *   real de producao ~1.5 MB), reter mais nao estoura o limite de MB.
+             * - BACKUP_MAX_STORAGE_MB: quando o total ultrapassa este teto, o
+             *   spatie apaga os mais antigos primeiro (default 5000 MB).
              */
-            'keep_all_backups_for_days' => 15,
-            'keep_daily_backups_for_days' => 0,
-            'keep_weekly_backups_for_weeks' => 0,
-            'keep_monthly_backups_for_months' => 0,
-            'keep_yearly_backups_for_years' => 0,
+            // BACKUP_ANTIGO: 'keep_all_backups_for_days' => (int) env('BACKUP_KEEP_ALL_DAYS', 15),
+            'keep_all_backups_for_days' => (int) env('BACKUP_KEEP_ALL_DAYS', (int) env('BACKUP_RETENTION_DAYS', 15)),
+            'keep_daily_backups_for_days' => (int) env('BACKUP_KEEP_DAILY_DAYS', 0),
+            'keep_weekly_backups_for_weeks' => (int) env('BACKUP_KEEP_WEEKLY_WEEKS', 0),
+            'keep_monthly_backups_for_months' => (int) env('BACKUP_KEEP_MONTHLY_MONTHS', 0),
+            'keep_yearly_backups_for_years' => (int) env('BACKUP_KEEP_YEARLY_YEARS', 0),
 
-            'delete_oldest_backups_when_using_more_megabytes_than' => 5000,
+            'delete_oldest_backups_when_using_more_megabytes_than' => (int) env('BACKUP_MAX_STORAGE_MB', 5000),
         ],
 
         'tries' => 1,
         'retry_delay' => 0,
+    ],
+
+    /*
+     * Verificacao de integridade PROPRIA (alem do verify nativo do spatie).
+     * Roda apos cada backup bem-sucedido (por disco) em BackupIntegrityVerifier,
+     * acionado pelo TelegramNotifier::notifyBackupEvent. Um zip "verde" porem
+     * vazio/truncado/sem dump deixa de passar silenciosamente: vira alerta
+     * imediato no Telegram. Nao e lido pelo spatie (chave ignorada por ele).
+     */
+    'integrity' => [
+        'enabled' => filter_var(env('BACKUP_INTEGRITY_CHECK_ENABLED', true), FILTER_VALIDATE_BOOL),
+        // Tamanho minimo aceitavel do zip; abaixo disso e considerado vazio/truncado.
+        'min_size_kb' => (int) env('BACKUP_MIN_SIZE_KB', 50),
     ],
 
 ];

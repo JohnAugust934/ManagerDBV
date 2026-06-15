@@ -6,8 +6,8 @@ use App\Support\OperationalWindow;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -72,10 +72,7 @@ class TelegramNotifier
         // O resumo consolidado será enviado pelo DailyBackupReport às 05:00.
 
         if ($event instanceof BackupWasSuccessful) {
-            $tracker->recordSuccess('backup_run', 'Geração de Backup', [
-                'Backup' => $event->backupName,
-                'Disco'  => $event->diskName,
-            ]);
+            $this->handleBackupWasSuccessful($event, $tracker);
 
             return;
         }
@@ -83,7 +80,7 @@ class TelegramNotifier
         if ($event instanceof CleanupWasSuccessful) {
             $tracker->recordSuccess('backup_clean', 'Limpeza de Backups', [
                 'Backup' => $event->backupName,
-                'Disco'  => $event->diskName,
+                'Disco' => $event->diskName,
             ]);
 
             return;
@@ -92,7 +89,7 @@ class TelegramNotifier
         if ($event instanceof HealthyBackupWasFound) {
             $tracker->recordSuccess('backup_monitor', 'Monitoramento de Backup', [
                 'Backup' => $event->backupName,
-                'Disco'  => $event->diskName,
+                'Disco' => $event->diskName,
             ]);
 
             return;
@@ -109,8 +106,8 @@ class TelegramNotifier
 
             $this->notifyScheduledFailure('Falha ao gerar backup', [
                 'Backup' => $event->backupName ?: 'Nao informado',
-                'Disco'  => $event->diskName ?: 'Nao informado',
-                'Erro'   => $event->exception->getMessage(),
+                'Disco' => $event->diskName ?: 'Nao informado',
+                'Erro' => $event->exception->getMessage(),
             ]);
 
             return;
@@ -125,8 +122,8 @@ class TelegramNotifier
 
             $this->notifyScheduledFailure('Falha na limpeza de backups', [
                 'Backup' => $event->backupName ?: 'Nao informado',
-                'Disco'  => $event->diskName ?: 'Nao informado',
-                'Erro'   => $event->exception->getMessage(),
+                'Disco' => $event->diskName ?: 'Nao informado',
+                'Erro' => $event->exception->getMessage(),
             ]);
 
             return;
@@ -141,17 +138,73 @@ class TelegramNotifier
 
             $this->notifyScheduledFailure('Monitoramento detectou problema no backup', [
                 'Backup' => $event->backupName,
-                'Disco'  => $event->diskName,
+                'Disco' => $event->diskName,
                 'Falhas' => $this->formatFailures($event->failureMessages),
             ]);
         }
     }
 
     /**
+     * Trata um backup bem-sucedido: roda a verificacao de integridade propria
+     * (quando habilitada) e decide o desfecho.
+     *  - Integridade OK  → registra sucesso enriquecido (tamanho, nº de arquivos,
+     *    checksum) para o resumo diario das 05:00.
+     *  - Integridade FALHA → registra falha E dispara alerta IMEDIATO, para que
+     *    um zip "verde" porem invalido nao passe despercebido.
+     * Os resultados sao escopados por disco (local/r2) para que ambos aparecam.
+     */
+    private function handleBackupWasSuccessful(BackupWasSuccessful $event, ScheduledTaskTracker $tracker): void
+    {
+        $taskKey = 'backup_run:'.$event->diskName;
+        $label = 'Geração de Backup ('.$event->diskName.')';
+
+        if (! (bool) config('backup.integrity.enabled', true)) {
+            $tracker->recordSuccess($taskKey, $label, [
+                'Backup' => $event->backupName,
+                'Disco' => $event->diskName,
+            ]);
+
+            return;
+        }
+
+        $verifier = app(BackupIntegrityVerifier::class);
+        $report = $verifier->verify($event->diskName, $event->backupName);
+
+        // Grava o manifest.json (checksums por arquivo) ao lado do zip e registra
+        // o resultado em backup_logs (historico), tanto em sucesso quanto em falha.
+        $verifier->persistResult($report);
+
+        if ($report['ok']) {
+            $tracker->recordSuccess($taskKey, $label, [
+                'Disco' => $event->diskName,
+                'Arquivo' => $report['filename'] ?? 'desconhecido',
+                'Tamanho' => $report['size_human'],
+                'Arquivos no zip' => (string) $report['files'],
+                'Banco no backup' => $report['has_database'] ? 'Sim' : 'Nao',
+                'Uploads' => $report['has_uploads'] ? 'Sim' : 'Nao',
+                'Checksum' => $report['checksum'] ?? 'n/d',
+            ]);
+
+            return;
+        }
+
+        $problems = implode(' | ', $report['problems']);
+
+        $tracker->recordFailure($taskKey, $label, 'Integridade: '.$problems);
+
+        $this->notifyScheduledFailure('Backup gerado mas FALHOU na verificação de integridade', [
+            'Disco' => $event->diskName,
+            'Arquivo' => $report['filename'] ?? 'desconhecido',
+            'Tamanho' => $report['size_human'],
+            'Problemas' => $problems,
+        ]);
+    }
+
+    /**
      * Dispara imediatamente um alerta de falha em tarefa agendada.
      * Deve ser chamado quando qualquer rotina da madrugada falhar.
      *
-     * @param  string  $title    Título do alerta
+     * @param  string  $title  Título do alerta
      * @param  array<string, string>  $details  Contexto adicional
      */
     public function notifyScheduledFailure(string $title, array $details = []): void
@@ -172,9 +225,9 @@ class TelegramNotifier
         }
 
         $appName = $this->escape(config('app.name', 'Sistema'));
-        $env     = $this->escape(app()->environment());
-        $date    = Carbon::now(config('app.timezone'))->format('d/m/Y');
-        $time    = Carbon::now(config('app.timezone'))->format('H:i:s');
+        $env = $this->escape(app()->environment());
+        $date = Carbon::now(config('app.timezone'))->format('d/m/Y');
+        $time = Carbon::now(config('app.timezone'))->format('H:i:s');
 
         $lines = [
             "<b>📋 Relatório Diário — {$appName}</b>",
@@ -187,7 +240,7 @@ class TelegramNotifier
             $lines[] = '⚠️ Nenhuma tarefa registrou resultado esta madrugada.';
         } else {
             foreach ($results as $entry) {
-                $icon  = $entry['status'] === 'success' ? '✅' : '🔴';
+                $icon = $entry['status'] === 'success' ? '✅' : '🔴';
                 $label = $this->escape($entry['label']);
 
                 if ($entry['status'] === 'success') {

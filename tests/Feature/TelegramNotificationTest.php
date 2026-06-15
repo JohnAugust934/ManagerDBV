@@ -50,12 +50,16 @@ class TelegramNotificationTest extends TestCase
         Http::fake();
 
         config([
-            'services.telegram.enabled'             => true,
-            'services.telegram.bot_token'           => 'bot-token',
-            'services.telegram.chat_id'             => '123456',
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
+            // Desliga a verificacao de integridade propria para testar apenas o
+            // fio do registro de sucesso (a integridade tem cobertura dedicada
+            // em BackupIntegrityVerifierTest).
+            'backup.integrity.enabled' => false,
         ]);
 
         Cache::flush();
@@ -65,11 +69,11 @@ class TelegramNotificationTest extends TestCase
         // Sucesso NÃO deve disparar Telegram
         Http::assertNothingSent();
 
-        // Sucesso DEVE registrar no Cache via ScheduledTaskTracker
+        // Sucesso DEVE registrar no Cache via ScheduledTaskTracker (escopado por disco)
         $results = app(ScheduledTaskTracker::class)->getAll();
-        $this->assertArrayHasKey('backup_run', $results);
-        $this->assertSame('success', $results['backup_run']['status']);
-        $this->assertSame('Geração de Backup', $results['backup_run']['label']);
+        $this->assertArrayHasKey('backup_run:local', $results);
+        $this->assertSame('success', $results['backup_run:local']['status']);
+        $this->assertSame('Geração de Backup (local)', $results['backup_run:local']['label']);
     }
 
     public function test_evento_de_backup_falha_envia_telegram_imediatamente(): void
@@ -77,12 +81,12 @@ class TelegramNotificationTest extends TestCase
         Http::fake();
 
         config([
-            'services.telegram.enabled'             => true,
-            'services.telegram.bot_token'           => 'bot-token',
-            'services.telegram.chat_id'             => '123456',
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
         ]);
 
         Cache::flush();
@@ -107,12 +111,12 @@ class TelegramNotificationTest extends TestCase
         Http::fake();
 
         config([
-            'services.telegram.enabled'             => true,
-            'services.telegram.bot_token'           => 'bot-token',
-            'services.telegram.chat_id'             => '123456',
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
         ]);
 
         Cache::flush();
@@ -131,12 +135,12 @@ class TelegramNotificationTest extends TestCase
         Http::fake();
 
         config([
-            'services.telegram.enabled'             => true,
-            'services.telegram.bot_token'           => 'bot-token',
-            'services.telegram.chat_id'             => '123456',
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
         ]);
 
         Cache::flush();
@@ -155,12 +159,12 @@ class TelegramNotificationTest extends TestCase
         Http::fake();
 
         config([
-            'services.telegram.enabled'             => true,
-            'services.telegram.bot_token'           => 'bot-token',
-            'services.telegram.chat_id'             => '123456',
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
         ]);
 
         Cache::flush();
@@ -179,12 +183,12 @@ class TelegramNotificationTest extends TestCase
         Http::fake();
 
         config([
-            'services.telegram.enabled'             => true,
-            'services.telegram.bot_token'           => 'bot-token',
-            'services.telegram.chat_id'             => '123456',
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
         ]);
 
         app(TelegramNotifier::class)->notifyScheduledFailure('Falha crítica na sincronização', [
@@ -202,25 +206,25 @@ class TelegramNotificationTest extends TestCase
         Http::fake();
 
         config([
-            'services.telegram.enabled'             => true,
-            'services.telegram.bot_token'           => 'bot-token',
-            'services.telegram.chat_id'             => '123456',
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
         ]);
 
         $results = [
             'backup_run' => [
-                'status'      => 'success',
-                'label'       => 'Geração de Backup',
-                'details'     => ['Backup' => 'dbv', 'Disco' => 's3'],
+                'status' => 'success',
+                'label' => 'Geração de Backup',
+                'details' => ['Backup' => 'dbv', 'Disco' => 's3'],
                 'recorded_at' => now()->toIso8601String(),
             ],
             'backup_clean' => [
-                'status'      => 'failure',
-                'label'       => 'Limpeza de Backups',
-                'reason'      => 'Espaço insuficiente',
+                'status' => 'failure',
+                'label' => 'Limpeza de Backups',
+                'reason' => 'Espaço insuficiente',
                 'recorded_at' => now()->toIso8601String(),
             ],
         ];
