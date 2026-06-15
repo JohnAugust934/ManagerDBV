@@ -47,6 +47,32 @@ $backupNotificationMailTo = array_values(array_filter(array_map(
 
 $backupMailNotificationsEnabled = filter_var(env('BACKUP_MAIL_NOTIFICATIONS', false), FILTER_VALIDATE_BOOL);
 
+/*
+ * Criptografia do zip (AES via ZipArchive) depende de uma libzip compilada com
+ * suporte a cifragem. A hospedagem atual (Hostinger, PHP 8.4/alt-php) EXPOE a
+ * constante ZipArchive::EM_AES_256, entao o spatie acredita que pode cifrar,
+ * mas a libzip em runtime NAO cifra: o listener EncryptBackupArchive chama
+ * setEncryptionIndex() e o ZipArchive::close() quebra com
+ * "ZipArchive::close(): Invalid argument", abortando o backup inteiro DEPOIS
+ * de o zip ja ter sido criado. Como o spatie so tenta cifrar quando ha senha,
+ * o ambiente local (sem BACKUP_ARCHIVE_PASSWORD) sempre funcionou e a producao
+ * (com senha) nunca funcionou.
+ *
+ * Por isso a criptografia fica DESLIGADA por padrao, mesmo que exista um
+ * BACKUP_ARCHIVE_PASSWORD remanescente no .env. So habilite
+ * (BACKUP_ARCHIVE_ENCRYPTION_ENABLED=true) num ambiente cujo libzip realmente
+ * cifre. Os backups seguem protegidos por ficarem em disco privado (fora do
+ * webroot) e em bucket R2 privado.
+ */
+$archiveEncryptionEnabled = filter_var(env('BACKUP_ARCHIVE_ENCRYPTION_ENABLED', false), FILTER_VALIDATE_BOOL);
+$archivePassword = null;
+$archiveEncryption = false;
+if ($archiveEncryptionEnabled) {
+    $rawArchivePassword = env('BACKUP_ARCHIVE_PASSWORD');
+    $archivePassword = (is_string($rawArchivePassword) && $rawArchivePassword !== '') ? $rawArchivePassword : null;
+    $archiveEncryption = env('BACKUP_ARCHIVE_ENCRYPTION', 'default');
+}
+
 return [
 
     'backup' => [
@@ -92,8 +118,8 @@ return [
         ],
 
         'temporary_directory' => storage_path('app/backup-temp'),
-        'password' => env('BACKUP_ARCHIVE_PASSWORD'),
-        'encryption' => env('BACKUP_ARCHIVE_ENCRYPTION', 'default'),
+        'password' => $archivePassword,
+        'encryption' => $archiveEncryption,
         'verify_backup' => env('BACKUP_VERIFY', true),
         'tries' => 1,
         'retry_delay' => 0,

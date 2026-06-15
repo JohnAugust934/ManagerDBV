@@ -255,7 +255,12 @@ class BackupSystemTest extends TestCase
         // Resiliencia: por padrao a falha de um destino (ex.: R2) nao deve
         // abortar o backup local. Ver test_disco_r2_sem_bucket_e_descartado.
         $this->assertTrue(config('backup.backup.destination.continue_on_failure'));
-        $this->assertSame('default', config('backup.backup.encryption'));
+        // Criptografia do zip DESLIGADA por padrao: a libzip da hospedagem
+        // (PHP 8.4/alt-php) expoe EM_AES_256 mas nao cifra de verdade, e o
+        // ZipArchive::close() quebra com "Invalid argument" no
+        // EncryptBackupArchive. Sem senha (password null) o spatie nem tenta.
+        $this->assertFalse(config('backup.backup.encryption'));
+        $this->assertNull(config('backup.backup.password'));
         $this->assertIsArray(config('backup.notifications.mail.to'));
         $this->assertNotEmpty(config('backup.notifications.mail.to'));
         $this->assertSame([], config('backup.notifications.notifications.'.\Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification::class));
@@ -268,7 +273,10 @@ class BackupSystemTest extends TestCase
         $this->setBackupEnv('BACKUP_NOTIFICATIONS_MAIL_TO', 'ops@clube.com,admin@clube.com');
         $this->setBackupEnv('BACKUP_MAIL_NOTIFICATIONS', 'true');
         $this->setBackupEnv('BACKUP_VERIFY', 'false');
+        // Criptografia so vale quando habilitada explicitamente (opt-in) e com senha.
+        $this->setBackupEnv('BACKUP_ARCHIVE_ENCRYPTION_ENABLED', 'true');
         $this->setBackupEnv('BACKUP_ARCHIVE_ENCRYPTION', 'aes256');
+        $this->setBackupEnv('BACKUP_ARCHIVE_PASSWORD', 'segredo-super');
         $this->setBackupEnv('BACKUP_MONITOR_MAX_AGE_DAYS', '3');
         $this->setBackupEnv('BACKUP_MONITOR_MAX_STORAGE_MB', '2048');
 
@@ -280,6 +288,7 @@ class BackupSystemTest extends TestCase
         $this->assertSame(['mail'], $config['notifications']['notifications'][\Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification::class]);
         $this->assertFalse($config['backup']['verify_backup']);
         $this->assertSame('aes256', $config['backup']['encryption']);
+        $this->assertSame('segredo-super', $config['backup']['password']);
         $this->assertSame(3, $config['monitor_backups'][0]['health_checks'][\Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays::class]);
         $this->assertSame(2048, $config['monitor_backups'][0]['health_checks'][\Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes::class]);
 
@@ -288,9 +297,29 @@ class BackupSystemTest extends TestCase
         $this->setBackupEnv('BACKUP_NOTIFICATIONS_MAIL_TO', null);
         $this->setBackupEnv('BACKUP_MAIL_NOTIFICATIONS', null);
         $this->setBackupEnv('BACKUP_VERIFY', null);
+        $this->setBackupEnv('BACKUP_ARCHIVE_ENCRYPTION_ENABLED', null);
         $this->setBackupEnv('BACKUP_ARCHIVE_ENCRYPTION', null);
+        $this->setBackupEnv('BACKUP_ARCHIVE_PASSWORD', null);
         $this->setBackupEnv('BACKUP_MONITOR_MAX_AGE_DAYS', null);
         $this->setBackupEnv('BACKUP_MONITOR_MAX_STORAGE_MB', null);
+    }
+
+    public function test_senha_de_criptografia_sem_flag_habilitada_nao_ativa_cifragem()
+    {
+        // Reproduz o cenario de producao que derrubava o backup: havia
+        // BACKUP_ARCHIVE_PASSWORD no .env, entao o spatie tentava cifrar e o
+        // ZipArchive::close() quebrava com "Invalid argument" (libzip sem AES).
+        // Sem a flag explicita, a senha deve ser ignorada e a cifragem desligada.
+        $this->setBackupEnv('BACKUP_ARCHIVE_PASSWORD', 'senha-remanescente');
+        $this->setBackupEnv('BACKUP_ARCHIVE_ENCRYPTION', 'default');
+
+        $config = require base_path('config/backup.php');
+
+        $this->assertNull($config['backup']['password']);
+        $this->assertFalse($config['backup']['encryption']);
+
+        $this->setBackupEnv('BACKUP_ARCHIVE_PASSWORD', null);
+        $this->setBackupEnv('BACKUP_ARCHIVE_ENCRYPTION', null);
     }
 
     public function test_disco_r2_sem_bucket_e_descartado_para_nao_quebrar_o_backup()
@@ -333,4 +362,3 @@ class BackupSystemTest extends TestCase
         $_SERVER[$key] = $value;
     }
 }
-
