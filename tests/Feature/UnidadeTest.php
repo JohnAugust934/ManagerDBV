@@ -97,6 +97,42 @@ class UnidadeTest extends TestCase
         $this->actingAs($instrutor)->get(route('unidades.show', $unidade))->assertForbidden();
     }
 
+    public function test_painel_da_unidade_exibe_apenas_desbravadores_ativos()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+
+        $unidade = Unidade::create([
+            'nome' => 'Unidade Mista',
+            'conselheiro' => 'José',
+            'club_id' => $club->id,
+        ]);
+
+        $ativo = Desbravador::create([
+            'nome' => 'Membro Ativo',
+            'unidade_id' => $unidade->id,
+            'ativo' => true,
+            'data_nascimento' => '2010-01-01',
+            'sexo' => 'M',
+        ]);
+
+        $inativo = Desbravador::create([
+            'nome' => 'Membro Inativo',
+            'unidade_id' => $unidade->id,
+            'ativo' => false,
+            'data_nascimento' => '2010-01-01',
+            'sexo' => 'F',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('unidades.show', $unidade));
+
+        $response->assertOk();
+        $response->assertSee($ativo->nome);
+        $response->assertDontSee($inativo->nome);
+        // Contagem reflete apenas o membro ativo.
+        $response->assertSee('1 Desbravadores');
+    }
+
     public function test_nao_pode_editar_unidade_de_outro_clube()
     {
         $club = Club::create(['nome' => 'Meu Clube', 'cidade' => 'SP']);

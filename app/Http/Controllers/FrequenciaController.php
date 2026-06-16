@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class FrequenciaController extends Controller
 {
-    public function __construct(private readonly AttendanceColumnService $attendanceColumnService)
-    {
-    }
+    public function __construct(private readonly AttendanceColumnService $attendanceColumnService) {}
 
     public function index(Request $request)
     {
@@ -92,8 +90,9 @@ class FrequenciaController extends Controller
 
         $desbravadoresValidos = Desbravador::whereHas('unidade', function ($query) use ($clubId, $unidadesSubmetidas) {
             $query->where('club_id', $clubId)
-                  ->whereIn('id', $unidadesSubmetidas);
+                ->whereIn('id', $unidadesSubmetidas);
         })
+            ->where('ativo', true) // Desbravadores inativos não entram na chamada (nem como ausentes)
             ->withoutGlobalScopes() // Evita double-apply do GlobalScope na consulta interna
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
@@ -143,7 +142,7 @@ class FrequenciaController extends Controller
         $columns = $this->attendanceColumnService->getActiveColumnsForClub($clubId)->keyBy('id');
         $fixedColumns = $columns->where('is_fixed', true)->keyBy('key');
 
-        DB::transaction(function () use ($request, $clubId, $columns, $fixedColumns, $desbravadoresValidos, $presencas) {
+        DB::transaction(function () use ($request, $columns, $fixedColumns, $desbravadoresValidos, $presencas) {
             foreach ($presencas as $id => $dados) {
                 $id = (int) $id;
 

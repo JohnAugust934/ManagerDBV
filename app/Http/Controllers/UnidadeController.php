@@ -17,7 +17,10 @@ class UnidadeController extends Controller
         }
 
         // Busca as unidades pertencentes ao clube do usuário logado
-        $unidades = Unidade::where('club_id', auth()->user()->club_id)->get();
+        // (carrega os membros ativos de uma vez para a contagem dos cards, evitando N+1)
+        $unidades = Unidade::where('club_id', auth()->user()->club_id)
+            ->with('desbravadoresAtivos')
+            ->get();
 
         // Carrega a tela com os dados
         return view('unidades.index', compact('unidades'));

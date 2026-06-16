@@ -60,7 +60,7 @@
                             </div>
                             
                             <div class="mb-5 bg-[#002F6C]/5 dark:bg-blue-500/10 p-3 rounded-xl border border-[#002F6C]/10 dark:border-blue-500/20 inline-flex items-center justify-center w-max relative z-10">
-                                <span class="text-xl font-black text-[#002F6C] dark:text-blue-400 leading-none mr-2">{{ $unidade->desbravadores->count() ?? 0 }}</span>
+                                <span class="text-xl font-black text-[#002F6C] dark:text-blue-400 leading-none mr-2">{{ $unidade->desbravadoresAtivos->count() ?? 0 }}</span>
                                 <span class="text-[10px] uppercase font-black text-[#002F6C]/70 dark:text-blue-400/70 tracking-widest leading-none">Membros</span>
                             </div>
 

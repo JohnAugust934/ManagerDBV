@@ -45,7 +45,7 @@
                             </span>
                             <span class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-[#002F6C] dark:text-blue-300 px-4 py-2 rounded-xl font-bold border border-blue-100 dark:border-blue-900/50 w-full sm:w-auto justify-center">
                                 <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                {{ $unidade->desbravadores->count() }} Desbravadores
+                                {{ $unidade->desbravadoresAtivos->count() }} Desbravadores
                             </span>
                         </div>
 
@@ -72,7 +72,7 @@
                 </h3>
             </div>
 
-            @if ($unidade->desbravadores->count() > 0)
+            @if ($unidade->desbravadoresAtivos->count() > 0)
                 
                 <div class="hidden md:block ui-table-wrapper rounded-none border-0 shadow-none">
                     <table class="ui-table">
@@ -85,7 +85,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($unidade->desbravadores as $dbv)
+                            @foreach ($unidade->desbravadoresAtivos as $dbv)
                                 <tr>
                                     <td>
                                         <div class="flex items-center gap-4">
@@ -123,7 +123,7 @@
                 </div>
 
                 <div class="md:hidden flex flex-col pt-2">
-                    @foreach ($unidade->desbravadores as $dbv)
+                    @foreach ($unidade->desbravadoresAtivos as $dbv)
                         <div class="p-4 flex items-center justify-between border-b border-dashed border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                             <div class="flex items-center gap-3">
                                 <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">

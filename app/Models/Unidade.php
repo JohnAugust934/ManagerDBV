@@ -30,6 +30,13 @@ class Unidade extends Model
         return $this->hasMany(Desbravador::class);
     }
 
+    // Apenas os desbravadores ativos da unidade — usado nas listagens/contagens
+    // do painel da unidade para não exibir membros inativados.
+    public function desbravadoresAtivos(): HasMany
+    {
+        return $this->desbravadores()->where('ativo', true);
+    }
+
     // Conselheiro responsável vinculado a um usuário do sistema (opcional).
     public function conselheiroUser(): BelongsTo
     {

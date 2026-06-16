@@ -99,6 +99,47 @@ class FrequenciaTest extends TestCase
         ]);
     }
 
+    public function test_desbravador_inativo_nao_aparece_na_tela_de_chamada()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
+
+        $ativo = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true, 'nome' => 'Membro Ativo Chamada']);
+        $inativo = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => false, 'nome' => 'Membro Inativo Chamada']);
+
+        $response = $this->actingAs($user)->get(route('frequencia.create'));
+
+        $response->assertOk();
+        $response->assertSee($ativo->nome);
+        $response->assertDontSee($inativo->nome);
+    }
+
+    public function test_chamada_nao_gera_registro_para_desbravador_inativo()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'master']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
+
+        $ativo = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
+        $inativo = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => false]);
+
+        $dados = [
+            'data' => now()->format('Y-m-d'),
+            'unidades_submetidas' => [$unidade->id],
+            'presencas' => [
+                $ativo->id => ['registrado' => '1'],
+            ],
+        ];
+
+        $this->actingAs($user)->post(route('frequencia.store'), $dados)
+            ->assertRedirect(route('frequencia.index'));
+
+        // O ativo recebe registro (ausente), o inativo não recebe nenhum.
+        $this->assertDatabaseHas('frequencias', ['desbravador_id' => $ativo->id]);
+        $this->assertDatabaseMissing('frequencias', ['desbravador_id' => $inativo->id]);
+    }
+
     public function test_apenas_diretor_secretario_e_master_acessam_gerencia_de_colunas()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
