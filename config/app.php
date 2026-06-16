@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | Fonte única da verdade para a versão exibida do sistema (tela "Sobre",
+    | rodapés, etc.). O default acompanha o código; pode ser sobrescrito via
+    | APP_VERSION no .env quando necessário. Ao lançar uma versão, atualize
+    | apenas este valor.
+    |
+    */
+
+    'version' => env('APP_VERSION', 'v2026_4.0.0-beta'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
