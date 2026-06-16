@@ -1,130 +1,219 @@
-﻿# Desbravadores Manager
+<div align="center">
 
-Sistema web para gestão de clubes de Desbravadores, com foco em secretaria, financeiro, pedagógico, eventos, patrimônio e relatórios.
+<img src="public/favicon.svg" alt="Desbravadores Manager" width="96" height="96" />
 
-## Visão Geral
+# Desbravadores Manager
 
-O **Desbravadores Manager** centraliza as rotinas do clube em um único sistema:
+**Plataforma web completa para a gestão de clubes de Desbravadores**
+Secretaria · Financeiro · Pedagógico · Eventos · Patrimônio · Relatórios
 
-- Cadastro e acompanhamento de desbravadores e unidades
-- Controle administrativo (atas e atos)
-- Fluxo financeiro (caixa e mensalidades)
-- Inventário patrimonial
-- Gestão de eventos e inscrições
-- Frequência, classes, especialidades e ranking
-- Emissão de relatórios em PDF
+<br />
 
-## Principais Módulos
+[![Versão](https://img.shields.io/badge/versão-v2026__4.0.0--beta-6366f1?style=for-the-badge)](#)
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Licença](https://img.shields.io/badge/licença-MIT-22c55e?style=for-the-badge)](#-licença)
 
-### Secretaria
+<br />
 
-- Clube (dados institucionais)
-- Desbravadores (cadastro completo)
+[![CI](https://github.com/JohnAugust934/ManagerDBV/actions/workflows/laravel.yml/badge.svg)](https://github.com/JohnAugust934/ManagerDBV/actions/workflows/laravel.yml)
+![Tests](https://img.shields.io/badge/tests-Pest-8b5cf6?logo=pest&logoColor=white)
+![Frontend](https://img.shields.io/badge/Alpine.js-3-77C1D2?logo=alpinedotjs&logoColor=white)
+![Build](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
+![DB](https://img.shields.io/badge/SQLite_·_PostgreSQL_·_MySQL-003B57?logo=sqlite&logoColor=white)
+![Locale](https://img.shields.io/badge/locale-pt__BR-009739)
+
+<br />
+
+<img src="public/images/manual/dashboard.png" alt="Dashboard do Desbravadores Manager" width="860" />
+
+</div>
+
+---
+
+<div align="center">
+
+### 🌟 Centralize toda a operação do seu clube em um único lugar
+
+Multi-tenant · Controle de acesso por função · Trilha de auditoria · Backups com verificação de integridade · Notificações em tempo real
+
+</div>
+
+---
+
+## 📑 Sumário
+
+- [Visão Geral](#-visão-geral)
+- [Capturas de Tela](#-capturas-de-tela)
+- [Principais Módulos](#-principais-módulos)
+- [Recursos Transversais](#-recursos-transversais)
+- [Stack Tecnológica](#-stack-tecnológica)
+- [Instalação](#-instalação-local)
+- [Scripts Úteis](#-scripts-úteis)
+- [Acessos de Desenvolvimento](#-acessos-de-desenvolvimento-seeder)
+- [Controle de Acesso](#-controle-de-acesso)
+- [Estrutura de Pastas](#-estrutura-de-pastas)
+- [Backups e Restauração](#-backups-e-restauração)
+- [Deploy](#-deploy)
+- [Qualidade e Testes](#-qualidade-e-testes)
+- [Roadmap](#-roadmap)
+- [Contribuição](#-contribuição)
+- [Licença](#-licença)
+
+---
+
+## 🎯 Visão Geral
+
+O **Desbravadores Manager** centraliza as rotinas administrativas de um clube em uma única aplicação web. Foi pensado para o dia a dia real da secretaria, da tesouraria e da equipe pedagógica, com **isolamento de dados por clube (multi-tenant)**, **controle de acesso por função**, **trilha de auditoria** e um **subsistema de backup com verificação de integridade**.
+
+Todo o domínio e a interface estão em **português (pt_BR)**, com UI **mobile-first** e foco em acessibilidade (meta de contraste WCAG 2.1 AA).
+
+| | |
+|---|---|
+| 👥 **Membros e unidades** | Cadastro completo de desbravadores e organização em unidades |
+| 📋 **Administração** | Dados institucionais do clube, atas e atos oficiais |
+| 💰 **Financeiro** | Caixa, mensalidades e patrimônio |
+| 📚 **Pedagógico** | Classes, especialidades, frequência configurável e pontuação |
+| 🎪 **Eventos** | Criação, inscrições em lote, status de pagamento e autorizações |
+| 🏆 **Ranking** | Pontuação ao vivo por unidade + snapshots anuais |
+| 📄 **Relatórios** | PDFs operacionais e hub de relatórios personalizados |
+
+---
+
+## 🖼️ Capturas de Tela
+
+<div align="center">
+
+| Desbravadores | Frequência |
+|:---:|:---:|
+| <img src="public/images/manual/desbravadores-index.png" alt="Desbravadores" width="420" /> | <img src="public/images/manual/frequencia-index.png" alt="Frequência" width="420" /> |
+| **Ranking** | **Eventos** |
+| <img src="public/images/manual/ranking-index.png" alt="Ranking" width="420" /> | <img src="public/images/manual/eventos-index.png" alt="Eventos" width="420" /> |
+| **Caixa (Financeiro)** | **Backups** |
+| <img src="public/images/manual/caixa-index.png" alt="Caixa" width="420" /> | <img src="public/images/manual/backups-index.png" alt="Backups" width="420" /> |
+
+</div>
+
+> 📷 Galeria completa de telas em [`public/images/manual/`](public/images/manual/).
+> As capturas são geradas automaticamente pelo script [`scripts/shots.mjs`](scripts/shots.mjs) (Playwright) a partir da aplicação rodando com dados de demonstração.
+
+---
+
+## 🧩 Principais Módulos
+
+### 📋 Secretaria
+- Dados institucionais do clube
+- Cadastro completo de desbravadores
 - Unidades
 - Atas e atos oficiais
 
-### Pedagógico
-
+### 📚 Pedagógico
 - Classes e requisitos
 - Especialidades por desbravador
-- Frequência e pontuação
+- Frequência com **colunas de chamada configuráveis por clube** (Presente, Pontual, Bíblia, Uniforme + colunas personalizadas), com pontuação automática
 
-### Financeiro
-
-- Caixa (entradas e saídas)
+### 💰 Financeiro
+- Caixa (entradas e saídas, com trilha de autoria)
 - Mensalidades (geração e baixa de pagamento)
 - Patrimônio (itens e estado de conservação)
 
-### Eventos
-
+### 🎪 Eventos
 - Criação e gestão de eventos
 - Inscrição individual e em lote
 - Controle de pagamento/status
-- Geração de autorização
+- Geração de autorização em PDF
 
-### Relatórios
+### 🏆 Ranking
+- Pontuação ao vivo por unidade (com exclusão opcional de unidades)
+- Snapshots anuais automáticos para histórico e auditoria
 
+### 📄 Relatórios
 - Hub de relatórios personalizados
 - Relatórios por módulo
-- PDFs de fichas e documentos operacionais
+- PDFs de fichas e documentos (autorização, carteirinha, ficha médica, financeiro, patrimônio)
 
-## Stack Tecnológica
+---
 
-- **Backend:** Laravel 12 + PHP 8.2+
-- **Frontend:** Blade + Alpine.js + Tailwind CSS
-- **Build:** Vite
-- **Banco de dados:** SQLite (padrão), PostgreSQL ou MySQL
-- **PDF:** `barryvdh/laravel-dompdf`
-- **Backup:** `spatie/laravel-backup`
+## ⚙️ Recursos Transversais
 
-## Requisitos
+| Recurso | Descrição |
+|---|---|
+| 🏢 **Multi-tenant** | Dados isolados automaticamente por clube (`club_id`) via global scopes. O perfil `master` enxerga todos os clubes. |
+| 🔐 **Controle de acesso** | Autenticação com verificação de e-mail + autorização por função e permissões de módulo (Gates / `can:*`). Registro apenas por convite. |
+| 🕵️ **Trilha de auditoria** | Preenchimento automático de `created_by` / `updated_by` em registros sensíveis (caixa, desbravadores). |
+| 💾 **Backups robustos** | `spatie/laravel-backup` + camada própria de integridade (SHA-256, manifesto por arquivo, histórico em banco e deep-verify mensal). |
+| 📣 **Monitoramento** | Notificações via Telegram para falhas de backup, fila e exceções, com relatório diário consolidado. |
+| ⏰ **Agendamento** | Tarefas de madrugada (backup, limpeza, monitoramento, snapshot anual de ranking) em `routes/console.php`. |
+| ❤️ **Health checks** | `GET /health` (verifica o banco) e `/up` (nativo do Laravel). |
+
+---
+
+## 🛠️ Stack Tecnológica
+
+<div align="center">
+
+| Camada | Tecnologia |
+|---|---|
+| **Backend** | Laravel 12 · PHP 8.2+ |
+| **Frontend** | Blade · Alpine.js · Tailwind CSS |
+| **Build** | Vite |
+| **Banco de dados** | SQLite (padrão) · PostgreSQL · MySQL |
+| **PDF** | `barryvdh/laravel-dompdf` |
+| **Backup** | `spatie/laravel-backup` |
+| **Testes** | Pest |
+| **Formatação** | Laravel Pint |
+
+</div>
+
+### Requisitos
 
 - PHP 8.2+
 - Composer
 - Node.js 20+ e npm
 - Banco de dados (SQLite, PostgreSQL ou MySQL)
 
-## Instalação (Local)
+---
 
-### 1. Clonar o projeto
+## 🚀 Instalação (Local)
 
 ```bash
+# 1. Clonar
 git clone <URL_DO_REPOSITORIO>
-cd desbravadores-manager
-```
+cd ManagerDBV
 
-### 2. Instalar dependências
-
-```bash
+# 2. Dependências
 composer install
 npm install
-```
 
-### 3. Configurar ambiente
-
-```bash
+# 3. Ambiente
 cp .env.example .env
 php artisan key:generate
-```
 
-### 4. Banco de dados
-
-Opção rápida com SQLite (padrão do `.env.example`):
-
-```bash
+# 4. Banco de dados (SQLite padrão) + dados de demonstração
 php artisan migrate --seed
-```
 
-Para reset completo com dados de demonstração:
-
-```bash
-php artisan migrate:fresh --seed
-```
-
-### 5. Rodar aplicação
-
-Em terminais separados:
-
-```bash
-php artisan serve
+# 5. Rodar (em terminais separados)
+php artisan serve   # http://127.0.0.1:8000
 npm run dev
 ```
 
-A aplicação ficará disponível em `http://127.0.0.1:8000`.
-
-## Setup em Um Comando
-
-O projeto possui script de setup no Composer:
+### ⚡ Setup em um comando
 
 ```bash
 composer run setup
 ```
 
-Esse script instala dependências, configura `.env`, gera key, roda migration e build de frontend.
+> Instala dependências, configura o `.env`, gera a key, roda as migrations e faz o build do frontend.
 
-## Scripts Úteis
+---
+
+## 📜 Scripts Úteis
 
 ```bash
+# Fluxo de desenvolvimento completo (servidor + fila + logs + vite, via concurrently)
+composer run dev
+
 # Frontend
 npm run dev
 npm run build
@@ -132,106 +221,157 @@ npm run build
 # Backend
 php artisan serve
 php artisan migrate
-php artisan migrate:fresh --seed
-php artisan test
+php artisan migrate:fresh --seed     # reset completo com dados de demonstração
 
-# Fluxo de desenvolvimento completo (servidor + fila + logs + vite)
-composer run dev
+# Testes (Pest, em SQLite :memory: — não tocam o banco de dev)
+composer test                        # config:clear + artisan test (preferível)
+php artisan test
+php artisan test --filter=BackupIntegrityVerifierTest
+
+# Formatação (Pint) — formate apenas os arquivos que tocar
+./vendor/bin/pint app/ database/ tests/
+./vendor/bin/pint --test app/ database/ tests/
 ```
 
-## Acessos de Desenvolvimento (Seeder)
+---
 
-Após `migrate --seed` ou `migrate:fresh --seed`, usuários padrão são criados:
+## 🔑 Acessos de Desenvolvimento (Seeder)
 
-| Perfil | E-mail | Senha |
-|---|---|---|
-| Master | `admin@clube.com` | `password` |
-| Diretor | `diretor@clube.com` | `password` |
-| Secretaria | `secretaria@clube.com` | `password` |
-| Tesoureiro | `tesoureiro@clube.com` | `password` |
-| Instrutor | `instrutor@clube.com` | `password` |
+Após `migrate --seed`, usuários padrão são criados (senha **`password`**):
 
-Também são criados usuários conselheiros e dados de demonstração para navegação dos módulos.
+| Perfil | E-mail |
+|---|---|
+| 👑 Master | `admin@clube.com` |
+| 🎩 Diretor | `diretor@clube.com` |
+| 🗂️ Secretaria | `secretaria@clube.com` |
+| 💵 Tesoureiro | `tesoureiro@clube.com` |
+| 🎓 Instrutor | `instrutor@clube.com` |
 
-## Controle de Acesso
+Também são criados conselheiros (`pedro@`, `joao@`, `lucas@`, `maria@clube.com`) e dados de demonstração para navegar pelos módulos.
 
-O sistema utiliza autenticação com verificação de e-mail e autorização por função/permissão (`can:*`).
+> ⚠️ **Produção:** o `DatabaseSeeder` redireciona automaticamente para `MasterOnlySeeder`. Rode apenas `php artisan db:seed --class=MasterOnlySeeder`.
 
-Perfis principais:
+---
 
-- `master`
-- `diretor`
-- `secretario`
-- `tesoureiro`
-- `conselheiro`
-- `instrutor`
+## 🛡️ Controle de Acesso
 
-Permissões por módulo (com extras por usuário):
+Autenticação com verificação de e-mail e autorização por **função + permissão de módulo**.
 
-- `secretaria`
-- `financeiro`
-- `unidades`
-- `pedagogico`
-- `eventos`
-- `relatorios`
+**Perfis:** `master` · `diretor` · `secretario` · `tesoureiro` · `conselheiro` · `instrutor`
 
-## Estrutura de Pastas
+**Módulos de permissão:** `gestao_acessos` · `secretaria` · `financeiro` · `unidades` · `pedagogico` · `eventos` · `relatorios`
+
+Cada usuário recebe os padrões do seu papel, podendo ter `extra_permissions` adicionais. O perfil `master` tem acesso total e visão de todos os clubes. O registro de novos usuários ocorre **apenas por convite** (`/register-invite`).
+
+---
+
+## 🗂️ Estrutura de Pastas
 
 ```text
-app/                # Regras de negócio, controllers, models
-bootstrap/
+app/
+├─ Console/Commands/   # Comandos artisan personalizados (backup, ranking, monitoramento)
+├─ Http/               # Controllers e middleware
+├─ Models/             # Models, global scopes (tenant) e traits de auditoria
+├─ Services/           # Backup integrity, Telegram, tracker de tarefas
+└─ Support/            # Utilitários (janelas operacionais, etc.)
+bootstrap/             # bootstrap/app.php (config central do Laravel 11/12)
 config/
-database/           # Migrations, factories, seeders
-public/
+database/             # Migrations, factories, seeders
+public/images/manual/ # Capturas de tela / manual
 resources/
-  css/              # Estilos base (design system)
-  views/            # Telas Blade
-routes/             # Rotas web
-storage/
-tests/              # Testes automatizados
+├─ css/               # Design system base
+└─ views/             # Telas Blade
+routes/               # web.php e console.php (agendamento)
+tests/                # Testes Pest
+docs/                 # Guia visual de UI
 ```
 
-## UI e Padrões Visuais
+---
 
-Para manter consistência de interface nas novas telas, use o guia:
+## 💾 Backups e Restauração
 
-- [Guia Visual UI](docs/guia-visual-ui.md)
+O sistema usa `spatie/laravel-backup` com uma **camada própria de integridade**:
 
-Ele cobre:
+- ✅ Backup do banco + uploads (`storage/app/public`)
+- ✅ Verificação no evento de sucesso: tamanho mínimo, reabertura do zip, SHA-256 e manifesto por arquivo
+- ✅ Histórico persistido em banco (`backup_logs`)
+- ✅ Verificação profunda mensal (lê o dump dentro do zip)
+- 🚨 Alertas imediatos no Telegram em caso de falha
+- 🖥️ Telas administrativas de backup/restauração para o perfil `master`
 
-- padrão de botões (`ui-btn-primary`, `ui-btn-secondary`, `ui-btn-danger`)
-- ações fora do header
-- checklist de revisão visual antes de publicar
+> Runbook de restauração em [`RESTORE.md`](RESTORE.md).
 
-## Relatórios e PDFs
+---
 
-O módulo de relatórios gera documentos em PDF para operação administrativa, médica, financeira e patrimonial.
+## 🌐 Deploy
 
-## Backups
-
-A base já inclui estrutura para backup e restauração usando Spatie Backup (`spatie/laravel-backup`) e telas administrativas de backup para perfil master.
-
-## Qualidade e Testes
-
-Executar testes:
+Guia completo em [`DEPLOY.md`](DEPLOY.md). Pontos-chave:
 
 ```bash
-php artisan test
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+php artisan storage:link
+php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
 
-Executar build de produção:
+- Worker de fila via Supervisor (`queue:work database`)
+- Cron de 1 minuto rodando `php artisan schedule:run`
+- Sempre executar `backup:run` antes de deploy com migrations
+- Template de produção em `.env.production.example`
+
+---
+
+## ✅ Qualidade e Testes
 
 ```bash
-npm run build
+composer test       # config:clear + artisan test (preferível)
+php artisan test    # todos os testes
+npm run build       # build de produção
 ```
 
-## Contribuição
+> 🎯 O foco atual do projeto é **endurecer qualidade** (robustez, cobertura de testes e consistência de dados financeiros) em vez de novas features.
+
+---
+
+## 🗺️ Roadmap
+
+O projeto está em fase de **endurecimento de qualidade**. Próximos passos planejados:
+
+- [x] Subsistema de backup com verificação de integridade (SHA-256, manifesto, deep-verify)
+- [x] Colunas de chamada configuráveis por clube
+- [x] Snapshots anuais de ranking
+- [x] Pipeline de CI (Pest + Pint)
+- [ ] Ampliar a cobertura de testes automatizados (financeiro e frequência)
+- [ ] Unificar a lógica duplicada de pontuação de ranking
+- [ ] Ligar o Gate `gerir-unidade` às rotas de unidade (escopo por conselheiro)
+- [ ] Exportações adicionais (planilhas) e novos relatórios financeiros
+- [ ] Refino contínuo de acessibilidade (WCAG 2.1 AA)
+
+> Sugestões e issues são bem-vindas.
+
+---
+
+## 🤝 Contribuição
 
 1. Crie uma branch (`feat/minha-melhoria`)
 2. Faça commits pequenos e objetivos
-3. Rode testes/build
-4. Abra Pull Request com descrição clara
+3. Rode os testes (`composer test`) e o build (`npm run build`)
+4. Formate apenas os arquivos tocados (`./vendor/bin/pint`)
+5. Abra um Pull Request com descrição clara
 
-## Licença
+> Antes de criar novas telas, consulte o [Guia Visual UI](docs/guia-visual-ui.md) (padrão de botões, layout, acessibilidade).
 
-Projeto sob licença MIT (base Laravel).
+---
+
+## 📄 Licença
+
+Distribuído sob a licença **MIT** (base Laravel). Sinta-se livre para usar como referência e estudo.
+
+---
+
+<div align="center">
+
+Feito com ❤️ para os clubes de Desbravadores
+
+</div>
