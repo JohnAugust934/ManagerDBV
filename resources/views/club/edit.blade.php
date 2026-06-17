@@ -115,5 +115,18 @@
             @method('DELETE')
         </form>
         @endif
+
+        @can('master')
+        <div class="ui-card p-6 sm:p-8 mt-6">
+            <h2 class="text-base font-black text-slate-800 dark:text-white">Exportar dados do clube</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4">
+                Baixe um arquivo JSON com todos os dados do seu clube (membros, financeiro, documentos e mais).
+            </p>
+            <a href="{{ route('club.export') }}" class="ui-btn-secondary w-full sm:w-auto inline-flex justify-center items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Exportar dados (JSON)
+            </a>
+        </div>
+        @endcan
     </div>
 </x-app-layout>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
@@ -24,13 +25,19 @@ class UsuarioController extends Controller
     {
         $this->authorizeAccessManagement();
 
-        if (auth()->user()->isMaster()) {
+        // Apenas o platform admin é cross-tenant. O master de clube gerencia só o seu clube.
+        if (auth()->user()->isPlatformAdmin()) {
             $users = User::orderBy('name')->get();
         } else {
-            $users = User::where('club_id', auth()->user()->club_id)
-                ->where('role', '!=', 'master')
-                ->orderBy('name')
-                ->get();
+            $query = User::where('club_id', ClubContext::currentClubId())
+                ->orderBy('name');
+
+            // Quem não é master do clube não enxerga/gerencia masters.
+            if (! auth()->user()->isMaster()) {
+                $query->where('role', '!=', 'master');
+            }
+
+            $users = $query->get();
         }
 
         return view('usuarios.index', compact('users'));
@@ -56,7 +63,7 @@ class UsuarioController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
-            'club_id' => auth()->user()->club_id,
+            'club_id' => ClubContext::currentClubId(),
             'extra_permissions' => $extraPermissions,
         ]);
 
@@ -128,16 +135,19 @@ class UsuarioController extends Controller
     {
         $authUser = auth()->user();
 
-        if ($authUser->isMaster()) {
+        // Platform admin pode tudo (cross-tenant).
+        if ($authUser->isPlatformAdmin()) {
             return;
         }
 
-        if ($usuario->role === 'master') {
-            abort(403, 'Somente o admin master pode gerenciar usuarios master.');
+        // Demais gestores: somente dentro do próprio clube ativo.
+        if ($usuario->club_id !== ClubContext::currentClubId()) {
+            abort(403, 'Voce nao pode gerenciar usuarios de outro clube.');
         }
 
-        if ($usuario->club_id !== $authUser->club_id) {
-            abort(403, 'Voce nao pode gerenciar usuarios de outro clube.');
+        // E só o master do clube gerencia outros masters do clube.
+        if ($usuario->role === 'master' && ! $authUser->isMaster()) {
+            abort(403, 'Somente o admin master pode gerenciar usuarios master.');
         }
     }
 

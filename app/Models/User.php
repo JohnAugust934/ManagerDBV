@@ -18,6 +18,7 @@ class User extends Authenticatable
         'role',              // master, diretor, secretario, tesoureiro, conselheiro, instrutor
         'extra_permissions', // array json
         'is_master',         // mantido para compatibilidade, mas o foco agora e 'role'
+        'is_platform_admin', // super admin de plataforma (cross-tenant)
     ];
 
     protected $hidden = [
@@ -29,6 +30,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_master' => 'boolean',
+        'is_platform_admin' => 'boolean',
         'extra_permissions' => 'array', // Converte JSON para Array automaticamente
     ];
 
@@ -85,5 +87,10 @@ class User extends Authenticatable
     public function isMaster(): bool
     {
         return $this->role === 'master';
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return $this->is_platform_admin === true;
     }
 }

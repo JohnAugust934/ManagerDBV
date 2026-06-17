@@ -2,6 +2,7 @@
 
 namespace App\Models\Scopes;
 
+use App\Services\ClubContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -14,16 +15,22 @@ class DesbravadorClubScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
+        // Sem usuário autenticado (seeders, console, factories): não filtra.
         if (! auth()->check()) {
             return;
         }
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
 
-        if (! $clubId) {
+        if ($clubId !== null) {
+            $builder->whereHas('unidade', fn (Builder $q) => $q->where('club_id', $clubId));
+
             return;
         }
 
-        $builder->whereHas('unidade', fn (Builder $q) => $q->where('club_id', $clubId));
+        // Sem clube ativo: platform admin enxerga tudo; usuário comum, nada.
+        if (! ClubContext::isPlatformAdmin()) {
+            $builder->whereRaw('1 = 0');
+        }
     }
 }

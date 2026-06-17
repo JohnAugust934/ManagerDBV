@@ -576,11 +576,11 @@ class RelatorioController extends Controller
             : null;
 
         return array_filter([
-                'Status' => match ($status) {
-                    'inativos' => 'Somente inativos',
-                    'todos' => 'Todos os cadastrados',
-                    default => 'Somente ativos',
-                },
+            'Status' => match ($status) {
+                'inativos' => 'Somente inativos',
+                'todos' => 'Todos os cadastrados',
+                default => 'Somente ativos',
+            },
             'Unidade' => $unidade ?: 'Todas as unidades',
         ]);
     }
@@ -723,7 +723,7 @@ class RelatorioController extends Controller
 
     private function currentClubId(): ?int
     {
-        return auth()->user()?->club_id;
+        return \App\Services\ClubContext::currentClubId();
     }
 
     private function applyUnidadeScope(Builder $query): Builder

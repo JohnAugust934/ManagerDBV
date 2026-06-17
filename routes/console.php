@@ -73,9 +73,15 @@ Artisan::command('inspire', function () {
 Artisan::command('ranking:snapshot {year?}', function (?int $year = null) {
     $snapshotYear = $year ?: now()->subYear()->year;
 
-    AppServiceProvider::snapshotRankingYear($snapshotYear);
+    // Multi-tenant: gera um snapshot por clube. Sem usuario autenticado, os global
+    // scopes ficam inertes, por isso iteramos os clubes explicitamente.
+    $clubIds = \App\Models\Club::query()->pluck('id');
 
-    $this->info("Snapshot anual do ranking gerado para {$snapshotYear}.");
+    foreach ($clubIds as $clubId) {
+        AppServiceProvider::snapshotRankingYear($snapshotYear, (int) $clubId);
+    }
+
+    $this->info("Snapshot anual do ranking gerado para {$snapshotYear} ({$clubIds->count()} clube(s)).");
 })->purpose('Gera um snapshot anual do ranking para auditoria');
 
 Schedule::command('ranking:snapshot')

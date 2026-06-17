@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Caixa;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -45,7 +46,7 @@ class CaixaController extends Controller
             'categoria' => 'nullable|string|max:100',
         ]);
 
-        $validado['club_id'] = auth()->user()->club_id;
+        $validado['club_id'] = ClubContext::currentClubId();
 
         Caixa::create($validado);
 

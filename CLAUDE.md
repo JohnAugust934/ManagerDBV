@@ -91,11 +91,13 @@ tudo configurado em `bootstrap/app.php`). As partes não óbvias e transversais:
     pedido.
 
 ### Ranking — lógica DUPLICADA, manter as duas em sincronia
-- `AppServiceProvider::snapshotRankingYear()` (comando agendado `ranking:snapshot`, contexto de
-  console, **sem** filtro de `club_id`/`no_ranking`) vs `RankingController` (telas ao vivo, filtra
-  `club_id` + `no_ranking`). Qualquer mudança na regra de pontuação precisa tocar **as duas**.
-- `Unidade::no_ranking` exclui a unidade do ranking ao vivo. Snapshots anuais são persistidos em
-  `ranking_snapshots` (model `RankingSnapshot`) para auditoria.
+- `AppServiceProvider::snapshotRankingYear(int $year, int $clubId)` (comando agendado
+  `ranking:snapshot`, contexto de console — itera **por clube**) vs `RankingController` (telas ao
+  vivo). Ambos agora filtram `club_id` + `no_ranking`. Qualquer mudança na regra de pontuação
+  precisa tocar **as duas**.
+- `Unidade::no_ranking` controla a participação no ranking (atenção: `no_ranking = true` significa
+  **participa** — a coluna é mal-nomeada; ver `UnidadeController::toggleRanking`). Snapshots anuais
+  são persistidos em `ranking_snapshots` (model `RankingSnapshot`, com `club_id`) para auditoria.
 
 ### Console & agendamento (padrão Laravel 11/12)
 - O agendamento fica em **`routes/console.php`**, não num Kernel. Comandos personalizados são

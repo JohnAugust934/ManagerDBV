@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Especialidade;
 use App\Models\EspecialidadeRequisito;
+use App\Services\ClubContext;
 use App\Support\EspecialidadesCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,8 +26,12 @@ class EspecialidadeController extends Controller
         $version = Cache::get('especialidades:index:version', 1);
         $page = max(1, (int) $request->input('page', 1));
 
-        $cacheKey = 'especialidades:index:' . sha1(json_encode([
+        // O catálogo de especialidades é global, mas withCount('desbravadores') é
+        // escopado por clube (DesbravadorClubScope). Sem o club_id na chave, um clube
+        // serviria contagens cacheadas de outro. Namespace por clube ativo resolve isso.
+        $cacheKey = 'especialidades:index:'.sha1(json_encode([
             'v' => $version,
+            'club' => ClubContext::currentClubId(),
             'p' => $page,
             'search' => $searchNormalized,
             'area' => $selectedArea,

@@ -19,7 +19,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
-if (! function_exists(__NAMESPACE__ . '\\fake')) {
+if (! function_exists(__NAMESPACE__.'\\fake')) {
     /**
      * Fallback para ambientes de produção sem fakerphp/faker (composer --no-dev).
      */
@@ -32,7 +32,7 @@ if (! function_exists(__NAMESPACE__ . '\\fake')) {
         }
 
         if ($faker === null) {
-            $faker = new SeederFallbackFaker();
+            $faker = new SeederFallbackFaker;
         }
 
         return $faker;
@@ -62,7 +62,7 @@ final class SeederFallbackFaker
             ? $this->randomElement($female)
             : ($gender === 'male' ? $this->randomElement($male) : $this->randomElement(array_merge($male, $female)));
 
-        return trim($first . ' ' . $this->randomElement($surnames));
+        return trim($first.' '.$this->randomElement($surnames));
     }
 
     public function dateTimeBetween(string $startDate = '-30 years', string $endDate = 'now'): \DateTime
@@ -74,7 +74,7 @@ final class SeederFallbackFaker
             [$start, $end] = [$end, $start];
         }
 
-        return (new \DateTime())->setTimestamp(random_int($start, $end));
+        return (new \DateTime)->setTimestamp(random_int($start, $end));
     }
 
     public function unique(): self
@@ -121,6 +121,7 @@ final class SeederFallbackFaker
         }
 
         $factor = 10 ** max(0, $maxDecimals);
+
         return round(random_int((int) round($min * $factor), (int) round($max * $factor)) / $factor, $maxDecimals);
     }
 
@@ -154,7 +155,7 @@ final class SeederFallbackFaker
             $parts[] = $this->randomElement($words);
         }
 
-        return ucfirst(implode(' ', $parts)) . '.';
+        return ucfirst(implode(' ', $parts)).'.';
     }
 }
 
@@ -216,7 +217,15 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $this->command->info('👥 Equipe administrativa criada.');
+        // O admin@clube.com (sem clube) passa a ser o SUPER ADMIN DE PLATAFORMA:
+        // enxerga todos os clubes e pode entrar em modo suporte. Master de clube agora
+        // é o diretor/master vinculado a um club_id específico.
+        User::where('email', 'admin@clube.com')->update([
+            'is_platform_admin' => true,
+            'club_id' => null,
+        ]);
+
+        $this->command->info('👥 Equipe administrativa criada (admin@clube.com = platform admin).');
 
         // ---------------------------------------------------------
         // 3. UNIDADES & CONSELHEIROS
@@ -468,6 +477,42 @@ class DatabaseSeeder extends Seeder
             }
         }
         $this->command->info('📋 Frequência das últimas reuniões registrada.');
+
+        // ---------------------------------------------------------
+        // 10. SEGUNDO CLUBE (validação de isolamento multi-tenant)
+        // ---------------------------------------------------------
+        $clubeAurora = Club::firstOrCreate(['nome' => 'Clube de Desbravadores Aurora'], [
+            'cidade' => 'Curitiba',
+            'associacao' => 'Associação Paraná',
+            'logo' => null,
+        ]);
+
+        User::firstOrCreate(['email' => 'master.aurora@clube.com'], [
+            'name' => 'Master Aurora',
+            'password' => Hash::make('password'),
+            'role' => 'master',
+            'is_master' => true,
+            'club_id' => $clubeAurora->id,
+        ]);
+
+        $unidadeAurora = Unidade::firstOrCreate(
+            ['nome' => 'Tigres', 'club_id' => $clubeAurora->id],
+            ['grito_guerra' => 'Garra e foco, somos Tigres!', 'conselheiro' => 'Conselheiro Aurora']
+        );
+
+        for ($i = 1; $i <= 3; $i++) {
+            Desbravador::firstOrCreate(
+                ['nome' => "Desbravador Aurora {$i}", 'unidade_id' => $unidadeAurora->id],
+                ['ativo' => true, 'data_nascimento' => now()->subYears(11 + $i), 'sexo' => $i % 2 ? 'M' : 'F']
+            );
+        }
+
+        Caixa::firstOrCreate(
+            ['descricao' => 'Saldo inicial Aurora', 'club_id' => $clubeAurora->id],
+            ['tipo' => 'entrada', 'categoria' => 'Abertura', 'valor' => 500.00, 'data_movimentacao' => now()]
+        );
+
+        $this->command->info("🌅 Segundo clube criado: '{$clubeAurora->nome}' (master.aurora@clube.com).");
 
         $this->command->info('---------------------------------------------------------');
         $this->command->info('🚀 SISTEMA COMPLETO PRONTO PARA USO!');

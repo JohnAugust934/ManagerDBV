@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Classe;
-use App\Models\Club;
 use App\Models\Unidade;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

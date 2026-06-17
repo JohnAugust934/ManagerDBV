@@ -52,6 +52,7 @@ class InviteRegistrationTest extends TestCase
             'email' => 'conselheiro@teste.com',
             'token' => 'token123',
             'role' => 'conselheiro',
+            'club_id' => $club->id,
             'expires_at' => now()->addDays(7),
         ]);
 

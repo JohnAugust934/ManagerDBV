@@ -18,7 +18,7 @@ class BackupController extends Controller
 {
     public function index(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
 
         $disks = ['local', 'r2'];
         $backups = [];
@@ -72,7 +72,7 @@ class BackupController extends Controller
 
     public function store()
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
         set_time_limit(0);
         ini_set('memory_limit', '-1');
 
@@ -116,7 +116,7 @@ class BackupController extends Controller
 
     public function import(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
 
         if (empty($_FILES) && $request->server('CONTENT_LENGTH') > 0) {
             return back()->with('error', 'O arquivo é maior que o limite de upload configurado no seu servidor local (upload_max_filesize no php.ini).');
@@ -184,7 +184,7 @@ class BackupController extends Controller
 
     public function restore(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
 
         set_time_limit(0);
         ini_set('memory_limit', '-1');
@@ -337,7 +337,7 @@ class BackupController extends Controller
 
     public function download(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
 
         set_time_limit(0);
         ini_set('memory_limit', '-1');
@@ -362,7 +362,7 @@ class BackupController extends Controller
 
     public function destroy(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
         [$disk, $path] = $this->normalizeBackupSelection(
             (string) $request->input('disk', ''),
             (string) $request->input('path', '')

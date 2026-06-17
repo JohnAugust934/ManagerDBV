@@ -6,6 +6,7 @@ use App\Models\Caixa;
 use App\Models\Desbravador;
 use App\Models\Frequencia;
 use App\Models\Mensalidade;
+use App\Services\ClubContext;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -13,7 +14,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
 
         // Caixa usa GlobalScope (ClubScope) — filtra por club_id automaticamente.
         $entradas = Caixa::where('tipo', 'entrada')->sum('valor');

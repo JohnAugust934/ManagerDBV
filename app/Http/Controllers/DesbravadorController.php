@@ -8,6 +8,7 @@ use App\Models\Classe;
 use App\Models\Desbravador;
 use App\Models\Especialidade;
 use App\Models\Unidade;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -51,7 +52,7 @@ class DesbravadorController extends Controller
     public function create()
     {
         // Mostra apenas unidades do clube do usuário.
-        $unidades = Unidade::where('club_id', auth()->user()->club_id)->orderBy('nome')->get();
+        $unidades = Unidade::where('club_id', ClubContext::currentClubId())->orderBy('nome')->get();
         $classes = Classe::orderBy('ordem')->get();
 
         return view('desbravadores.create', compact('unidades', 'classes'));
@@ -98,7 +99,7 @@ class DesbravadorController extends Controller
 
     public function edit(Desbravador $desbravador)
     {
-        $unidades = Unidade::where('club_id', auth()->user()->club_id)->orderBy('nome')->get();
+        $unidades = Unidade::where('club_id', ClubContext::currentClubId())->orderBy('nome')->get();
         $classes = Classe::orderBy('ordem')->get();
 
         return view('desbravadores.edit', compact('desbravador', 'unidades', 'classes'));

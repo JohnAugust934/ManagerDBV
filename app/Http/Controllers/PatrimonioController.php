@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Patrimonio;
 use App\Models\PatrimonioManutencao;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -66,7 +67,7 @@ class PatrimonioController extends Controller
             'observacoes' => 'nullable|string',
         ]);
 
-        $validated['club_id'] = auth()->user()->club_id;
+        $validated['club_id'] = ClubContext::currentClubId();
 
         Patrimonio::create($validated);
 

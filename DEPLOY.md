@@ -37,9 +37,22 @@ touch database/database.sqlite
 # Rodar migrations (apenas tabelas, SEM seeders de demo)
 php artisan migrate --force
 
-# Criar usuário master de produção
+# Criar o SUPER ADMIN DE PLATAFORMA + clube base de produção
 php artisan db:seed --class=MasterOnlySeeder
 ```
+
+> **Multi-tenant:** o `MasterOnlySeeder` cria:
+> - **Platform admin** (`admin@plataforma.com` / `password`) — `is_platform_admin = true`,
+>   `club_id = null`. Acessa o painel `/platform`, vê todos os clubes, entra em modo suporte
+>   (impersonação) e é o único com acesso a **Backups Cloud** completos.
+> - **Master do clube base** (`master@clube.com` / `password`) — dono de um clube específico.
+>
+> **Troque as senhas imediatamente após o primeiro login.**
+>
+> Novos clubes são criados pelo painel da plataforma (`/platform` → “Novo Clube”), que cria o
+> clube e seu master inicial. Cada master de clube exporta os próprios dados em
+> *Configurações do Clube → Exportar dados (JSON)*; o backup completo do banco é exclusivo do
+> platform admin.
 
 ### 4. Configurar storage
 
@@ -172,8 +185,16 @@ php artisan up
 
 | Seeder | Uso |
 |--------|-----|
-| `MasterOnlySeeder` | **Produção** — cria apenas o usuário master, classes e especialidades base |
-| `DatabaseSeeder` | **Desenvolvimento** — cria dados demo completos (30+ desbravadores, movimentações etc.) |
+| `MasterOnlySeeder` | **Produção** — platform admin + clube base + catálogo (classes/especialidades) |
+| `DatabaseSeeder` | **Desenvolvimento** — 2 clubes com dados demo completos (`admin@clube.com` é platform admin) |
+| `TestClubSeeder` | **Staging** (opcional) — clube "Beta" persistente p/ testes manuais (`php artisan db:seed --class=TestClubSeeder`) |
 
 > Em produção, o `DatabaseSeeder` redireciona automaticamente para `MasterOnlySeeder`.
 > Nunca execute `php artisan db:seed` sem `--class=MasterOnlySeeder` em produção.
+
+### Modelo multi-tenant (resumo)
+- Banco único compartilhado; isolamento por `club_id` via Global Scopes (`ClubScope`,
+  `DesbravadorClubScope`, `MensalidadeClubScope`), resolvidos por `App\Services\ClubContext`.
+- `is_platform_admin` (cross-tenant) é distinto de `role = master` (dono de um clube).
+- Sem contexto de clube, usuário comum **não vê nada** (fail-closed); platform admin vê tudo.
+- Especialidades e Classes permanecem **catálogo global** (sem `club_id`).

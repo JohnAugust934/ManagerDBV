@@ -43,8 +43,15 @@ class AppServiceProvider extends ServiceProvider
         $this->registerTelegramBackupListeners();
         $this->registerOperationalListeners();
 
+        // Super admin de plataforma (cross-tenant). Controla o painel /platform.
+        Gate::define('platform-admin', function (User $user) {
+            return $user->is_platform_admin === true;
+        });
+
+        // "master" = dono do clube. Distinto do platform admin (que opera cross-tenant
+        // pelo painel da plataforma, não pelas telas administrativas de um clube).
         Gate::define('master', function (User $user) {
-            return $user->role === 'master';
+            return $user->role === 'master' && ! $user->is_platform_admin;
         });
 
         Gate::define('gestao-acessos', fn (User $user) => $user->temPermissao('gestao_acessos'));
@@ -161,7 +168,7 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    public static function snapshotRankingYear(int $year, ?int $generatedBy = null): void
+    public static function snapshotRankingYear(int $year, int $clubId, ?int $generatedBy = null): void
     {
         $hasColumnValues = Schema::hasTable('frequencia_column_values');
         $frequenciasLoader = function ($query) use ($year, $hasColumnValues) {
@@ -171,7 +178,11 @@ class AppServiceProvider extends ServiceProvider
             }
         };
 
-        $unitEntries = Unidade::with(['desbravadores.frequencias' => $frequenciasLoader])
+        // Consistente com o ranking ao vivo (RankingController): só unidades que
+        // participam do ranking (no_ranking = true) entram no snapshot.
+        $unitEntries = Unidade::where('club_id', $clubId)
+            ->where('no_ranking', true)
+            ->with(['desbravadores.frequencias' => $frequenciasLoader])
             ->orderBy('nome')
             ->get()
             ->map(function (Unidade $unidade) {
@@ -198,6 +209,7 @@ class AppServiceProvider extends ServiceProvider
 
         $memberEntries = Desbravador::with(['unidade', 'frequencias' => $frequenciasLoader])
             ->where('ativo', true)
+            ->whereHas('unidade', fn ($q) => $q->where('club_id', $clubId)->where('no_ranking', true))
             ->orderBy('nome')
             ->get()
             ->map(function (Desbravador $desbravador) {
@@ -219,12 +231,12 @@ class AppServiceProvider extends ServiceProvider
             ->all();
 
         RankingSnapshot::updateOrCreate(
-            ['year' => $year, 'scope' => 'unidades'],
+            ['year' => $year, 'scope' => 'unidades', 'club_id' => $clubId],
             ['generated_by' => $generatedBy, 'entries' => $unitEntries, 'generated_at' => now()]
         );
 
         RankingSnapshot::updateOrCreate(
-            ['year' => $year, 'scope' => 'desbravadores'],
+            ['year' => $year, 'scope' => 'desbravadores', 'club_id' => $clubId],
             ['generated_by' => $generatedBy, 'entries' => $memberEntries, 'generated_at' => now()]
         );
     }

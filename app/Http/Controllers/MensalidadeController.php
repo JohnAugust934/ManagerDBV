@@ -6,6 +6,7 @@ use App\Models\Caixa;
 use App\Models\Desbravador;
 use App\Models\Mensalidade;
 use App\Models\Unidade;
+use App\Services\ClubContext;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class MensalidadeController extends Controller
     {
         Gate::authorize('financeiro');
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
         $mes = $request->input('mes', date('m'));
         $ano = $request->input('ano', date('Y'));
 
@@ -74,7 +75,7 @@ class MensalidadeController extends Controller
             'valor' => 'required|numeric|min:0',
         ]);
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
 
         // Obtém apenas IDs dos desbravadores ativos do clube — sem carregar objetos.
         $ids = Desbravador::ativos()
@@ -118,7 +119,7 @@ class MensalidadeController extends Controller
     {
         Gate::authorize('financeiro');
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
 
         // Garante que a mensalidade pertence ao clube do usuário.
         $mensalidade = Mensalidade::doClube($clubId)

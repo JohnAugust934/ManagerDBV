@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RankingSnapshot extends Model
 {
@@ -12,6 +13,7 @@ class RankingSnapshot extends Model
     protected $fillable = [
         'year',
         'scope',
+        'club_id',
         'generated_by',
         'entries',
         'generated_at',
@@ -21,4 +23,9 @@ class RankingSnapshot extends Model
         'entries' => 'array',
         'generated_at' => 'datetime',
     ];
+
+    public function club(): BelongsTo
+    {
+        return $this->belongsTo(Club::class);
+    }
 }

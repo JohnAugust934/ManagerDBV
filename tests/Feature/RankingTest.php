@@ -102,7 +102,8 @@ class RankingTest extends TestCase
 
     public function test_snapshot_anual_do_ranking_pode_ser_gerado_para_auditoria()
     {
-        $unidade = Unidade::factory()->create();
+        $clube = Club::create(['nome' => 'Clube Snapshot', 'cidade' => 'SP']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $desbravador = Desbravador::factory()->create([
             'unidade_id' => $unidade->id,
             'ativo' => true,
@@ -230,10 +231,34 @@ class RankingTest extends TestCase
         $this->assertSame(2, $entries[1]['position']);
     }
 
+    public function test_snapshot_exclui_unidades_fora_do_ranking()
+    {
+        $ano = now()->subYear()->year;
+        $clube = Club::create(['nome' => 'Clube Exclui', 'cidade' => 'SP']);
+
+        $participante = Unidade::factory()->create(['nome' => 'Participa', 'club_id' => $clube->id, 'no_ranking' => true]);
+        $foraRanking = Unidade::factory()->create(['nome' => 'Fora', 'club_id' => $clube->id, 'no_ranking' => false]);
+
+        $dbvIn = Desbravador::factory()->create(['unidade_id' => $participante->id, 'ativo' => true, 'nome' => 'Dentro']);
+        $dbvOut = Desbravador::factory()->create(['unidade_id' => $foraRanking->id, 'ativo' => true, 'nome' => 'Fora DBV']);
+
+        Frequencia::create(['desbravador_id' => $dbvIn->id, 'data' => now()->subYear(), 'presente' => true, 'pontual' => true, 'biblia' => true, 'uniforme' => true]);
+        Frequencia::create(['desbravador_id' => $dbvOut->id, 'data' => now()->subYear(), 'presente' => true, 'pontual' => true, 'biblia' => true, 'uniforme' => true]);
+
+        $this->artisan('ranking:snapshot '.$ano)->assertExitCode(0);
+
+        $unidades = RankingSnapshot::where('year', $ano)->where('scope', 'unidades')->firstOrFail()->entries;
+        $this->assertSame(['Participa'], array_column($unidades, 'name'));
+
+        $membros = RankingSnapshot::where('year', $ano)->where('scope', 'desbravadores')->firstOrFail()->entries;
+        $this->assertSame(['Dentro'], array_column($membros, 'name'));
+    }
+
     public function test_snapshot_anual_e_idempotente_por_ano_e_escopo()
     {
         $ano = now()->subYear()->year;
-        $unidade = Unidade::factory()->create();
+        $clube = Club::create(['nome' => 'Clube Idempotente', 'cidade' => 'SP']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
         Frequencia::create(['desbravador_id' => $dbv->id, 'data' => now()->subYear(), 'presente' => true, 'pontual' => true, 'biblia' => true, 'uniforme' => true]);
 

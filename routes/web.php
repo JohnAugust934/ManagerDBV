@@ -16,11 +16,13 @@ use App\Http\Controllers\FrequenciaController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MensalidadeController;
 use App\Http\Controllers\PatrimonioController;
+use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RankingController;
 use App\Http\Controllers\RelatorioController;
 use App\Http\Controllers\UnidadeController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Middleware\EnsureClubContextForPlatformAdmin;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -57,7 +59,7 @@ Route::get('/register-invite', [RegisteredUserController::class, 'create'])->nam
 Route::post('/register-invite', [RegisteredUserController::class, 'store'])->name('register.store_invite');
 
 // Area restrita
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', EnsureClubContextForPlatformAdmin::class])->group(function () {
     // 1. Dashboard e perfil
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -80,8 +82,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
-    // 3. Administracao master (backups e nuvem)
-    Route::middleware('can:master')->group(function () {
+    // 2.1 Painel de Plataforma (Super Admin / cross-tenant)
+    Route::middleware('can:platform-admin')
+        ->prefix('platform')
+        ->name('platform.')
+        ->group(function () {
+            Route::get('/', [PlatformController::class, 'index'])->name('index');
+            Route::get('/clubs/create', [PlatformController::class, 'createClub'])->name('clubs.create');
+            Route::post('/clubs', [PlatformController::class, 'storeClub'])->name('clubs.store');
+            Route::post('/clubs/{club}/enter', [PlatformController::class, 'enterClub'])->name('enter');
+            Route::post('/clubs/exit', [PlatformController::class, 'exitClub'])->name('exit');
+            Route::get('/clubs/{club}/export', [PlatformController::class, 'exportClub'])->name('export');
+        });
+
+    // 3. Backups completos do banco — responsabilidade da PLATAFORMA (super admin),
+    //    não do master de clube. Master de clube usa a exportação por clube.
+    Route::middleware('can:platform-admin')->group(function () {
         Route::prefix('backups')->name('backups.')->group(function () {
             Route::get('/', [BackupController::class, 'index'])->name('index');
             Route::post('/', [BackupController::class, 'store'])->name('store');
@@ -90,6 +106,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/import', [BackupController::class, 'import'])->name('import');
             Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
         });
+    });
+
+    // 3.1 Exportação dos próprios dados do clube — restrita ao master do clube.
+    Route::middleware('can:master')->group(function () {
+        Route::get('/clube/exportar-dados', [ClubController::class, 'exportarDados'])->name('club.export');
     });
 
     // 4. Secretaria (gestao de membros, clube e eventos CRUD)

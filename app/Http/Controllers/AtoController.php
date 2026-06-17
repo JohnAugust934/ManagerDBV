@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ato;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -42,7 +43,7 @@ class AtoController extends Controller
             'descricao' => 'required|string',
         ]);
 
-        $dados['club_id'] = auth()->user()->club_id;
+        $dados['club_id'] = ClubContext::currentClubId();
         Ato::create($dados);
 
         return redirect()->route('atos.index')->with('success', 'Ato publicado com sucesso!');

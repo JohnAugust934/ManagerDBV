@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ClubInvitation;
 use App\Models\Invitation;
 use App\Models\User;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -18,8 +19,13 @@ class InvitationController extends Controller
     {
         $this->authorizeAccessManagement();
 
-        // Single tenant: mostra todos os convites do sistema
-        $invites = Invitation::latest()->get();
+        // Multi-tenant: cada gestor vê apenas os convites do próprio clube (ou do
+        // clube impersonado, no caso do platform admin em modo suporte).
+        $clubId = ClubContext::currentClubId();
+
+        $invites = Invitation::when($clubId, fn ($q) => $q->where('club_id', $clubId))
+            ->latest()
+            ->get();
 
         return view('admin.invites.index', compact('invites'));
     }
@@ -42,14 +48,21 @@ class InvitationController extends Controller
             'email.unique' => 'Este e-mail ja esta cadastrado no sistema.',
         ]);
 
-        $club = \App\Models\Club::first(); // Busca o unico clube do banco (se ja existir)
+        // Multi-tenant: o convite pertence ao clube ativo (próprio ou impersonado).
+        // No onboarding inicial (diretor antes de criar o clube) ainda pode ser null.
+        $club = ClubContext::currentClub();
         $existingInvitation = Invitation::where('email', $request->email)->first();
 
-        // REGRA 1: So pode haver UM diretor no sistema (ja cadastrado ou convidado)
+        // REGRA 1: So pode haver UM diretor por clube (ja cadastrado ou convidado)
         if ($request->role === 'diretor') {
-            $directorExists = User::where('role', 'diretor')->exists() ||
+            $clubId = $club?->id;
+
+            $directorExists = User::where('role', 'diretor')
+                ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
+                ->exists() ||
                               Invitation::where('role', 'diretor')
                                   ->whereNull('registered_at')
+                                  ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
                                   ->when($existingInvitation, fn ($query) => $query->where('email', '!=', $existingInvitation->email))
                                   ->exists();
 

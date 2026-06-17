@@ -75,7 +75,8 @@ class FluxoCadastroCompletoTest extends TestCase
         Auth::logout();
 
         // 8. MASTER LOGA NOVAMENTE E AGORA CONSEGUE CONVIDAR CONSELHEIROS
-        $this->actingAs($master);
+        // (re-login traz o club_id recém-vinculado pelo onboarding do diretor)
+        $this->actingAs($master->fresh());
         $this->post(route('invites.store'), [
             'email' => 'conselheiro@teste.com',
             'role' => 'conselheiro',

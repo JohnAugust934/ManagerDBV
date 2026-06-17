@@ -70,15 +70,17 @@ class RegisteredUserController extends Controller
                 return ['erro' => 'Já existe um usuário cadastrado com este e-mail.'];
             }
 
-            // MÁGICA SINGLE-TENANT: Busca o único clube. Se for o primeiro acesso, será null.
-            $club = Club::first();
+            // Multi-tenant: o usuário herda o clube do CONVITE. No primeiro acesso
+            // (diretor convidado antes de o clube existir) o convite ainda não tem
+            // club_id e o onboarding o levará à criação do clube.
+            $club = $invitation->club_id ? Club::find($invitation->club_id) : null;
 
             $user = User::create([
                 'name' => $request->name,
                 'email' => $invitation->email,
                 'password' => Hash::make($request->password),
                 'role' => $invitation->role,
-                'club_id' => $club?->id,
+                'club_id' => $invitation->club_id,
                 'extra_permissions' => $invitation->extra_permissions ?? null,
                 'is_master' => false,
             ]);

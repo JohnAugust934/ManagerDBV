@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\MensalidadeClubScope;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,11 @@ class Mensalidade extends Model
         'data_pagamento' => 'date',
         'valor' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new MensalidadeClubScope);
+    }
 
     public function desbravador(): BelongsTo
     {

@@ -6,6 +6,7 @@ use App\Models\Desbravador;
 use App\Models\Frequencia;
 use App\Models\Unidade;
 use App\Services\AttendanceColumnService;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,7 @@ class FrequenciaController extends Controller
 
     public function index(Request $request)
     {
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
         if (empty($clubId) || $clubId <= 0) {
             return redirect()
                 ->route('dashboard')
@@ -55,7 +56,7 @@ class FrequenciaController extends Controller
 
     public function create()
     {
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
 
         $unidades = Unidade::with(['desbravadores' => function ($query) {
             $query->where('ativo', true)->orderBy('nome');
@@ -78,7 +79,7 @@ class FrequenciaController extends Controller
             'unidades_submetidas.*' => 'integer',
         ]);
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
 
         if (empty($clubId) || $clubId <= 0) {
             return redirect()
@@ -203,7 +204,7 @@ class FrequenciaController extends Controller
 
     public function destroyData(string $data)
     {
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
 
         $ids = Frequencia::whereDate('data', $data)
             ->whereHas('desbravador.unidade', fn ($q) => $q->where('club_id', $clubId))

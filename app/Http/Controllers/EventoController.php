@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateEventoRequest;
 use App\Models\Caixa;
 use App\Models\Desbravador;
 use App\Models\Evento;
+use App\Services\ClubContext;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class EventoController extends Controller
         Gate::authorize('secretaria');
 
         $dados = $request->validated();
-        $dados['club_id'] = auth()->user()->club_id;
+        $dados['club_id'] = ClubContext::currentClubId();
         Evento::create($dados);
 
         return redirect()->route('eventos.index')->with('success', 'Evento criado!');
@@ -239,7 +240,7 @@ class EventoController extends Controller
             'categoria' => 'Evento',
             'valor' => $evento->valor,
             'data_movimentacao' => now(),
-            'club_id' => auth()->user()->club_id,
+            'club_id' => ClubContext::currentClubId(),
         ]);
     }
 }

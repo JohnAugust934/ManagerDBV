@@ -14,7 +14,7 @@ class MensalidadeFactory extends Factory
             'mes' => 1,
             'ano' => 2024,
             'valor' => 15.00,
-            'status' => 'pendente'
+            'status' => 'pendente',
         ];
     }
 }

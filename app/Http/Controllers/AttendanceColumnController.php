@@ -4,21 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceColumn;
 use App\Services\AttendanceColumnService;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class AttendanceColumnController extends Controller
 {
-    public function __construct(private readonly AttendanceColumnService $attendanceColumnService)
-    {
-    }
+    public function __construct(private readonly AttendanceColumnService $attendanceColumnService) {}
 
     public function index()
     {
         Gate::authorize('gerenciar-colunas-chamada');
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
         if (empty($clubId) || $clubId <= 0) {
             return redirect()
                 ->route('dashboard')
@@ -59,7 +58,7 @@ class AttendanceColumnController extends Controller
             'new_columns.*.points' => 'nullable|integer|min:1|max:10',
         ]);
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
         if (empty($clubId) || $clubId <= 0) {
             return redirect()
                 ->route('dashboard')
@@ -123,7 +122,7 @@ class AttendanceColumnController extends Controller
                 ->with('error', 'Atualizacao pendente: execute as migrations para habilitar a gestao de colunas.');
         }
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
         if (empty($clubId) || $clubId <= 0) {
             return redirect()
                 ->route('dashboard')

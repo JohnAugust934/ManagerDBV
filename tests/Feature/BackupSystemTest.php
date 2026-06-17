@@ -18,7 +18,7 @@ class BackupSystemTest extends TestCase
         Storage::fake('local');
         Storage::fake('r2');
 
-        $master = User::factory()->create(['role' => 'master']);
+        $master = User::factory()->platformAdmin()->create();
         $diretor = User::factory()->create(['role' => 'diretor']);
 
         $this->actingAs($diretor)->get(route('backups.index'))->assertForbidden();
@@ -31,7 +31,7 @@ class BackupSystemTest extends TestCase
         Storage::fake('r2');
         Artisan::spy();
 
-        $master = User::factory()->create(['role' => 'master']);
+        $master = User::factory()->platformAdmin()->create();
 
         $response = $this->actingAs($master)->post(route('backups.store'));
 
@@ -45,7 +45,7 @@ class BackupSystemTest extends TestCase
     {
         Storage::fake('local');
         Storage::fake('r2');
-        $master = User::factory()->create(['role' => 'master']);
+        $master = User::factory()->platformAdmin()->create();
 
         $file = UploadedFile::fake()->create('meu_backup_antigo.zip', 1024, 'application/zip');
 
@@ -67,7 +67,7 @@ class BackupSystemTest extends TestCase
     {
         Storage::fake('local');
         Storage::fake('r2');
-        $master = User::factory()->create(['role' => 'master']);
+        $master = User::factory()->platformAdmin()->create();
 
         $file = UploadedFile::fake()->createWithContent('backup-corrompido.zip', 'nao-e-um-zip-real');
 
@@ -88,7 +88,7 @@ class BackupSystemTest extends TestCase
         Storage::fake('r2');
         Artisan::spy();
 
-        $master = User::factory()->create(['role' => 'master']);
+        $master = User::factory()->platformAdmin()->create();
 
         $pasta = config('backup.backup.name', 'Laravel');
         Storage::disk('local')->put($pasta.'/fake.zip', 'nao sou um zip real');
@@ -111,7 +111,7 @@ class BackupSystemTest extends TestCase
     {
         Storage::fake('local');
         Storage::fake('r2');
-        $master = User::factory()->create(['role' => 'master']);
+        $master = User::factory()->platformAdmin()->create();
 
         $pasta = config('backup.backup.name', 'Laravel');
         $caminho = $pasta.'/meu_backup_para_download.zip';
@@ -129,7 +129,7 @@ class BackupSystemTest extends TestCase
     {
         Storage::fake('local');
         Storage::fake('r2');
-        $master = User::factory()->create(['role' => 'master']);
+        $master = User::factory()->platformAdmin()->create();
 
         $pasta = config('backup.backup.name', 'Laravel');
         $caminho = $pasta.'/backup_para_apagar.zip';
@@ -151,7 +151,7 @@ class BackupSystemTest extends TestCase
     {
         Storage::fake('local');
         Storage::fake('r2');
-        $master = User::factory()->create(['role' => 'master']);
+        $master = User::factory()->platformAdmin()->create();
 
         // Backup criado quando o APP_NAME (e, portanto, a pasta de destino) era
         // diferente do atual. A listagem recursiva deve continuar exibindo-o.

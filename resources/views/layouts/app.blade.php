@@ -251,7 +251,12 @@
                 </a>
                 @endcan
                 
-                @can('master')
+                @can('platform-admin')
+                <a href="{{ route('platform.index') }}" class="{{ $linkBase }} {{ request()->routeIs('platform*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                     @if(request()->routeIs('platform*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('platform*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Plataforma</span>
+                </a>
                 <a href="{{ route('backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('backups*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('backups*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
                     <svg class="w-6 h-6 {{ request()->routeIs('backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
@@ -314,6 +319,20 @@
 
             <!-- Page Content -->
             <main id="app-content" class="flex-1 overflow-x-hidden overflow-y-auto px-4 sm:px-6 md:px-8 pb-32 sm:pb-12 pt-[max(1.5rem,env(safe-area-inset-top))] transition-all scroll-smooth relative z-20">
+                @if (\App\Services\ClubContext::isImpersonating())
+                    <div class="mb-6 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-sm">
+                        <span class="text-amber-800 dark:text-amber-300 font-bold">
+                            Modo suporte — {{ \App\Services\ClubContext::currentClub()?->nome }}
+                        </span>
+                        <form method="POST" action="{{ route('platform.exit') }}">
+                            @csrf
+                            <button type="submit" class="text-amber-700 dark:text-amber-300 font-bold underline hover:no-underline">
+                                Sair do clube
+                            </button>
+                        </form>
+                    </div>
+                @endif
+
                 <div class="mb-6 ui-animate-fade-up">
                     <x-flash-messages />
                 </div>
