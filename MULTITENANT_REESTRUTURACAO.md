@@ -187,11 +187,26 @@ filtrados À MÃO passam a ter o global scope:
 > — mais robusto e rápido. Regressão coberta por
 > `ConsolidacaoScopeTest::test_export_traz_o_clube_alvo_mesmo_impersonando_outro`.
 
-## Fase 5 — Contexto de tenant fora do HTTP
+## Fase 5 — Contexto de tenant fora do HTTP ✅ FEITO
 
-- [ ] `ClubContext::actAs(int $clubId, Closure $fn)` (set/restore) e scopes
-  respeitando tenant explicitamente setado mesmo sem `auth()`.
-- [ ] Jobs e comandos passam a rodar dentro de um tenant declarado.
+- [x] **`ClubContext::actAs(int $clubId, Closure $fn)`** — fixa um tenant via
+  override estático (set/restore em `finally`, aninhável, restaura em exceção).
+  `currentClubId()` retorna o override quando ativo (vence o auth).
+- [x] **`ClubScope` respeita o override:** filtra por `club_id` mesmo SEM `auth()`
+  (antes, sem auth, via tudo). Default sem auth e sem override segue vendo tudo
+  (seeders/console intactos). Único ponto a mudar — só existe um `ClubScope`.
+- [x] **Consolidação final no trait:** `Caixa`, `Evento`, `Patrimonio`, `Ata`,
+  `Ato` migraram de `ClubScope` direto para `BelongsToTenant` — assim ganham o
+  **auto-fill** de `club_id`, e um job dentro de `actAs` pode criá-los sem informar
+  o clube (antes daria `NOT NULL`). Agora 100% dos models de tenant usam o trait.
+- [x] Testes: `TenantContextActAsTest` (filtra sem auth, auto-fill, aninhamento,
+  restauração em exceção). Suíte: 333. Sem migration (só código).
+
+> **Padrão para jobs/comandos futuros:** envolva o processamento de um clube em
+> `ClubContext::actAs($clubId, fn () => ...)` — dentro dele, leitura e criação de
+> qualquer model de tenant ficam isoladas automaticamente, sem filtrar à mão.
+> Sem isso, código de console enxerga TODOS os clubes (os scopes só filtram com
+> auth ou override).
 
 ## Fase 6 — Ciclo de vida do clube + catálogo
 

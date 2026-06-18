@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\RegistraAutoria;
-use App\Models\Scopes\ClubScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Caixa extends Model
 {
-    use HasFactory, RegistraAutoria;
+    use BelongsToTenant, HasFactory, RegistraAutoria;
 
     protected $fillable = [
         'descricao',
@@ -24,9 +24,4 @@ class Caixa extends Model
         'data_movimentacao' => 'date',
         'valor' => 'decimal:2',
     ];
-
-    protected static function booted(): void
-    {
-        static::addGlobalScope(new ClubScope);
-    }
 }

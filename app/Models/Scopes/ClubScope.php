@@ -15,7 +15,15 @@ class ClubScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
-        // Sem usuário autenticado (seeders, console, factories): não filtra.
+        // Override explícito (jobs/comandos/seeders via ClubContext::actAs): filtra
+        // pelo tenant declarado, mesmo sem requisição HTTP autenticada.
+        if (ClubContext::hasOverride()) {
+            $builder->where($model->getTable().'.club_id', ClubContext::currentClubId());
+
+            return;
+        }
+
+        // Sem usuário autenticado e sem override (seeders, console, factories): não filtra.
         if (! auth()->check()) {
             return;
         }

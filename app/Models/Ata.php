@@ -2,18 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\ClubScope;
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Ata extends Model
 {
-    use HasFactory;
-
-    protected static function booted(): void
-    {
-        static::addGlobalScope(new ClubScope);
-    }
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'club_id',
