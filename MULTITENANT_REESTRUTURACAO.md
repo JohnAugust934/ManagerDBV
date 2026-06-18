@@ -207,6 +207,12 @@ filtrados À MÃO passam a ter o global scope:
 > qualquer model de tenant ficam isoladas automaticamente, sem filtrar à mão.
 > Sem isso, código de console enxerga TODOS os clubes (os scopes só filtram com
 > auth ou override).
+>
+> **⚠️ Job em fila NÃO herda o `actAs`** (achado da revisão): o override é estático
+> e some quando o job é serializado e processado depois, noutro processo. O job
+> deve **carregar o `club_id` no payload** e re-envolver o próprio `handle()` em
+> `ClubContext::actAs($this->clubId, fn () => ...)`. Idem para chamadas de console
+> que processam vários clubes: um `actAs` por clube.
 
 ## Fase 6 — Ciclo de vida do clube + catálogo
 
