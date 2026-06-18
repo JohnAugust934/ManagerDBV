@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Rules\UnidadePertenceAoClube;
+use App\Services\ClubContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -44,12 +45,14 @@ class StoreDesbravadorRequest extends FormRequest
     }
 
     /**
-     * Regra de unicidade do CPF. O update sobrescreve para ignorar o proprio registro.
+     * Regra de unicidade do CPF — POR CLUBE (a mesma pessoa pode estar em clubes
+     * distintos). O update sobrescreve para ignorar o próprio registro.
      *
      * @return array<int, mixed>
      */
     protected function cpfRule(): array
     {
-        return ['required', 'string', 'max:14', Rule::unique('desbravadores', 'cpf')];
+        return ['required', 'string', 'max:14',
+            Rule::unique('desbravadores', 'cpf')->where('club_id', ClubContext::currentClubId())];
     }
 }

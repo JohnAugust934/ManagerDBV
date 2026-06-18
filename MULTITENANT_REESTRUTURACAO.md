@@ -125,13 +125,31 @@ Migration `2026_06_18_000002_enforce_club_id_integrity` (três fases internas):
 > a unidade não tira mais o desbravador do clube). Revisão para `restrict` fica
 > como item aberto da Fase 6 (ciclo de vida).
 
-## Fase 3 — Uniques e índices escopados por tenant
+## Fase 3 — Uniques e índices escopados por tenant ✅ FEITO
 
-- [ ] Índices compostos `(club_id, <coluna quente>)` substituindo índices avulsos
-  de `club_id` — ex.: `(club_id, data)` em `frequencias`, `(club_id, status)` e
-  `(club_id, mes, ano)` em `mensalidades`.
-- [ ] Uniques naturais "por clube" passam a incluir `club_id` (padrão já usado em
-  `attendance_columns: unique(club_id, key)`).
+Migration `2026_06_18_000003_tenant_scoped_uniques_and_indexes`.
+
+- [x] **CPF único POR CLUBE** (correção de correção, não só performance):
+  `unique(club_id, cpf)` em `desbravadores` + regra de validação
+  (`Store/UpdateDesbravadorRequest`) escopada por `ClubContext`. Antes o CPF era
+  único global — impedia a mesma pessoa de existir em dois clubes. `cpf` nulo pode
+  repetir (NULLs distintos no índice unique nos três bancos).
+- [x] **Índices compostos `(club_id, <coluna quente>)`** substituindo os avulsos de
+  `club_id` (a coluna líder também serve as consultas que filtram só por club_id):
+  `desbravadores (club_id, ativo)`, `frequencias (club_id, data)`,
+  `mensalidades (club_id, status)` e `(club_id, mes, ano)`,
+  `caixas (club_id, data_movimentacao)`, `eventos (club_id, data_inicio)`.
+  Os compostos são criados ANTES de remover o índice avulso — em MySQL a FK
+  precisa de um índice com club_id na frente o tempo todo.
+- [x] Testes: `TenantScopedUniqueTest` (CPF entre/no clube, nulo repetível).
+  Suíte: 324. Gate + rollback/re-migração OK no SQLite.
+
+> Uniques naturais já escopados por FK club-específica (ex.:
+> `frequencias unique(desbravador_id, data)`, `mensalidades unique(desbravador_id,
+> mes, ano)`) permanecem — desbravador_id já implica o clube. `invitations.email`
+> segue único GLOBAL (e-mail é a chave de login; um usuário pertence a um clube).
+> Índices avulsos secundários (`ativo`, `status`, `data`...) mantidos para as
+> raras consultas cross-tenant (console/platform admin).
 
 ## Fase 4 — Trait único `BelongsToTenant`
 

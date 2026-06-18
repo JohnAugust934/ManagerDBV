@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\ClubContext;
 use Illuminate\Validation\Rule;
 
 class UpdateDesbravadorRequest extends StoreDesbravadorRequest
@@ -23,6 +24,9 @@ class UpdateDesbravadorRequest extends StoreDesbravadorRequest
      */
     protected function cpfRule(): array
     {
-        return ['required', 'string', 'max:14', Rule::unique('desbravadores', 'cpf')->ignore($this->route('desbravador'))];
+        return ['required', 'string', 'max:14',
+            Rule::unique('desbravadores', 'cpf')
+                ->where('club_id', ClubContext::currentClubId())
+                ->ignore($this->route('desbravador'))];
     }
 }
