@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Club;
+use App\Services\ClubContext;
 use App\Services\ClubExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -14,7 +15,7 @@ class ClubController extends Controller
     public function edit()
     {
         Gate::authorize('secretaria');
-        $club = Club::first(); // Sempre pega o único clube do sistema
+        $club = ClubContext::currentClub(); // Clube ativo do tenant (respeita impersonação)
 
         return view('club.edit', compact('club'));
     }
@@ -30,7 +31,7 @@ class ClubController extends Controller
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $club = Club::first();
+        $club = ClubContext::currentClub();
 
         if (! $club) {
             // O DIRETOR ESTÁ CRIANDO O CLUBE AGORA!
@@ -66,7 +67,7 @@ class ClubController extends Controller
     public function removeLogo()
     {
         Gate::authorize('secretaria');
-        $club = Club::first();
+        $club = ClubContext::currentClub();
 
         if ($club && $club->logo) {
             Storage::disk('public')->delete($club->logo);

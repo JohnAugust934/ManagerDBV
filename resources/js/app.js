@@ -65,11 +65,13 @@ window.addEventListener("pageshow", () => {
 document.addEventListener("click", (e) => {
     const link = e.target.closest("a");
 
-    // Filtros de segurança: ignora se não for link, nova aba, ou ancora
+    // Filtros de segurança: ignora se não for link, nova aba/frame alvo,
+    // download, ou ancora
     if (
         !link ||
         link.hostname !== window.location.hostname ||
-        link.target === "_blank" ||
+        link.target ||
+        link.hasAttribute("download") ||
         link.getAttribute("href").startsWith("#") ||
         link.getAttribute("href") === ""
     ) {

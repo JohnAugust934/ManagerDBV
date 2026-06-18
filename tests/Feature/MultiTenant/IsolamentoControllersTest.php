@@ -67,6 +67,17 @@ class IsolamentoControllersTest extends TestCase
         $this->assertDatabaseHas('invitations', ['email' => 'convidado@clube.com', 'club_id' => $clubA->id]);
     }
 
+    public function test_tela_de_configuracoes_mostra_o_proprio_clube_nao_o_primeiro(): void
+    {
+        ['club' => $clubA] = criarClubeComDados('Clube Alfa');
+        ['master' => $masterB] = criarClubeComDados('Clube Beta');
+
+        $this->actingAs($masterB)->get(route('club.edit'))
+            ->assertOk()
+            ->assertSee('Clube Beta')
+            ->assertDontSee('Clube Alfa');
+    }
+
     public function test_platform_admin_em_modo_suporte_cria_dados_no_clube_impersonado(): void
     {
         ['club' => $clubA] = criarClubeComDados('Clube A');

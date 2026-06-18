@@ -22,10 +22,12 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         $user = auth()->user();
-        $club = \App\Models\Club::first();
 
-        // Se o clube não existe e o logado é Master ou Diretor, cobra dele a criação!
-        if (! $club && in_array($user->role, ['diretor', 'master'])) {
+        // Se o PRÓPRIO clube do usuário ainda não existe e ele é Master ou Diretor,
+        // cobra dele a criação. Platform admin (cross-tenant) nunca cai aqui.
+        if (! $user->is_platform_admin
+            && ! $user->club
+            && in_array($user->role, ['diretor', 'master'])) {
             return redirect()->route('club.edit')->with('warning', 'Por favor, finalize as configurações do clube para liberar o sistema.');
         }
 

@@ -49,7 +49,7 @@
                             @csrf
                             <button type="submit" class="ui-btn-primary w-full sm:w-auto">Entrar (suporte)</button>
                         </form>
-                        <a href="{{ route('platform.export', $row->model) }}" class="ui-btn-secondary w-full sm:w-auto text-center">
+                        <a href="{{ route('platform.export', $row->model) }}" target="dl_frame" class="ui-btn-secondary w-full sm:w-auto text-center">
                             Exportar
                         </a>
                     </div>
@@ -61,4 +61,7 @@
             @endforelse
         </div>
     </div>
+
+    {{-- Recebe o download de exportação sem navegar a página principal --}}
+    <iframe name="dl_frame" class="hidden" title="Download de exportação"></iframe>
 </x-app-layout>
