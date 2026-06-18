@@ -104,23 +104,14 @@ class RelatorioTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
-    public function test_unidade_sem_club_id_nao_vaza_para_outro_clube()
+    public function test_unidade_sem_club_id_e_rejeitada_pelo_banco()
     {
-        // Unidades sem club_id NÃO devem aparecer para usuários de outros clubes.
-        // Comportamento anterior (whereNull fallback) era uma brecha de segurança — removido.
+        // O vazamento que este teste guardava (unidade sem club_id aparecendo para
+        // outro clube) agora é IMPOSSÍVEL: a Fase 2 tornou unidades.club_id NOT NULL.
+        // Garantia no nível do banco, mais forte que a verificação anterior em runtime.
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
         $this->unidade->update(['club_id' => null]);
-
-        $this->mockPdfLoadView('relatorios.table', function (array $data) {
-            $this->assertCount(0, $data['linhas'], 'Unidade sem club_id não deve aparecer para usuários de clube definido.');
-        });
-
-        $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
-            'tipo' => 'desbravadores',
-            'status' => 'ativos',
-        ]);
-
-        $response->assertOk();
-        $response->assertHeader('content-type', 'application/pdf');
     }
 
     public function test_pode_gerar_relatorio_personalizado_caixa()

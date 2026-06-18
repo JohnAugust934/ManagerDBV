@@ -31,17 +31,20 @@ class TenantIntegrityCommandTest extends TestCase
             ->assertExitCode(0);
     }
 
-    public function test_detecta_club_id_nulo_em_tabela_de_tenant(): void
+    public function test_invitation_com_club_id_nulo_e_aceita(): void
     {
-        ['club' => $club] = criarClubeComDados('Clube A');
-        $caixa = Caixa::factory()->forClube($club->id)->create();
-
-        // Simula linha órfã (invisível sob fail-closed).
-        DB::table('caixas')->where('id', $caixa->id)->update(['club_id' => null]);
+        // club_id nulo em tabela estrita virou impossível (NOT NULL na Fase 2).
+        // Mas invitations é OPCIONAL: o convite de bootstrap não tem clube.
+        criarClubeComDados('Clube A');
+        \App\Models\Invitation::create([
+            'email' => 'bootstrap@clube.com',
+            'token' => 'tok-boot',
+            'role' => 'diretor',
+        ]);
 
         $this->artisan('tenant:check-integrity')
-            ->expectsOutputToContain('Problemas de integridade')
-            ->assertExitCode(1);
+            ->expectsOutputToContain('Integridade multi-tenant OK')
+            ->assertExitCode(0);
     }
 
     public function test_detecta_club_id_pendente_para_clube_inexistente(): void
@@ -73,8 +76,11 @@ class TenantIntegrityCommandTest extends TestCase
 
     public function test_detecta_desbravador_sem_unidade(): void
     {
-        ['club' => $club] = criarClubeComDados('Clube A');
-        Desbravador::factory()->create(['unidade_id' => null]);
+        ['unidade' => $unidade] = criarClubeComDados('Clube A');
+        $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id]);
+
+        // Remove a unidade mantendo club_id (dado inconsistente).
+        DB::table('desbravadores')->where('id', $dbv->id)->update(['unidade_id' => null]);
 
         $this->artisan('tenant:check-integrity')->assertExitCode(1);
     }
@@ -83,7 +89,9 @@ class TenantIntegrityCommandTest extends TestCase
     {
         ['club' => $club] = criarClubeComDados('Clube A');
         $caixa = Caixa::factory()->forClube($club->id)->create();
-        DB::table('caixas')->where('id', $caixa->id)->update(['club_id' => null]);
+        // club_id pendente (aponta para clube inexistente) — reproduzível no SQLite,
+        // onde a FK é pulada; o NOT NULL impede forjar nulo.
+        DB::table('caixas')->where('id', $caixa->id)->update(['club_id' => 999999]);
 
         $this->artisan('tenant:check-integrity --json')
             ->expectsOutputToContain('"ok": false')

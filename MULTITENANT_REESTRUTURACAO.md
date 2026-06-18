@@ -92,16 +92,38 @@ buracos que impedem escalar com segurança.
 > Idem `Unidade`, que (descoberta) **não tem global scope** — é filtrada à mão nos
 > controllers; receberá `ClubScope` na Fase 4.
 
-## Fase 2 — Integridade referencial + cascade (MySQL/InnoDB)
+## Fase 2 — Integridade referencial + cascade (MySQL/InnoDB) ✅ FEITO
 
-- [ ] Converter **todo** `club_id` para FK `constrained('clubs')->cascadeOnDelete()`.
-  - MySQL exige tipo idêntico ao PK (`unsignedBigInteger`) e índice na coluna — já existem.
-- [ ] `club_id` → **`NOT NULL`** nas tabelas puramente de tenant (após backfill;
-  alterar para NOT NULL com nulos presentes falha no MySQL — backfill primeiro).
-  Manter `nullable` apenas onde há semântica global/platform.
-- [ ] Revisar `desbravadores.unidade_id`: com `club_id` próprio, o tenant não
-  depende mais da unidade. Decidir `nullOnDelete` (mantém a pessoa, tira da
-  unidade) vs `restrict`.
+Migration `2026_06_18_000002_enforce_club_id_integrity` (três fases internas):
+
+- [x] **Cura ou aborta antes de qualquer DDL:** linhas com club_id nulo num banco
+  de clube único são preenchidas com o único clube (legado single-tenant); se
+  houver vários clubes com nulos, aborta com orientação (`tenant:upgrade-legacy`).
+  Isto **substitui** a ideia anterior de tightening dentro do upgrade-legacy: a
+  cura do single-tenant agora é da própria migration, e instalações novas também
+  ganham NOT NULL (tabelas vazias no migrate → 0 nulos).
+- [x] **`club_id` → NOT NULL** em: unidades, desbravadores, frequencias,
+  mensalidades, caixas, patrimonios, eventos, atas, atos, ranking_snapshots.
+- [x] **FK `club_id → clubs` com `cascadeOnDelete`** nas que ainda não tinham
+  (todas as acima menos unidades). **Pulada no SQLite** (não adiciona FK via
+  ALTER) — em MySQL/Postgres vale; a rede agnóstica continua sendo o
+  `tenant:check-integrity`.
+- [x] **`invitations.club_id` permanece NULLABLE** (descoberta na revisão): o
+  convite de bootstrap do primeiro diretor é criado SEM clube. `users.club_id`
+  idem (platform admin). O `tenant:check-integrity` separa tabelas estritas
+  (null+pendente) de opcionais como invitations (só pendente).
+- [x] Testes reenquadrados (cenários de club_id nulo agora são impossíveis por
+  schema): `UpgradeLegacyTenantTest` foca em papéis de usuário; `RelatorioTest`
+  e `TenantIntegrityCommandTest` ajustados; novo `EnforcedClubIdTest`. Suíte: 321.
+
+> **Limitação consciente:** o `ON DELETE CASCADE` real só roda em MySQL/Postgres
+> (dev/produção). O SQLite dos testes não tem a FK, então o cascade de exclusão de
+> clube **não é exercido na suíte** — será coberto na Fase 6 por cascade em nível
+> de aplicação (portável) + a FK como backstop nos bancos reais.
+>
+> `desbravadores.unidade_id` mantido `nullOnDelete` (com `club_id` próprio, perder
+> a unidade não tira mais o desbravador do clube). Revisão para `restrict` fica
+> como item aberto da Fase 6 (ciclo de vida).
 
 ## Fase 3 — Uniques e índices escopados por tenant
 

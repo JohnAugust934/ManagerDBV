@@ -35,6 +35,7 @@ class CheckTenantIntegrity extends Command
      *
      * @var list<string>
      */
+    /** Tabelas onde club_id é OBRIGATÓRIO (não pode ser nulo nem pendente). */
     private const TABELAS_COM_CLUB_ID = [
         'unidades',
         'desbravadores',
@@ -46,8 +47,16 @@ class CheckTenantIntegrity extends Command
         'atas',
         'atos',
         'attendance_columns',
-        'invitations',
         'ranking_snapshots',
+    ];
+
+    /**
+     * Tabelas onde club_id pode ser nulo (estado legítimo), mas se preenchido
+     * precisa apontar para um clube existente. `invitations`: convite de
+     * bootstrap (primeiro diretor) é criado sem clube.
+     */
+    private const TABELAS_CLUB_ID_OPCIONAL = [
+        'invitations',
     ];
 
     public function handle(): int
@@ -60,6 +69,14 @@ class CheckTenantIntegrity extends Command
                 $problemas[] = ['club_id nulo (invisível ao clube)', $tabela, $nulos];
             }
 
+            $pendentes = $this->contarClubIdPendente($tabela);
+            if ($pendentes > 0) {
+                $problemas[] = ['club_id aponta para clube inexistente', $tabela, $pendentes];
+            }
+        }
+
+        // Tabelas onde o nulo é permitido: só checamos club_id pendente.
+        foreach (self::TABELAS_CLUB_ID_OPCIONAL as $tabela) {
             $pendentes = $this->contarClubIdPendente($tabela);
             if ($pendentes > 0) {
                 $problemas[] = ['club_id aponta para clube inexistente', $tabela, $pendentes];

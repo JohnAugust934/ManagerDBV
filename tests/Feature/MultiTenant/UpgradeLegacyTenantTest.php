@@ -4,17 +4,20 @@ namespace Tests\Feature\MultiTenant;
 
 use App\Models\Caixa;
 use App\Models\Club;
-use App\Models\Desbravador;
-use App\Models\RankingSnapshot;
-use App\Models\Unidade;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * Simula um banco single-tenant (v4.0.0-beta) com linhas órfãs (club_id NULL)
- * e valida a migração in-place para multi-tenant sem perda de dados.
+ * Valida o `tenant:upgrade-legacy` na sua responsabilidade ATUAL: resolver os
+ * papéis de usuário (platform admin) e vincular usuários órfãos ao clube.
+ *
+ * Observação: a cura de linhas de tenant órfãs (club_id NULL) de um banco legado
+ * single-tenant passou a ser feita pela própria migration de Fase 2
+ * (`enforce_club_id_integrity`, via curarOuAbortar) — por isso, e porque o schema
+ * de teste já é NOT NULL, não é possível (nem necessário) simular linhas de tenant
+ * com club_id nulo aqui. users.club_id permanece nullable e é o que o comando trata.
  */
 class UpgradeLegacyTenantTest extends TestCase
 {
@@ -39,61 +42,52 @@ class UpgradeLegacyTenantTest extends TestCase
             'club_id' => null,
         ]);
 
-        // Dados órfãos (club_id NULL) que ficariam invisíveis sob fail-closed.
-        $unidade = Unidade::factory()->create(['club_id' => null]);
-        $desbravador = Desbravador::factory()->create(['unidade_id' => $unidade->id]);
-        $caixa = Caixa::factory()->create(['club_id' => null, 'descricao' => 'Mov Legada']);
-        $snapshot = RankingSnapshot::create(['year' => 2025, 'scope' => 'unidades', 'club_id' => null, 'entries' => [], 'generated_at' => now()]);
+        // Dado já vinculado ao clube (pós Fase 2 não há tenant órfão).
+        $caixa = Caixa::factory()->forClube($club->id)->create(['descricao' => 'Mov Legada']);
 
-        return compact('club', 'masterLegado', 'diretorOrfao', 'unidade', 'caixa', 'snapshot');
+        return compact('club', 'masterLegado', 'diretorOrfao', 'caixa');
     }
 
-    public function test_upgrade_faz_backfill_e_define_papeis(): void
+    public function test_upgrade_define_papeis_e_vincula_usuarios_orfaos(): void
     {
-        ['club' => $club, 'masterLegado' => $master, 'diretorOrfao' => $diretor, 'unidade' => $unidade, 'caixa' => $caixa, 'snapshot' => $snapshot] = $this->cenarioLegado();
+        ['club' => $club, 'masterLegado' => $master, 'diretorOrfao' => $diretor] = $this->cenarioLegado();
 
         $this->artisan('tenant:upgrade-legacy', ['--platform-admin' => ['master@legado.com']])
             ->assertExitCode(0);
-
-        // Backfill: nada mais órfão.
-        $this->assertSame(0, DB::table('caixas')->whereNull('club_id')->count());
-        $this->assertSame(0, DB::table('unidades')->whereNull('club_id')->count());
-        $this->assertSame(0, DB::table('ranking_snapshots')->whereNull('club_id')->count());
-
-        $this->assertSame($club->id, $caixa->fresh()->club_id);
-        $this->assertSame($club->id, $unidade->fresh()->club_id);
-        $this->assertSame($club->id, $snapshot->fresh()->club_id);
 
         // Master legado vira platform admin (sem clube).
         $master->refresh();
         $this->assertTrue($master->is_platform_admin);
         $this->assertNull($master->club_id);
 
-        // Diretor órfão é vinculado ao clube (não fica travado).
+        // Diretor órfão é vinculado ao clube (não fica travado pelo fail-closed).
         $this->assertSame($club->id, $diretor->fresh()->club_id);
         $this->assertFalse($diretor->fresh()->is_platform_admin);
+
+        // Nenhum usuário comum permanece órfão.
+        $this->assertSame(0, User::whereNull('club_id')->where('is_platform_admin', false)->count());
     }
 
-    public function test_dados_ficam_visiveis_para_o_master_apos_upgrade(): void
+    public function test_dados_ficam_visiveis_para_o_diretor_apos_upgrade(): void
     {
-        ['club' => $club, 'diretorOrfao' => $diretor] = $this->cenarioLegado();
+        ['diretorOrfao' => $diretor] = $this->cenarioLegado();
 
         $this->artisan('tenant:upgrade-legacy', ['--platform-admin' => ['master@legado.com']])->assertExitCode(0);
 
-        // O diretor (agora vinculado ao clube) enxerga a movimentação legada.
+        // O diretor (agora vinculado ao clube) enxerga a movimentação do clube.
         $this->actingAs($diretor->fresh());
         $this->assertSame(['Mov Legada'], Caixa::pluck('descricao')->all());
     }
 
     public function test_dry_run_nao_grava_nada(): void
     {
-        ['caixa' => $caixa, 'masterLegado' => $master] = $this->cenarioLegado();
+        ['masterLegado' => $master, 'diretorOrfao' => $diretor] = $this->cenarioLegado();
 
         $this->artisan('tenant:upgrade-legacy', ['--platform-admin' => ['master@legado.com'], '--dry-run' => true])
             ->assertExitCode(0);
 
-        $this->assertNull($caixa->fresh()->club_id);
         $this->assertFalse($master->fresh()->is_platform_admin);
+        $this->assertNull($diretor->fresh()->club_id);
     }
 
     public function test_falha_quando_ha_multiplos_clubes_sem_especificar(): void
@@ -106,7 +100,7 @@ class UpgradeLegacyTenantTest extends TestCase
 
     public function test_nao_vincula_platform_admin_existente_ao_clube(): void
     {
-        $club = Club::create(['nome' => 'Clube Legado', 'cidade' => 'SP']);
+        Club::create(['nome' => 'Clube Legado', 'cidade' => 'SP']);
 
         // Já existe um platform admin (cenário de re-execução ou pós-seed).
         $admin = User::factory()->platformAdmin()->create(['email' => 'super@plataforma.com']);
@@ -121,12 +115,13 @@ class UpgradeLegacyTenantTest extends TestCase
 
     public function test_idempotente_segunda_execucao_nao_altera(): void
     {
-        ['club' => $club] = $this->cenarioLegado();
+        ['club' => $club, 'diretorOrfao' => $diretor] = $this->cenarioLegado();
 
         $this->artisan('tenant:upgrade-legacy', ['--platform-admin' => ['master@legado.com']])->assertExitCode(0);
         $this->artisan('tenant:upgrade-legacy', ['--platform-admin' => ['master@legado.com']])->assertExitCode(0);
 
-        $this->assertSame(0, DB::table('caixas')->whereNull('club_id')->count());
+        $this->assertSame($club->id, $diretor->fresh()->club_id);
         $this->assertSame(1, User::where('is_platform_admin', true)->count());
+        $this->assertSame(0, DB::table('users')->whereNull('club_id')->where('is_platform_admin', false)->count());
     }
 }
