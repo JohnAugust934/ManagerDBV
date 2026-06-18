@@ -30,9 +30,9 @@ class PlatformController extends Controller
                     'model' => $club,
                     'usuarios' => User::where('club_id', $club->id)->count(),
                     'unidades' => Unidade::withoutGlobalScopes()->where('club_id', $club->id)->count(),
-                    'desbravadores' => Desbravador::withoutGlobalScopes()
-                        ->whereHas('unidade', fn ($q) => $q->where('club_id', $club->id))
-                        ->count(),
+                    // club_id direto (Fase 1) — evita whereHas('unidade'), que agora
+                    // aplicaria o ClubScope do Unidade e quebraria a contagem cross-tenant.
+                    'desbravadores' => Desbravador::withoutGlobalScopes()->where('club_id', $club->id)->count(),
                 ];
             });
 

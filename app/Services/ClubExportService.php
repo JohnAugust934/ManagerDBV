@@ -34,11 +34,11 @@ class ClubExportService
     public function export(Club $club): array
     {
         $clubId = $club->id;
-        $porUnidade = fn ($q) => $q->where('club_id', $clubId);
 
-        $desbravadorIds = Desbravador::withoutGlobalScopes()
-            ->whereHas('unidade', $porUnidade)
-            ->pluck('id');
+        // club_id direto (Fase 1) em vez de whereHas('unidade'/'desbravador.unidade'):
+        // a subquery da relação aplicaria o ClubScope do Unidade/Desbravador e, sob
+        // impersonação de outro clube, exportaria dados errados.
+        $desbravadorIds = Desbravador::withoutGlobalScopes()->where('club_id', $clubId)->pluck('id');
 
         $eventoIds = Evento::withoutGlobalScopes()->where('club_id', $clubId)->pluck('id');
         $patrimonioIds = Patrimonio::withoutGlobalScopes()->where('club_id', $clubId)->pluck('id');
@@ -63,17 +63,13 @@ class ClubExportService
             'users' => $this->rows(DB::table('users')->where('club_id', $clubId)->get()),
             'attendance_columns' => AttendanceColumn::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
             'unidades' => Unidade::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
-            'desbravadores' => Desbravador::withoutGlobalScopes()
-                ->whereHas('unidade', $porUnidade)
-                ->get()->toArray(),
+            'desbravadores' => Desbravador::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
             'frequencias' => $this->rows($frequencias),
             'frequencia_column_values' => $this->rows(
                 DB::table('frequencia_column_values')->whereIn('frequencia_id', $frequenciaIds)->get()
             ),
             'caixas' => Caixa::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
-            'mensalidades' => Mensalidade::withoutGlobalScopes()
-                ->whereHas('desbravador.unidade', $porUnidade)
-                ->get()->toArray(),
+            'mensalidades' => Mensalidade::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
             'eventos' => Evento::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
             'desbravador_evento' => $this->rows(
                 DB::table('desbravador_evento')->whereIn('desbravador_id', $desbravadorIds)->get()

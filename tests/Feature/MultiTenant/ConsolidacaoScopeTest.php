@@ -7,6 +7,9 @@ use App\Models\Desbravador;
 use App\Models\Evento;
 use App\Models\RankingSnapshot;
 use App\Models\Unidade;
+use App\Models\User;
+use App\Services\ClubContext;
+use App\Services\ClubExportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -53,6 +56,25 @@ class ConsolidacaoScopeTest extends TestCase
 
         $this->actingAs($masterA);
         $this->assertSame(1, RankingSnapshot::count());
+    }
+
+    public function test_export_traz_o_clube_alvo_mesmo_impersonando_outro(): void
+    {
+        ['club' => $clubA, 'unidade' => $unidadeA] = criarClubeComDados('Clube A');
+        ['club' => $clubB] = criarClubeComDados('Clube B');
+
+        Desbravador::factory()->create(['unidade_id' => $unidadeA->id, 'nome' => 'Fulano A']);
+
+        $admin = User::factory()->platformAdmin()->create(['club_id' => null]);
+        $this->actingAs($admin);
+        session([ClubContext::SESSION_KEY => $clubB->id]); // impersonando o clube B
+
+        // Exporta o clube A — deve trazer os dados do A (via club_id direto),
+        // sem ser filtrado pelo scope do clube impersonado (B).
+        $data = app(ClubExportService::class)->export($clubA);
+
+        $this->assertCount(1, $data['desbravadores']);
+        $this->assertSame('Fulano A', $data['desbravadores'][0]['nome']);
     }
 
     public function test_integridade_detecta_inscricao_cross_club(): void

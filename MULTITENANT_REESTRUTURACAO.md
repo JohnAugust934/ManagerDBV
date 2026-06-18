@@ -178,6 +178,15 @@ filtrados À MÃO passam a ter o global scope:
 > `Invitation` permanece SEM scope: seu `club_id` é nullable (bootstrap) e já é
 > filtrado à mão; um global scope com fail-closed esconderia convites de bootstrap.
 
+> **Revisão da Fase 4 (achado):** dar scope ao `Unidade` fez todo `whereHas('unidade')`
+> / `whereHas('desbravador.unidade')` passar a aplicar o ClubScope do Unidade dentro
+> da subquery. Nos caminhos cross-tenant (`ClubExportService`, `PlatformController`),
+> isso filtraria errado **sob impersonação** (frágil — em produção funcionava só
+> porque export/painel são acessados sem impersonar). Corrigido trocando a travessia
+> de relação por `club_id` direto (disponível desde a Fase 1) com `withoutGlobalScopes()`
+> — mais robusto e rápido. Regressão coberta por
+> `ConsolidacaoScopeTest::test_export_traz_o_clube_alvo_mesmo_impersonando_outro`.
+
 ## Fase 5 — Contexto de tenant fora do HTTP
 
 - [ ] `ClubContext::actAs(int $clubId, Closure $fn)` (set/restore) e scopes
