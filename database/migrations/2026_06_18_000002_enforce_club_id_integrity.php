@@ -50,9 +50,15 @@ return new class extends Migration
     {
         $todas = array_merge(self::COM_FK_NOVA, self::FK_JA_EXISTE);
 
-        // 1. Cura ou aborta — antes de mexer no schema.
+        // 1. PRÉ-VALIDAÇÃO completa, antes de qualquer DDL — em MySQL o DDL não é
+        //    transacional, então um erro no meio deixaria o schema pela metade.
+        //    Cura nulos (ou aborta) e garante que não há club_id pendente (que
+        //    faria a FK falhar).
         foreach ($todas as $tabela) {
             $this->curarOuAbortar($tabela);
+        }
+        foreach (self::COM_FK_NOVA as $tabela) {
+            $this->garantirSemPendentes($tabela);
         }
 
         // 2. NOT NULL.
@@ -68,6 +74,10 @@ return new class extends Migration
         }
 
         foreach (self::COM_FK_NOVA as $tabela) {
+            if ($this->jaTemFkClubId($tabela)) {
+                continue; // idempotente: re-execução após falha parcial não duplica FK.
+            }
+
             Schema::table($tabela, function (Blueprint $table) {
                 $table->foreign('club_id')->references('id')->on('clubs')->cascadeOnDelete();
             });
@@ -118,5 +128,37 @@ return new class extends Migration
             "com club_id nulo e há {$clubes} clube(s) no banco. ".
             "Rode 'php artisan tenant:upgrade-legacy' (ou corrija via tenant:check-integrity) antes de migrar."
         );
+    }
+
+    /**
+     * Aborta se a tabela tiver club_id apontando para clube inexistente — isso
+     * faria a criação da FK falhar (em MySQL, após o NOT NULL já aplicado).
+     */
+    private function garantirSemPendentes(string $tabela): void
+    {
+        $pendentes = DB::table($tabela)
+            ->whereNotNull('club_id')
+            ->whereNotIn('club_id', fn ($q) => $q->from('clubs')->select('id'))
+            ->count();
+
+        if ($pendentes > 0) {
+            throw new RuntimeException(
+                "Não é possível adicionar a FK: a tabela '{$tabela}' tem {$pendentes} linha(s) ".
+                'com club_id apontando para um clube inexistente. '.
+                "Corrija via 'php artisan tenant:check-integrity' antes de migrar."
+            );
+        }
+    }
+
+    /** Já existe uma FK em club_id nesta tabela? (idempotência da fase 3). */
+    private function jaTemFkClubId(string $tabela): bool
+    {
+        foreach (Schema::getForeignKeys($tabela) as $fk) {
+            if (in_array('club_id', $fk['columns'] ?? [], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 };
