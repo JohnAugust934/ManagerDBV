@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -19,6 +20,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Pré-validação antes de qualquer DDL: a unique(club_id, cpf) falharia em
+        // dados com CPF duplicado dentro de um mesmo clube. Aborta limpo (em MySQL
+        // o DDL não é transacional e quebraria a migration pela metade).
+        $this->abortarSeCpfDuplicado();
+
         // desbravadores: CPF único por clube + (club_id, ativo).
         Schema::table('desbravadores', function (Blueprint $table) {
             $table->unique(['club_id', 'cpf'], 'desbravadores_club_cpf_unique');
@@ -101,5 +107,29 @@ return new class extends Migration
         Schema::table('eventos', function (Blueprint $table) {
             $table->dropIndex('eventos_club_data_index');
         });
+    }
+
+    /**
+     * Aborta se houver CPF duplicado DENTRO de um mesmo clube — o que faria a
+     * criação de unique(club_id, cpf) falhar. CPF nulo é ignorado (NULLs distintos).
+     */
+    private function abortarSeCpfDuplicado(): void
+    {
+        $duplicados = DB::table('desbravadores')
+            ->select('club_id', 'cpf', DB::raw('count(*) as total'))
+            ->whereNotNull('cpf')
+            ->groupBy('club_id', 'cpf')
+            ->havingRaw('count(*) > 1')
+            ->get();
+
+        if ($duplicados->isNotEmpty()) {
+            $exemplo = $duplicados->first();
+
+            throw new RuntimeException(
+                "Não é possível criar unique(club_id, cpf): há {$duplicados->count()} CPF(s) ".
+                "duplicado(s) dentro de um mesmo clube (ex.: clube #{$exemplo->club_id}, cpf {$exemplo->cpf}). ".
+                'Resolva os duplicados antes de migrar.'
+            );
+        }
     }
 };
