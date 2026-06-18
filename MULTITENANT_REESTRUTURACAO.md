@@ -151,11 +151,32 @@ Migration `2026_06_18_000003_tenant_scoped_uniques_and_indexes`.
 > Índices avulsos secundários (`ativo`, `status`, `data`...) mantidos para as
 > raras consultas cross-tenant (console/platform admin).
 
-## Fase 4 — Trait único `BelongsToTenant`
+## Fase 4 — Trait único `BelongsToTenant` ✅ FEITO
 
-- [ ] Trait que registra o global scope, **auto-preenche `club_id` no `creating`**
-  via `ClubContext`, e expõe `club()`. Aposenta as 3 classes divergentes.
-- [ ] Models de tenant passam a `use BelongsToTenant` (um ponto de verdade).
+O trait em si nasceu na Fase 1 (scope direto + auto-fill de `club_id` + `club()`).
+A Fase 4 fecha os pontos cegos restantes — modelos com `club_id` que ainda eram
+filtrados À MÃO passam a ter o global scope:
+
+- [x] **`Unidade`** passa a usar `BelongsToTenant` — era o gap principal: sem scope,
+  o route-model binding não isolava (dependia de `abort(403)` manual nos
+  controllers). Agora unidade de outro clube dá **404** (isolamento mais forte que
+  403, que revelava a existência). `AttendanceColumn` e `RankingSnapshot` idem
+  (removidos os `club()` redundantes — o trait fornece).
+- [x] **Pontos cross-tenant ajustados** para `withoutGlobalScopes()`: contagem de
+  unidades em `PlatformController` e o export de `unidades`/`attendance_columns`/
+  `ranking_snapshots` em `ClubExportService` (rodam para um clube específico,
+  possivelmente sem impersoná-lo). `Desbravador::resolveClubIdFromParent` também
+  usa `withoutGlobalScopes()` na busca da unidade-pai.
+- [x] **Pivôs sem `club_id` (decisão mantida):** `desbravador_especialidade/
+  requisito/evento` e `frequencia_column_values` continuam SEM `club_id` próprio
+  (são sempre acessados via pai já escopado, e `attach()` não popula colunas
+  extras). Em vez de coluna, ganharam **verificação de integridade**:
+  `tenant:check-integrity` agora detecta pivô ligando entidades de clubes
+  diferentes (inscrição cross-club, valor de coluna cross-club).
+- [x] Testes: `ConsolidacaoScopeTest` + `UnidadeTest` ajustado (403→404). Suíte: 328.
+
+> `Invitation` permanece SEM scope: seu `club_id` é nullable (bootstrap) e já é
+> filtrado à mão; um global scope com fail-closed esconderia convites de bootstrap.
 
 ## Fase 5 — Contexto de tenant fora do HTTP
 

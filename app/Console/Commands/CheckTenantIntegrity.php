@@ -130,6 +130,19 @@ class CheckTenantIntegrity extends Command
             'club_id da mensalidade difere do do desbravador',
         );
 
+        // Pivôs sem club_id próprio (Fase 1/4): garantir que ligam entidades do
+        // MESMO clube — uma inscrição entre clubes diferentes seria vazamento.
+        $this->checarPivotMesmoClube(
+            $problemas,
+            'desbravador_evento', 'desbravadores', 'desbravador_id', 'eventos', 'evento_id',
+            'inscrição liga desbravador e evento de clubes diferentes',
+        );
+        $this->checarPivotMesmoClube(
+            $problemas,
+            'frequencia_column_values', 'frequencias', 'frequencia_id', 'attendance_columns', 'attendance_column_id',
+            'valor de coluna liga frequência e coluna de clubes diferentes',
+        );
+
         return $this->reportar($problemas);
     }
 
@@ -162,6 +175,32 @@ class CheckTenantIntegrity extends Command
 
         if ($divergentes > 0) {
             $problemas[] = [$descricao, $filha, $divergentes];
+        }
+    }
+
+    /**
+     * Conta linhas de um pivô (sem club_id próprio) que ligam dois pais de clubes
+     * diferentes — vazamento cross-tenant. Os dois pais têm club_id direto.
+     *
+     * @param  list<array{0:string,1:string,2:int}>  $problemas
+     */
+    private function checarPivotMesmoClube(
+        array &$problemas,
+        string $pivot,
+        string $paiA,
+        string $fkA,
+        string $paiB,
+        string $fkB,
+        string $descricao,
+    ): void {
+        $divergentes = DB::table("{$pivot} as p")
+            ->join("{$paiA} as a", 'a.id', '=', "p.{$fkA}")
+            ->join("{$paiB} as b", 'b.id', '=', "p.{$fkB}")
+            ->whereColumn('a.club_id', '!=', 'b.club_id')
+            ->count();
+
+        if ($divergentes > 0) {
+            $problemas[] = [$descricao, $pivot, $divergentes];
         }
     }
 

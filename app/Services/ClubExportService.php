@@ -61,8 +61,8 @@ class ClubExportService
             // DB direto (não o model) para incluir o hash de senha — necessário para
             // reimportar usuários sem perder o login. O arquivo é restrito a admins.
             'users' => $this->rows(DB::table('users')->where('club_id', $clubId)->get()),
-            'attendance_columns' => AttendanceColumn::where('club_id', $clubId)->get()->toArray(),
-            'unidades' => Unidade::where('club_id', $clubId)->get()->toArray(),
+            'attendance_columns' => AttendanceColumn::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
+            'unidades' => Unidade::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
             'desbravadores' => Desbravador::withoutGlobalScopes()
                 ->whereHas('unidade', $porUnidade)
                 ->get()->toArray(),
@@ -84,7 +84,7 @@ class ClubExportService
             'patrimonio_manutencoes' => $this->rows(
                 DB::table('patrimonio_manutencoes')->whereIn('patrimonio_id', $patrimonioIds)->get()
             ),
-            'ranking_snapshots' => RankingSnapshot::where('club_id', $clubId)->get()->toArray(),
+            'ranking_snapshots' => RankingSnapshot::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
             'desbravador_especialidade' => $this->rows($desbEspecialidade),
             'desbravador_requisito' => $this->rows($desbRequisito),
 

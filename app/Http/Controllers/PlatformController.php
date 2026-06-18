@@ -29,7 +29,7 @@ class PlatformController extends Controller
                 return (object) [
                     'model' => $club,
                     'usuarios' => User::where('club_id', $club->id)->count(),
-                    'unidades' => Unidade::where('club_id', $club->id)->count(),
+                    'unidades' => Unidade::withoutGlobalScopes()->where('club_id', $club->id)->count(),
                     'desbravadores' => Desbravador::withoutGlobalScopes()
                         ->whereHas('unidade', fn ($q) => $q->where('club_id', $club->id))
                         ->count(),

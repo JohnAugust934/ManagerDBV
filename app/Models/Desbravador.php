@@ -59,7 +59,7 @@ class Desbravador extends Model
             return null;
         }
 
-        return Unidade::whereKey($this->unidade_id)->value('club_id');
+        return Unidade::withoutGlobalScopes()->whereKey($this->unidade_id)->value('club_id');
     }
 
     public function classe(): BelongsTo
