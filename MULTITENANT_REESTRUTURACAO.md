@@ -59,8 +59,11 @@ buracos que impedem escalar com segurança.
   Aplicado a `Desbravador`, `Frequencia`, `Mensalidade`.
 - [x] `DesbravadorClubScope` e `MensalidadeClubScope` **removidos** (substituídos
   pelo `ClubScope` direto via trait). `Mensalidade::scopeDoClube` agora usa
-  `where club_id` direto. **Bug corrigido:** `Frequencia` ganhou scope (antes
-  vazava entre clubes — afetava Dashboard).
+  `where club_id` direto. `Frequencia` ganhou global scope — antes **não tinha
+  scope nenhum** (`Frequencia::all()` vazava). As telas atuais (Dashboard,
+  FrequenciaController) já filtravam à mão via `whereHas`, então o scope é
+  defesa-em-profundidade contra vazamento futuro, não correção de leak ativo.
+  Esses `whereHas` ficaram redundantes — limpeza opcional na Fase 4.
 - [x] Inserts em massa que pulam o auto-fill ajustados: `MensalidadeController`
   (`insert()` em massa) e `ClubImportService` (`DB::table()->insert`) agora setam
   `club_id` explicitamente.
@@ -69,6 +72,19 @@ buracos que impedem escalar com segurança.
   bater com o do pai).
 - [x] Testes: `DesnormalizacaoClubIdTest` (5) + suíte completa verde (318 testes).
 
+> **Revisão da Fase 1 (achados):**
+> - 🔴 Corrigido (bug pré-existente): `App\Rules\UnidadePertenceAoClube` usava
+>   `auth()->user()->club_id` em vez de `ClubContext::currentClubId()` — um
+>   platform admin em **modo suporte** (club_id null) era rejeitado em toda
+>   unidade e não conseguia criar/editar desbravador no clube atendido. Agora usa
+>   `ClubContext`. Teste de regressão em `SuperAdminImpersonacaoTest`.
+> - 🟢 `club_id` em `$fillable`: sem risco de mass-assignment — os controllers
+>   usam `FormRequest::validated()` (club_id não é campo de formulário) e o
+>   auto-fill seta via `setAttribute` (fora do fillable). Mantido por consistência
+>   com Caixa/Evento/etc.
+> - 🟢 Export/round-trip e ranking/snapshot revisados: corretos (import sobrescreve
+>   club_id; snapshot em console usa short-circuit do scope sem auth).
+>
 > **Pivôs deferidos para a Fase 4:** `desbravador_especialidade/requisito/evento`
 > e `frequencia_column_values` **não** receberam club_id nesta fase — são sempre
 > acessados via pai já escopado (nunca query direta no app) e `attach()` não
