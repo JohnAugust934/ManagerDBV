@@ -37,6 +37,9 @@ class CheckTenantIntegrity extends Command
      */
     private const TABELAS_COM_CLUB_ID = [
         'unidades',
+        'desbravadores',
+        'frequencias',
+        'mensalidades',
         'caixas',
         'patrimonios',
         'eventos',
@@ -93,6 +96,23 @@ class CheckTenantIntegrity extends Command
             $problemas[] = ['unidade_id aponta para unidade inexistente', 'desbravadores', $unidadePendente];
         }
 
+        // Divergência pai/filho: o club_id desnormalizado precisa bater com o do pai.
+        $this->checarDivergencia(
+            $problemas,
+            'desbravadores', 'unidades', 'unidade_id',
+            'club_id do desbravador difere do da unidade',
+        );
+        $this->checarDivergencia(
+            $problemas,
+            'frequencias', 'desbravadores', 'desbravador_id',
+            'club_id da frequência difere do do desbravador',
+        );
+        $this->checarDivergencia(
+            $problemas,
+            'mensalidades', 'desbravadores', 'desbravador_id',
+            'club_id da mensalidade difere do do desbravador',
+        );
+
         return $this->reportar($problemas);
     }
 
@@ -106,6 +126,26 @@ class CheckTenantIntegrity extends Command
             ->whereNotNull('club_id')
             ->whereNotIn('club_id', fn ($q) => $q->from('clubs')->select('id'))
             ->count();
+    }
+
+    /**
+     * Conta linhas da tabela filha cujo club_id desnormalizado diverge do club_id
+     * do registro-pai (ambos não-nulos). Invariante da Fase 1.
+     *
+     * @param  list<array{0:string,1:string,2:int}>  $problemas
+     */
+    private function checarDivergencia(array &$problemas, string $filha, string $pai, string $fk, string $descricao): void
+    {
+        $divergentes = DB::table($filha)
+            ->join($pai, "{$pai}.id", '=', "{$filha}.{$fk}")
+            ->whereNotNull("{$filha}.club_id")
+            ->whereNotNull("{$pai}.club_id")
+            ->whereColumn("{$filha}.club_id", '!=', "{$pai}.club_id")
+            ->count();
+
+        if ($divergentes > 0) {
+            $problemas[] = [$descricao, $filha, $divergentes];
+        }
     }
 
     /**

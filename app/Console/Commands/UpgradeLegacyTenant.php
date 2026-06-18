@@ -37,6 +37,9 @@ class UpgradeLegacyTenant extends Command
     /** Tabelas com coluna club_id direta que recebem backfill. */
     private const TABELAS_COM_CLUB_ID = [
         'unidades',
+        'desbravadores',
+        'frequencias',
+        'mensalidades',
         'caixas',
         'patrimonios',
         'eventos',

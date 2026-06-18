@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,10 +10,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Frequencia extends Model
 {
-    use HasFactory;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'desbravador_id',
+        'club_id',
         'data',
         'presente',
         'pontual',
@@ -31,6 +33,19 @@ class Frequencia extends Model
     public function desbravador(): BelongsTo
     {
         return $this->belongsTo(Desbravador::class);
+    }
+
+    /**
+     * Sem contexto de clube ativo, herda o clube do desbravador. Usado pelo
+     * trait BelongsToTenant ao criar (ex.: seeders, import).
+     */
+    public function resolveClubIdFromParent(): ?int
+    {
+        if (! $this->desbravador_id) {
+            return null;
+        }
+
+        return Desbravador::withoutGlobalScopes()->whereKey($this->desbravador_id)->value('club_id');
     }
 
     public function columnValues(): HasMany

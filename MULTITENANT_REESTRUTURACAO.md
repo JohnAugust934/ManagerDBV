@@ -49,15 +49,32 @@ buracos que impedem escalar com segurança.
 > da Fase 4 fecham esse buraco ao dar `club_id` direto e scope próprio a essas
 > tabelas.
 
-## Fase 1 — `club_id` direto em todas as tabelas de tenant (desnormalização)
+## Fase 1 — `club_id` direto em todas as tabelas de tenant (desnormalização) ✅ FEITO
 
-- [ ] Migration adiciona `club_id` a: `desbravadores`, `frequencias`,
-  `mensalidades`, `desbravador_especialidade`, `desbravador_requisito`,
-  `desbravador_evento`, `frequencia_column_values`.
-- [ ] **Backfill na mesma migration** a partir das relações atuais
-  (`unidade.club_id` → desbravador; `desbravador.club_id` → filhos).
-- [ ] Trocar `DesbravadorClubScope`/`MensalidadeClubScope` para filtro **direto**
-  `where club_id` (eliminar `whereHas`).
+- [x] Migration `2026_06_18_000001_add_club_id_to_tenant_core_tables` adiciona
+  `club_id` (nullable + índice) a `desbravadores`, `frequencias`, `mensalidades`,
+  com **backfill** via UPDATE correlacionado portável (SQLite/MySQL/Postgres).
+- [x] Trait `App\Models\Concerns\BelongsToTenant`: registra o `ClubScope` direto
+  e **auto-preenche club_id ao criar** (ClubContext → fallback `resolveClubIdFromParent`).
+  Aplicado a `Desbravador`, `Frequencia`, `Mensalidade`.
+- [x] `DesbravadorClubScope` e `MensalidadeClubScope` **removidos** (substituídos
+  pelo `ClubScope` direto via trait). `Mensalidade::scopeDoClube` agora usa
+  `where club_id` direto. **Bug corrigido:** `Frequencia` ganhou scope (antes
+  vazava entre clubes — afetava Dashboard).
+- [x] Inserts em massa que pulam o auto-fill ajustados: `MensalidadeController`
+  (`insert()` em massa) e `ClubImportService` (`DB::table()->insert`) agora setam
+  `club_id` explicitamente.
+- [x] `tenant:upgrade-legacy` estendido com as 3 tabelas; `tenant:check-integrity`
+  agora cobre as 3 + **checks de divergência pai/filho** (club_id da filha precisa
+  bater com o do pai).
+- [x] Testes: `DesnormalizacaoClubIdTest` (5) + suíte completa verde (318 testes).
+
+> **Pivôs deferidos para a Fase 4:** `desbravador_especialidade/requisito/evento`
+> e `frequencia_column_values` **não** receberam club_id nesta fase — são sempre
+> acessados via pai já escopado (nunca query direta no app) e `attach()` não
+> popula colunas extras facilmente. Serão tratados junto da consolidação do trait.
+> Idem `Unidade`, que (descoberta) **não tem global scope** — é filtrada à mão nos
+> controllers; receberá `ClubScope` na Fase 4.
 
 ## Fase 2 — Integridade referencial + cascade (MySQL/InnoDB)
 

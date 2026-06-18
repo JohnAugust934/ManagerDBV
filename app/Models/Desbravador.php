@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\RegistraAutoria;
-use App\Models\Scopes\DesbravadorClubScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Desbravador extends Model
 {
-    use HasFactory, RegistraAutoria;
+    use BelongsToTenant, HasFactory, RegistraAutoria;
 
     protected $table = 'desbravadores';
 
@@ -24,6 +24,7 @@ class Desbravador extends Model
         'cpf',
         'rg',
         'unidade_id',
+        'club_id',
         'classe_atual',
         'email',
         'telefone',
@@ -43,14 +44,22 @@ class Desbravador extends Model
         'ativo' => 'boolean',
     ];
 
-    protected static function booted(): void
-    {
-        static::addGlobalScope(new DesbravadorClubScope);
-    }
-
     public function unidade(): BelongsTo
     {
         return $this->belongsTo(Unidade::class);
+    }
+
+    /**
+     * Sem contexto de clube ativo (seeders/console), o clube do desbravador é
+     * definido pela sua unidade. Usado pelo trait BelongsToTenant ao criar.
+     */
+    public function resolveClubIdFromParent(): ?int
+    {
+        if (! $this->unidade_id) {
+            return null;
+        }
+
+        return Unidade::whereKey($this->unidade_id)->value('club_id');
     }
 
     public function classe(): BelongsTo

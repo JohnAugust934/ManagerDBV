@@ -39,10 +39,11 @@ class ClubImportService
             $userMap = $this->importUsers($data['users'] ?? [], $newClubId);
             $acMap = $this->importSimple('attendance_columns', $data['attendance_columns'] ?? [], ['club_id' => $newClubId]);
             $unidadeMap = $this->importUnidades($data['unidades'] ?? [], $newClubId, $userMap);
-            $dbvMap = $this->importDesbravadores($data['desbravadores'] ?? [], $unidadeMap, $userMap, $catalogo);
+            $dbvMap = $this->importDesbravadores($data['desbravadores'] ?? [], $unidadeMap, $userMap, $catalogo, $newClubId);
 
             $freqMap = $this->importEach('frequencias', $data['frequencias'] ?? [], fn ($r) => [
                 'desbravador_id' => $dbvMap[$r['desbravador_id']] ?? null,
+                'club_id' => $newClubId,
             ], requiredKeys: ['desbravador_id']);
 
             $this->importEach('frequencia_column_values', $data['frequencia_column_values'] ?? [], fn ($r) => [
@@ -59,6 +60,7 @@ class ClubImportService
 
             $this->importEach('mensalidades', $data['mensalidades'] ?? [], fn ($r) => [
                 'desbravador_id' => $dbvMap[$r['desbravador_id']] ?? null,
+                'club_id' => $newClubId,
             ], requiredKeys: ['desbravador_id']);
 
             $eventoMap = $this->importSimple('eventos', $data['eventos'] ?? [], ['club_id' => $newClubId]);
@@ -162,7 +164,7 @@ class ClubImportService
     }
 
     /** @return array<int,int> */
-    private function importDesbravadores(array $desbravadores, array $unidadeMap, array $userMap, array $catalogo): array
+    private function importDesbravadores(array $desbravadores, array $unidadeMap, array $userMap, array $catalogo, int $newClubId): array
     {
         $map = [];
         $count = 0;
@@ -176,6 +178,7 @@ class ClubImportService
 
             $row = $this->scrub($d);
             $row['unidade_id'] = $novaUnidade;
+            $row['club_id'] = $newClubId;
             $row['classe_atual'] = $this->resolveClasse($d['classe_atual'] ?? null, $catalogo);
             $row['created_by'] = $userMap[$d['created_by'] ?? null] ?? null;
             $row['updated_by'] = $userMap[$d['updated_by'] ?? null] ?? null;

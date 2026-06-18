@@ -96,6 +96,7 @@ class MensalidadeController extends Controller
             ->reject(fn ($id) => $existentes->has($id))
             ->map(fn ($id) => [
                 'desbravador_id' => $id,
+                'club_id' => $clubId, // insert() em massa não dispara o auto-fill do BelongsToTenant
                 'mes' => (int) $request->mes,
                 'ano' => (int) $request->ano,
                 'valor' => (float) $request->valor,
