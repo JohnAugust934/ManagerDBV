@@ -1,0 +1,168 @@
+# Reestruturação Multi-Tenant — Plano de Endurecimento
+
+> Status: proposta aprovada (decisões base) — pendente execução faseada.
+> Decisões base: **banco de produção = MySQL**; **`club_id` direto em todas as
+> tabelas de tenant** (desnormalização); **catálogo pedagógico permanece global
+> read-only**.
+
+O modelo conceitual (banco único compartilhado + isolamento por `club_id`) está
+**correto e é mantido**. Não há reescrita do zero. Esta reestruturação corrige a
+**camada de schema e de scope**, que foi montada de forma incremental e tem
+buracos que impedem escalar com segurança.
+
+---
+
+## Diagnóstico (resumo)
+
+| # | Severidade | Problema |
+|---|---|---|
+| 1 | 🔴 Crítico | `desbravadores`, `frequencias`, `mensalidades` sem `club_id` — isolamento indireto via `whereHas(unidade)`. Subquery em toda query; risco de órfão (`unidade_id` é `nullOnDelete`); vazamento se a relação for ignorada. |
+| 2 | 🔴 Crítico | `club_id` sem FK e `nullable` em `caixas`, `patrimonios`, `eventos`, `atas`, `atos`, `ranking_snapshots` — sem integridade referencial, sem cascade, fail-open. |
+| 3 | 🟠 Alto | Não existe exclusão de clube (offboarding/LGPD). Implementar sem FK espalharia órfãos. |
+| 4 | 🟡 Médio | Três classes de scope divergentes (`ClubScope`, `DesbravadorClubScope`, `MensalidadeClubScope`) — fácil dessincronizar. |
+| 5 | 🟡 Médio | Scopes curto-circuitam sem `auth()` → jobs/console enxergam todos os tenants. |
+| 6 | 🟡 Médio | Catálogo global sem decisão explícita → **decidido: global read-only**. |
+| 7 | 🟢 Menor | Uniques não escopadas por `club_id` (exceto `attendance_columns`, que é o modelo correto). |
+
+---
+
+## Fase 0 — Rede de segurança (pré-schema) ✅ EM ANDAMENTO
+
+- [x] Comando `tenant:check-integrity` (`app/Console/Commands/CheckTenantIntegrity.php`):
+  varre `club_id` nulo em tabela de tenant, `club_id` apontando para clube
+  inexistente, usuário comum sem clube, e `desbravador` sem unidade / com unidade
+  pendente. Retorna exit 1 se achar problema (`--json` para CI). Coberto por
+  `tests/Feature/MultiTenant/TenantIntegrityCommandTest.php` (7 testes).
+- [x] **Gate de CI**: passo em `.github/workflows/laravel.yml` roda
+  `migrate:fresh --seed` + `tenant:check-integrity` (valida que os seeders
+  produzem banco consistente por tenant). Rodado também contra o dev Supabase: OK.
+- [ ] Expandir `tests/Feature/MultiTenant/` com teste de vazamento por **cada**
+  model e **cada** pivô (inclusive via raw SQL e relacionamento). Parcial — os
+  models principais já têm cobertura; faltam pivôs e `Frequencia` (ver achado).
+- [ ] `backup:run` + congelar mudanças de schema na janela (no cutover).
+
+> **Achado da Fase 0 (entra na Fase 1/4):** o model `Frequencia` **não tem global
+> scope nenhum** — `Frequencia::all()` vaza entre clubes; só é protegido quando
+> acessado via relação do desbravador. Idem para os pivôs
+> (`desbravador_especialidade/requisito/evento`, `frequencia_column_values`), que
+> não têm scope direto. A desnormalização da Fase 1 + o trait `BelongsToTenant`
+> da Fase 4 fecham esse buraco ao dar `club_id` direto e scope próprio a essas
+> tabelas.
+
+## Fase 1 — `club_id` direto em todas as tabelas de tenant (desnormalização)
+
+- [ ] Migration adiciona `club_id` a: `desbravadores`, `frequencias`,
+  `mensalidades`, `desbravador_especialidade`, `desbravador_requisito`,
+  `desbravador_evento`, `frequencia_column_values`.
+- [ ] **Backfill na mesma migration** a partir das relações atuais
+  (`unidade.club_id` → desbravador; `desbravador.club_id` → filhos).
+- [ ] Trocar `DesbravadorClubScope`/`MensalidadeClubScope` para filtro **direto**
+  `where club_id` (eliminar `whereHas`).
+
+## Fase 2 — Integridade referencial + cascade (MySQL/InnoDB)
+
+- [ ] Converter **todo** `club_id` para FK `constrained('clubs')->cascadeOnDelete()`.
+  - MySQL exige tipo idêntico ao PK (`unsignedBigInteger`) e índice na coluna — já existem.
+- [ ] `club_id` → **`NOT NULL`** nas tabelas puramente de tenant (após backfill;
+  alterar para NOT NULL com nulos presentes falha no MySQL — backfill primeiro).
+  Manter `nullable` apenas onde há semântica global/platform.
+- [ ] Revisar `desbravadores.unidade_id`: com `club_id` próprio, o tenant não
+  depende mais da unidade. Decidir `nullOnDelete` (mantém a pessoa, tira da
+  unidade) vs `restrict`.
+
+## Fase 3 — Uniques e índices escopados por tenant
+
+- [ ] Índices compostos `(club_id, <coluna quente>)` substituindo índices avulsos
+  de `club_id` — ex.: `(club_id, data)` em `frequencias`, `(club_id, status)` e
+  `(club_id, mes, ano)` em `mensalidades`.
+- [ ] Uniques naturais "por clube" passam a incluir `club_id` (padrão já usado em
+  `attendance_columns: unique(club_id, key)`).
+
+## Fase 4 — Trait único `BelongsToTenant`
+
+- [ ] Trait que registra o global scope, **auto-preenche `club_id` no `creating`**
+  via `ClubContext`, e expõe `club()`. Aposenta as 3 classes divergentes.
+- [ ] Models de tenant passam a `use BelongsToTenant` (um ponto de verdade).
+
+## Fase 5 — Contexto de tenant fora do HTTP
+
+- [ ] `ClubContext::actAs(int $clubId, Closure $fn)` (set/restore) e scopes
+  respeitando tenant explicitamente setado mesmo sem `auth()`.
+- [ ] Jobs e comandos passam a rodar dentro de um tenant declarado.
+
+## Fase 6 — Ciclo de vida do clube + catálogo
+
+- [ ] `PlatformController::destroy` com cascade real (habilitado pela Fase 2);
+  arquivar antes de apagar. LGPD-export já existe (`ClubExportService`).
+- [ ] Catálogo (`classes`, `requisitos`, `especialidades`,
+  `especialidade_requisitos`): **mantido global read-only**. Garantir que a UI
+  não permita a clubes editar o catálogo; progresso do desbravador continua
+  escopado por clube via `desbravador_*`.
+
+## Fase 7 — Validação e cutover
+
+- [ ] `tenant:check-integrity` como gate de deploy.
+- [ ] Rollout em staging (Clube Beta / `TestClubSeeder`) → produção.
+- [ ] `backup:run` antes de cada migration com FK.
+
+---
+
+## Compatibilidade de banco (SQLite / PostgreSQL / MySQL)
+
+Três bancos em jogo simultâneo:
+
+- **Testes Pest (CI/local):** SQLite `:memory:`
+- **Dev local (`.env` → Supabase):** **PostgreSQL**
+- **Produção:** **MySQL**
+
+Vantagem: o dev local roda em Postgres, então as FKs/cascade da Fase 2 são
+enforçados no dia a dia (violação aparece cedo). O SQLite dos testes é o único
+ponto cego de FK — coberto pelo `tenant:check-integrity`.
+
+Regras para toda migration desta reestruturação:
+
+- [ ] Usar **apenas o Schema Builder** — zero SQL específico de dialeto. Se for
+  inevitável, guardar por `DB::getDriverName()`.
+- [ ] **FK + NOT NULL (Fase 2):** MySQL e Postgres aplicam in-place. **SQLite não
+  adiciona FK a tabela existente via ALTER** (o Laravel recria a tabela; algumas
+  FKs não são enforçadas). Portanto a integridade real é validada de forma
+  **agnóstica de banco** pelo `tenant:check-integrity` (Fase 0), que roda igual
+  nos três. As FKs continuam valendo em Postgres/MySQL.
+- [ ] Testar cada migration de schema nos três drivers antes do cutover.
+
+## Migração do legado single-tenant v4.0.0 → multi-tenant
+
+Suportada via comando existente `tenant:upgrade-legacy` (transacional, idempotente,
+`--dry-run`). Fluxo:
+
+```
+backup:run → migrate --force → tenant:upgrade-legacy --platform-admin=email → caches
+```
+
+Ajustes obrigatórios nesta reestruturação:
+
+- [ ] **Estender `TABELAS_COM_CLUB_ID`** do comando com as tabelas desnormalizadas
+  na Fase 1: `desbravadores`, `frequencias`, `mensalidades`,
+  `desbravador_especialidade`, `desbravador_requisito`, `desbravador_evento`,
+  `frequencia_column_values`. Sem isso, o upgrade do legado deixa essas tabelas
+  órfãs.
+- [ ] **Resolver conflito de ordem do NOT NULL (Fase 2):** num banco legado as
+  linhas só recebem `club_id` quando o `tenant:upgrade-legacy` roda — DEPOIS do
+  `migrate`. Logo, o `NOT NULL` **não pode** ser aplicado dentro do mesmo
+  `migrate`. Desenho:
+    1. `migrate` adiciona `club_id` + FK como **`nullable`**.
+    2. O aperto para **`NOT NULL`** vira o **passo final do
+       `tenant:upgrade-legacy`** (após o backfill, gated por zero-órfãos via
+       `tenant:check-integrity`).
+    3. Instalações novas: o seeder cria o clube antes, então não há nulos —
+       mesmo caminho seguro vale para os dois cenários.
+- [ ] Com `club_id` direto em `desbravadores`, o aviso atual de "desbravador sem
+  unidade fica invisível" deixa de ser bloqueante: o backfill dá `club_id`
+  direto, independente da unidade (melhoria de robustez).
+
+## Ordem de execução recomendada
+
+`Fase 0` → `Fase 1` → `Fase 2` → `Fase 3` → `Fase 4` → `Fase 5` → `Fase 6` → `Fase 7`.
+
+As Fases 1+2 sozinhas eliminam ~80% do risco de estabilidade (órfãos, vazamento,
+performance da tabela mais consultada).
