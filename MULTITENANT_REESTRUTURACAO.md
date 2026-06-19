@@ -1,9 +1,22 @@
 # Reestruturação Multi-Tenant — Plano de Endurecimento
 
-> Status: proposta aprovada (decisões base) — pendente execução faseada.
+> **Status: Fases 0–6 (código) CONCLUÍDAS, testadas e revisadas.** Fase 7 é o
+> cutover operacional (deploy). Suíte: **346 testes verdes**; gate de integridade
+> e rollback OK no SQLite; Pint limpo nos arquivos tocados.
 > Decisões base: **banco de produção = MySQL**; **`club_id` direto em todas as
 > tabelas de tenant** (desnormalização); **catálogo pedagógico permanece global
 > read-only**.
+>
+> | Fase | Tema | Migration | Status |
+> |---|---|---|---|
+> | 0 | Rede de segurança (`tenant:check-integrity` + gate CI) | — | ✅ |
+> | 1 | `club_id` direto (desnormalização) + trait `BelongsToTenant` | 000001 | ✅ |
+> | 2 | FK `cascade` + `NOT NULL` (com cura/abort pré-DDL) | 000002 | ✅ |
+> | 3 | CPF único por clube + índices compostos | 000003 | ✅ |
+> | 4 | Consolidação do scope (Unidade/AttendanceColumn/RankingSnapshot + pivôs) | — | ✅ |
+> | 5 | `ClubContext::actAs` (tenant fora do HTTP) + 100% dos models no trait | — | ✅ |
+> | 6 | Ciclo de vida: desativar/excluir clube + catálogo read-only | 000004 | ✅ |
+> | 7 | Validação e cutover (deploy) | — | ⏳ operacional |
 
 O modelo conceitual (banco único compartilhado + isolamento por `club_id`) está
 **correto e é mantido**. Não há reescrita do zero. Esta reestruturação corrige a
@@ -26,20 +39,22 @@ buracos que impedem escalar com segurança.
 
 ---
 
-## Fase 0 — Rede de segurança (pré-schema) ✅ EM ANDAMENTO
+## Fase 0 — Rede de segurança (pré-schema) ✅ FEITO
 
 - [x] Comando `tenant:check-integrity` (`app/Console/Commands/CheckTenantIntegrity.php`):
   varre `club_id` nulo em tabela de tenant, `club_id` apontando para clube
-  inexistente, usuário comum sem clube, e `desbravador` sem unidade / com unidade
-  pendente. Retorna exit 1 se achar problema (`--json` para CI). Coberto por
-  `tests/Feature/MultiTenant/TenantIntegrityCommandTest.php` (7 testes).
+  inexistente, usuário comum sem clube, `desbravador` sem unidade / com unidade
+  pendente, divergência pai/filho e **pivô cross-club** (Fase 4). Retorna exit 1
+  se achar problema (`--json` para CI). Coberto por `TenantIntegrityCommandTest`.
 - [x] **Gate de CI**: passo em `.github/workflows/laravel.yml` roda
   `migrate:fresh --seed` + `tenant:check-integrity` (valida que os seeders
   produzem banco consistente por tenant). Rodado também contra o dev Supabase: OK.
-- [ ] Expandir `tests/Feature/MultiTenant/` com teste de vazamento por **cada**
-  model e **cada** pivô (inclusive via raw SQL e relacionamento). Parcial — os
-  models principais já têm cobertura; faltam pivôs e `Frequencia` (ver achado).
-- [ ] `backup:run` + congelar mudanças de schema na janela (no cutover).
+- [x] Cobertura de vazamento ampliada ao longo das fases: `Frequencia` ganhou
+  scope (Fase 1), pivôs ganharam check de integridade cross-club (Fase 4), e há
+  18 arquivos de teste em `tests/Feature/MultiTenant/`. O vazamento por relação
+  está coberto; o de pivô é capturado pelo `tenant:check-integrity`.
+- [ ] `backup:run` + congelar mudanças de schema na janela — **operacional, no
+  cutover** (ver Fase 7).
 
 > **Achado da Fase 0 (entra na Fase 1/4):** o model `Frequencia` **não tem global
 > scope nenhum** — `Frequencia::all()` vaza entre clubes; só é protegido quando
@@ -241,18 +256,29 @@ Reorganizada em torno da **desativação** (mais valiosa/segura que exclusão du
 
 ### Fase 6 — detalhes originais do plano
 
-- [ ] `PlatformController::destroy` com cascade real (habilitado pela Fase 2);
-  arquivar antes de apagar. LGPD-export já existe (`ClubExportService`).
-- [ ] Catálogo (`classes`, `requisitos`, `especialidades`,
-  `especialidade_requisitos`): **mantido global read-only**. Garantir que a UI
-  não permita a clubes editar o catálogo; progresso do desbravador continua
-  escopado por clube via `desbravador_*`.
+- [x] `PlatformController::destroy` com cascade — feito em nível de aplicação
+  (`ClubLifecycleService`, portável) em vez de depender só do FK cascade.
+  LGPD-export já existe (`ClubExportService`). Em vez de "arquivar antes de
+  apagar", o fluxo é **desativar → excluir** (a desativação é a forma reversível).
+- [x] Catálogo (`classes`, `requisitos`, `especialidades`,
+  `especialidade_requisitos`): **mantido global read-only**. Escrita migrou para
+  `can:platform-admin` (+ `Gate::authorize` interno nos controllers) e os botões
+  escondidos via `@can`. Progresso do desbravador continua por clube via
+  `desbravador_*`.
 
-## Fase 7 — Validação e cutover
+## Fase 7 — Validação e cutover ⏳ OPERACIONAL (pendente do deploy)
 
-- [ ] `tenant:check-integrity` como gate de deploy.
+Esta fase não é código — é o procedimento de deploy. As Fases 0–6 (código) estão
+**100% concluídas, testadas e revisadas**.
+
+- [x] `tenant:check-integrity` já é gate de CI.
+- [ ] Aplicar `php artisan migrate` no **dev Postgres** (faltam as migrations 000003
+  da Fase 3 e 000004 da Fase 6) + `tenant:check-integrity`.
 - [ ] Rollout em staging (Clube Beta / `TestClubSeeder`) → produção.
-- [ ] `backup:run` antes de cada migration com FK.
+- [ ] `backup:run` antes de cada `migrate` com FK/NOT NULL em produção.
+- [ ] Em produção legada single-tenant: `backup:run` → `migrate --force`
+  (a Fase 2 cura os nulos) → `tenant:upgrade-legacy --platform-admin=email`
+  (define o super admin e vincula usuários órfãos) → `config:cache`/`route:cache`.
 
 ---
 
@@ -268,16 +294,17 @@ Vantagem: o dev local roda em Postgres, então as FKs/cascade da Fase 2 são
 enforçados no dia a dia (violação aparece cedo). O SQLite dos testes é o único
 ponto cego de FK — coberto pelo `tenant:check-integrity`.
 
-Regras para toda migration desta reestruturação:
+Regras seguidas em toda migration desta reestruturação:
 
-- [ ] Usar **apenas o Schema Builder** — zero SQL específico de dialeto. Se for
-  inevitável, guardar por `DB::getDriverName()`.
-- [ ] **FK + NOT NULL (Fase 2):** MySQL e Postgres aplicam in-place. **SQLite não
-  adiciona FK a tabela existente via ALTER** (o Laravel recria a tabela; algumas
-  FKs não são enforçadas). Portanto a integridade real é validada de forma
-  **agnóstica de banco** pelo `tenant:check-integrity` (Fase 0), que roda igual
-  nos três. As FKs continuam valendo em Postgres/MySQL.
-- [ ] Testar cada migration de schema nos três drivers antes do cutover.
+- [x] **Apenas o Schema Builder** — zero SQL específico de dialeto. O único raw
+  SQL é o backfill correlacionado da Fase 1, que é SQL padrão (roda nos três).
+- [x] **FK + NOT NULL (Fase 2):** MySQL e Postgres aplicam in-place. **SQLite não
+  adiciona FK a tabela existente via ALTER** → a FK é **pulada por driver** no
+  SQLite (`DB::getDriverName()`), e a integridade real é validada de forma
+  **agnóstica de banco** pelo `tenant:check-integrity`. As FKs valem em Postgres/MySQL.
+- [x] Toda migration testada no SQLite (suíte + gate + rollback). Aplicação no dev
+  Postgres confirmada pelo usuário nas Fases 1–2; Fases 3 e 6 pendentes de `migrate`
+  no dev (ver Fase 7).
 
 ## Migração do legado single-tenant v4.0.0 → multi-tenant
 
@@ -288,26 +315,22 @@ Suportada via comando existente `tenant:upgrade-legacy` (transacional, idempoten
 backup:run → migrate --force → tenant:upgrade-legacy --platform-admin=email → caches
 ```
 
-Ajustes obrigatórios nesta reestruturação:
+Ajustes desta reestruturação (todos resolvidos):
 
-- [ ] **Estender `TABELAS_COM_CLUB_ID`** do comando com as tabelas desnormalizadas
-  na Fase 1: `desbravadores`, `frequencias`, `mensalidades`,
-  `desbravador_especialidade`, `desbravador_requisito`, `desbravador_evento`,
-  `frequencia_column_values`. Sem isso, o upgrade do legado deixa essas tabelas
-  órfãs.
-- [ ] **Resolver conflito de ordem do NOT NULL (Fase 2):** num banco legado as
-  linhas só recebem `club_id` quando o `tenant:upgrade-legacy` roda — DEPOIS do
-  `migrate`. Logo, o `NOT NULL` **não pode** ser aplicado dentro do mesmo
-  `migrate`. Desenho:
-    1. `migrate` adiciona `club_id` + FK como **`nullable`**.
-    2. O aperto para **`NOT NULL`** vira o **passo final do
-       `tenant:upgrade-legacy`** (após o backfill, gated por zero-órfãos via
-       `tenant:check-integrity`).
-    3. Instalações novas: o seeder cria o clube antes, então não há nulos —
-       mesmo caminho seguro vale para os dois cenários.
-- [ ] Com `club_id` direto em `desbravadores`, o aviso atual de "desbravador sem
-  unidade fica invisível" deixa de ser bloqueante: o backfill dá `club_id`
-  direto, independente da unidade (melhoria de robustez).
+- [x] **`TABELAS_COM_CLUB_ID` estendida** com `desbravadores`, `frequencias`,
+  `mensalidades`. Os pivôs (`desbravador_*`, `frequencia_column_values`)
+  **não** entram — por decisão eles ficaram sem `club_id` (são limpos pelas FKs
+  naturais do pai). 
+- [x] **Conflito do NOT NULL resolvido por um caminho melhor que o planejado:** em
+  vez de o `NOT NULL` virar passo do `tenant:upgrade-legacy`, a própria migration
+  da Fase 2 (`enforce_club_id_integrity`) **cura** os nulos de um banco de clube
+  único antes de aplicar o `NOT NULL` (ou aborta com orientação se houver
+  ambiguidade). Assim instalações novas E legado single-tenant ganham `NOT NULL`
+  no `migrate`, sem depender do comando. O `tenant:upgrade-legacy` segue cuidando
+  de papéis de usuário (platform admin, órfãos) e do backfill no cenário
+  multi-clube de recuperação.
+- [x] Com `club_id` direto em `desbravadores`, "desbravador sem unidade" deixou de
+  ser bloqueante — o backfill dá `club_id` direto, independente da unidade.
 
 ## Ordem de execução recomendada
 
