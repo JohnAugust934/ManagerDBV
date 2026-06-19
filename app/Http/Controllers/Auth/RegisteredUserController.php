@@ -75,14 +75,17 @@ class RegisteredUserController extends Controller
             // club_id e o onboarding o levará à criação do clube.
             $club = $invitation->club_id ? Club::find($invitation->club_id) : null;
 
+            $isPlatformAdmin = $invitation->role === 'platform_admin';
+
             $user = User::create([
                 'name' => $request->name,
                 'email' => $invitation->email,
                 'password' => Hash::make($request->password),
                 'role' => $invitation->role,
-                'club_id' => $invitation->club_id,
+                'club_id' => $isPlatformAdmin ? null : $invitation->club_id,
                 'extra_permissions' => $invitation->extra_permissions ?? null,
                 'is_master' => false,
+                'is_platform_admin' => $isPlatformAdmin,
             ]);
 
             $invitation->update(['registered_at' => now()]);

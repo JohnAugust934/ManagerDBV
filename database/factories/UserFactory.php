@@ -50,7 +50,8 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_platform_admin' => true,
-            'role' => 'master',
+            'is_master' => false,
+            'role' => 'platform_admin',
             'club_id' => null,
         ]);
     }

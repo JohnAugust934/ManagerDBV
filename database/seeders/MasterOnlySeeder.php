@@ -29,8 +29,8 @@ class MasterOnlySeeder extends Seeder
         User::firstOrCreate(['email' => 'admin@plataforma.com'], [
             'name' => 'Platform Admin',
             'password' => Hash::make('password'),
-            'role' => 'master',
-            'is_master' => true,
+            'role' => 'platform_admin',
+            'is_master' => false,
             'is_platform_admin' => true,
             'club_id' => null,
         ]);

@@ -71,21 +71,22 @@
                             Cargo Hierárquico
                         </h4>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            @foreach (['master', 'diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'] as $role)
-                                @if ($role === 'master' && !($canAssignMaster ?? false))
-                                    @continue
-                                @endif
+                            @foreach (($assignableRoles ?? []) as $role)
                                 <label class="relative cursor-pointer group">
-                                    <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" {{ $usuario->role == $role ? 'checked' : '' }}>
+                                    <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" {{ $usuario->role == $role ? 'checked' : '' }} {{ ($isPlatformTarget ?? false) ? 'disabled' : '' }}>
                                     <div class="px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-black uppercase tracking-widest text-[11px] text-slate-500 peer-checked:border-[#002F6C] peer-checked:bg-[#002F6C]/5 peer-checked:text-[#002F6C] dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500/10 dark:peer-checked:text-blue-400 transition-colors">
-                                        {{ $role }}
+                                        {{ \App\Models\User::ROLES_LABEL[$role] ?? $role }}
                                     </div>
                                 </label>
                             @endforeach
                         </div>
+                        @if ($isPlatformTarget ?? false)
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-3">Admin da plataforma tem acesso total e não pertence a um clube.</p>
+                        @endif
                     </div>
 
                     {{-- Permissões Extra --}}
+                    @unless ($isPlatformTarget ?? false)
                     <div class="px-5 py-5 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
                         <h4 class="text-sm font-black uppercase tracking-widest text-amber-700 dark:text-amber-500 mb-1 flex items-center gap-2">Poderes Adicionais (Exceções)</h4>
                         <p class="text-[10px] font-bold text-amber-600/80 dark:text-amber-500/70 uppercase tracking-widest mb-4">Marque apenas se este membro precisar acessar um módulo fora do cargo.</p>
@@ -102,6 +103,7 @@
                             @endforeach
                         </div>
                     </div>
+                    @endunless
                 </div>
 
                 {{-- Rodapé / Botões --}}

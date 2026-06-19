@@ -20,21 +20,42 @@ class InvitationController extends Controller
         $this->authorizeAccessManagement();
 
         // Multi-tenant: cada gestor vê apenas os convites do próprio clube (ou do
-        // clube impersonado, no caso do platform admin em modo suporte).
+        // clube impersonado, no caso do platform admin em modo suporte). Sem clube
+        // ativo, o platform admin vê apenas os convites da EQUIPE DA PLATAFORMA.
         $clubId = ClubContext::currentClubId();
 
-        $invites = Invitation::when($clubId, fn ($q) => $q->where('club_id', $clubId))
+        if ($clubId === null) {
+            $invites = Invitation::whereNull('club_id')
+                ->where('role', 'platform_admin')
+                ->latest()
+                ->get();
+
+            return view('admin.invites.index', [
+                'invites' => $invites,
+                'isPlatformContext' => true,
+            ]);
+        }
+
+        $invites = Invitation::where('club_id', $clubId)
             ->latest()
             ->get();
 
-        return view('admin.invites.index', compact('invites'));
+        return view('admin.invites.index', [
+            'invites' => $invites,
+            'isPlatformContext' => false,
+        ]);
     }
 
     public function create()
     {
         $this->authorizeAccessManagement();
 
-        return view('admin.invites.create');
+        $platformContext = $this->isPlatformContext();
+
+        return view('admin.invites.create', [
+            'roles' => $platformContext ? ['platform_admin'] : ['diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'],
+            'isPlatformContext' => $platformContext,
+        ]);
     }
 
     public function store(Request $request)
@@ -47,6 +68,12 @@ class InvitationController extends Controller
         ], [
             'email.unique' => 'Este e-mail ja esta cadastrado no sistema.',
         ]);
+
+        // Convite de admin da plataforma: cross-tenant (sem clube), pula as regras
+        // de clube (diretor único / clube precisa existir).
+        if ($request->role === 'platform_admin') {
+            return $this->storePlatformAdminInvite($request);
+        }
 
         // Multi-tenant: o convite pertence ao clube ativo (próprio ou impersonado).
         // No onboarding inicial (diretor antes de criar o clube) ainda pode ser null.
@@ -125,6 +152,66 @@ class InvitationController extends Controller
             : 'Convite gerado e enviado com sucesso!');
     }
 
+    /**
+     * Gera/reaproveita um convite de admin da plataforma (cross-tenant, sem clube).
+     */
+    private function storePlatformAdminInvite(Request $request)
+    {
+        if (! $this->isPlatformContext()) {
+            abort(403, 'Apenas o admin da plataforma pode convidar outros admins da plataforma.');
+        }
+
+        $existingInvitation = Invitation::where('email', $request->email)->first();
+
+        if ($existingInvitation?->registered_at) {
+            return back()->with('error', 'Este convite já foi utilizado. Como o e-mail não pode ser reutilizado, faça o gerenciamento diretamente no cadastro de usuários.');
+        }
+
+        $conviteFoiReaproveitado = false;
+
+        try {
+            $invitation = DB::transaction(function () use ($request, $existingInvitation, &$conviteFoiReaproveitado) {
+                $dadosDoConvite = [
+                    'token' => Str::random(40),
+                    'role' => 'platform_admin',
+                    'club_id' => null,
+                    'expires_at' => now()->addDays(7),
+                    'registered_at' => null,
+                ];
+
+                if ($existingInvitation) {
+                    $existingInvitation->update($dadosDoConvite);
+                    $conviteFoiReaproveitado = true;
+
+                    return $existingInvitation->fresh();
+                }
+
+                return Invitation::create([
+                    'email' => $request->email,
+                    ...$dadosDoConvite,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            Log::error('Erro ao preparar convite de plataforma: '.$e->getMessage());
+
+            return back()->with('error', 'Nao foi possivel preparar o convite agora. Tente novamente.');
+        }
+
+        try {
+            Mail::to($request->email)->send(new ClubInvitation($invitation));
+        } catch (\Exception $e) {
+            Log::error('Erro ao enviar e-mail de convite de plataforma: '.$e->getMessage());
+
+            return redirect()->route('invites.index')->with('warning', $conviteFoiReaproveitado
+                ? 'Convite pendente atualizado, mas o e-mail nao pode ser enviado (verifique o SMTP). Copie o link e envie manualmente.'
+                : 'Convite gerado, mas o e-mail nao pode ser enviado (verifique o SMTP). Copie o link e envie manualmente.');
+        }
+
+        return redirect()->route('invites.index')->with('success', $conviteFoiReaproveitado
+            ? 'Convite de admin da plataforma atualizado e reenviado!'
+            : 'Convite de admin da plataforma gerado e enviado!');
+    }
+
     public function resend(Invitation $invite)
     {
         $this->authorizeAccessManagement();
@@ -153,7 +240,11 @@ class InvitationController extends Controller
     {
         $this->authorizeAccessManagement();
 
-        if (! auth()->user()->isMaster() && $invite->role === 'master') {
+        if ($invite->role === 'platform_admin' && ! auth()->user()->isPlatformAdmin()) {
+            abort(403, 'Somente o admin da plataforma pode cancelar convites de plataforma.');
+        }
+
+        if ($invite->role === 'master' && ! auth()->user()->podeGerenciarMasters()) {
             abort(403, 'Somente o admin master pode cancelar convites de master.');
         }
 
@@ -167,9 +258,20 @@ class InvitationController extends Controller
         Gate::authorize('gestao-acessos');
     }
 
+    /** Sem clube ativo, o platform admin opera o contexto da plataforma. */
+    private function isPlatformContext(): bool
+    {
+        return ClubContext::currentClubId() === null && auth()->user()->isPlatformAdmin();
+    }
+
     private function allowedInvitableRoles(): array
     {
-        if (auth()->user()->isMaster()) {
+        // Contexto de plataforma: só convida outros admins da plataforma.
+        if ($this->isPlatformContext()) {
+            return ['platform_admin'];
+        }
+
+        if (auth()->user()->podeGerenciarMasters()) {
             return ['master', 'diretor', 'secretario', 'tesoureiro', 'instrutor', 'conselheiro'];
         }
 

@@ -40,9 +40,16 @@ php artisan test tests/Feature/RankingTest.php          # Teste único por camin
 
 ### Logins de dev (seeder)
 
-Após `--seed`: `admin@clube.com` (master), `diretor@clube.com`, `secretaria@clube.com`,
-`tesoureiro@clube.com`, `instrutor@clube.com`, além de conselheiros (`pedro@`, `joao@`, `lucas@`,
-`maria@clube.com`) — todos com a senha `password`.
+O `DatabaseSeeder` cria **5 clubes** (todos na cidade de São Paulo, um por Associação Paulista:
+`orion`, `aurora`, `vega`, `sirius`, `antares`). Após `--seed`:
+
+- **Platform admin (cross-tenant, sem clube):** `admin@clube.com`.
+- **Por clube**, no padrão `<cargo>.<slug>@clube.com`: `master.`, `diretor.`, `secretaria.`,
+  `tesoureiro.`, `instrutor.` e `conselheiro1.`–`conselheiro4.` (ex.: `diretor.orion@clube.com`).
+
+Todos com a senha `password`. Cada clube tem 4 unidades, ~30 desbravadores distribuídos por todas
+as classes, especialidades, 6 chamadas de frequência (ranking sem empates de pontuação), 5 eventos,
+financeiro, patrimônio e 6 documentos.
 
 ## Arquitetura
 

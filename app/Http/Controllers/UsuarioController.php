@@ -16,8 +16,17 @@ class UsuarioController extends Controller
     {
         $this->authorizeAccessManagement();
 
+        // No contexto de plataforma (sem clube ativo) novos admins entram por
+        // convite — nao ha criacao direta.
+        if ($this->isPlatformContext()) {
+            return redirect()->route('invites.index')
+                ->with('info', 'Para adicionar um admin da plataforma, gere um convite.');
+        }
+
         return view('usuarios.create', [
-            'canGrantAccessManagement' => auth()->user()->isMaster(),
+            'assignableRoles' => $this->allowedAssignableRoles(),
+            'canGrantAccessManagement' => auth()->user()->podeGerenciarMasters(),
+            'isPlatformTarget' => false,
         ]);
     }
 
@@ -25,27 +34,44 @@ class UsuarioController extends Controller
     {
         $this->authorizeAccessManagement();
 
-        // Apenas o platform admin é cross-tenant. O master de clube gerencia só o seu clube.
-        if (auth()->user()->isPlatformAdmin()) {
-            $users = User::orderBy('name')->get();
-        } else {
-            $query = User::where('club_id', ClubContext::currentClubId())
-                ->orderBy('name');
+        $clubId = ClubContext::currentClubId();
 
-            // Quem não é master do clube não enxerga/gerencia masters.
-            if (! auth()->user()->isMaster()) {
-                $query->where('role', '!=', 'master');
-            }
+        if ($clubId === null) {
+            // Contexto de plataforma: so o platform admin chega aqui (middleware
+            // garante). Mostra a EQUIPE DA PLATAFORMA — os demais platform admins.
+            $users = User::where('is_platform_admin', true)
+                ->orderBy('name')
+                ->get();
 
-            $users = $query->get();
+            return view('usuarios.index', [
+                'users' => $users,
+                'isPlatformContext' => true,
+            ]);
         }
 
-        return view('usuarios.index', compact('users'));
+        // Contexto de clube (proprio ou em modo suporte): SOMENTE o clube ativo.
+        $query = User::where('club_id', $clubId)->orderBy('name');
+
+        // Quem nao pode gerir masters do clube nao os enxerga/gerencia.
+        if (! auth()->user()->podeGerenciarMasters()) {
+            $query->where('role', '!=', 'master');
+        }
+
+        return view('usuarios.index', [
+            'users' => $query->get(),
+            'isPlatformContext' => false,
+        ]);
     }
 
     public function store(Request $request)
     {
         $this->authorizeAccessManagement();
+
+        // Criacao direta so existe dentro de um clube. Admins de plataforma sao
+        // adicionados por convite.
+        if ($this->isPlatformContext()) {
+            abort(403, 'Adicione admins da plataforma por convite.');
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -77,8 +103,10 @@ class UsuarioController extends Controller
 
         return view('usuarios.edit', [
             'usuario' => $usuario,
-            'canAssignMaster' => auth()->user()->isMaster(),
-            'canGrantAccessManagement' => auth()->user()->isMaster(),
+            'assignableRoles' => $this->allowedAssignableRoles($usuario),
+            'isPlatformTarget' => $usuario->is_platform_admin,
+            'canAssignMaster' => auth()->user()->podeGerenciarMasters(),
+            'canGrantAccessManagement' => auth()->user()->podeGerenciarMasters(),
         ]);
     }
 
@@ -87,10 +115,33 @@ class UsuarioController extends Controller
         $this->authorizeAccessManagement();
         $this->ensureCanManageTargetUser($usuario);
 
+        // Admin de plataforma nao tem cargo de clube nem permissoes modulares:
+        // edita-se apenas identificacao/senha, mantendo o cargo de plataforma.
+        if ($usuario->is_platform_admin) {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$usuario->id],
+            ]);
+
+            $dados = [
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ];
+
+            if ($request->filled('password')) {
+                $request->validate(['password' => ['confirmed', Rules\Password::defaults()]]);
+                $dados['password'] = Hash::make($request->password);
+            }
+
+            $usuario->update($dados);
+
+            return redirect()->route('usuarios.index')->with('success', 'Admin da plataforma atualizado!');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$usuario->id],
-            'role' => ['required', 'in:'.implode(',', $this->allowedAssignableRoles())],
+            'role' => ['required', 'in:'.implode(',', $this->allowedAssignableRoles($usuario))],
             'extra_permissions' => ['nullable', 'array'],
             'extra_permissions.*' => ['string'],
         ]);
@@ -131,29 +182,48 @@ class UsuarioController extends Controller
         Gate::authorize('gestao-acessos');
     }
 
+    /** Sem clube ativo, o platform admin opera o contexto da plataforma. */
+    private function isPlatformContext(): bool
+    {
+        return ClubContext::currentClubId() === null && auth()->user()->isPlatformAdmin();
+    }
+
     private function ensureCanManageTargetUser(User $usuario): void
     {
         $authUser = auth()->user();
+        $clubId = ClubContext::currentClubId();
 
-        // Platform admin pode tudo (cross-tenant).
-        if ($authUser->isPlatformAdmin()) {
+        // Contexto de plataforma: so o platform admin, e so sobre outros platform admins.
+        if ($clubId === null) {
+            if (! $authUser->isPlatformAdmin() || ! $usuario->is_platform_admin) {
+                abort(403, 'Voce nao pode gerenciar este usuario.');
+            }
+
             return;
         }
 
-        // Demais gestores: somente dentro do próprio clube ativo.
-        if ($usuario->club_id !== ClubContext::currentClubId()) {
+        // Contexto de clube (proprio ou impersonado): o alvo precisa ser do clube ativo.
+        if ($usuario->club_id !== $clubId) {
             abort(403, 'Voce nao pode gerenciar usuarios de outro clube.');
         }
 
-        // E só o master do clube gerencia outros masters do clube.
-        if ($usuario->role === 'master' && ! $authUser->isMaster()) {
+        // E so quem pode gerir masters (master do clube ou platform admin) gerencia masters.
+        if ($usuario->role === 'master' && ! $authUser->podeGerenciarMasters()) {
             abort(403, 'Somente o admin master pode gerenciar usuarios master.');
         }
     }
 
-    private function allowedAssignableRoles(): array
+    /**
+     * Cargos atribuiveis no contexto atual. Um alvo platform admin so admite o
+     * proprio cargo de plataforma.
+     */
+    private function allowedAssignableRoles(?User $target = null): array
     {
-        if (auth()->user()->isMaster()) {
+        if ($target?->is_platform_admin) {
+            return ['platform_admin'];
+        }
+
+        if (auth()->user()->podeGerenciarMasters()) {
             return ['master', 'diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'];
         }
 
@@ -165,7 +235,7 @@ class UsuarioController extends Controller
         $allowed = array_keys(User::PERMISSOES);
         $normalized = array_values(array_unique(array_intersect($permissions, $allowed)));
 
-        if (! auth()->user()->isMaster() && in_array('gestao_acessos', $normalized, true)) {
+        if (! auth()->user()->podeGerenciarMasters() && in_array('gestao_acessos', $normalized, true)) {
             throw ValidationException::withMessages([
                 'extra_permissions' => 'Somente o admin master pode conceder a permissao de Gestao de Acessos.',
             ]);

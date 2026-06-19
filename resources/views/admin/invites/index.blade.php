@@ -4,7 +4,7 @@
     <div class="ui-page">
         <div class="ui-card overflow-hidden">
             <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <p class="ui-subtitle">Gerencie convites enviados. Links utilizados ou expirados continuam no histórico.</p>
+                <p class="ui-subtitle">{{ ($isPlatformContext ?? false) ? 'Convide outros admins para gerenciar a plataforma com você. Links usados/expirados ficam no histórico.' : 'Gerencie convites enviados. Links utilizados ou expirados continuam no histórico.' }}</p>
                 <a href="{{ route('invites.create') }}" class="ui-btn-primary w-full sm:w-auto">Novo Convite</a>
             </div>
 
@@ -36,7 +36,7 @@
                         <div class="ui-card p-4 {{ $isUsed ? 'opacity-80' : '' }}">
                             <div class="flex justify-between items-start gap-2 mb-4">
                                 <div class="flex flex-wrap gap-2">
-                                    <span class="ui-badge bg-[#002F6C]/10 text-[#002F6C] dark:bg-blue-500/20 dark:text-blue-400">{{ $invite->role }}</span>
+                                    <span class="ui-badge bg-[#002F6C]/10 text-[#002F6C] dark:bg-blue-500/20 dark:text-blue-400">{{ \App\Models\User::ROLES_LABEL[$invite->role] ?? $invite->role }}</span>
                                     <span class="ui-badge {{ $statusColor }}">{{ $statusText }}</span>
                                 </div>
                                 <form id="del-invite-{{ $invite->id }}" action="{{ route('invites.destroy', $invite->id) }}" method="POST">

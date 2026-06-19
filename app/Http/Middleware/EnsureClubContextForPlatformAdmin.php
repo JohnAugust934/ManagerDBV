@@ -21,7 +21,10 @@ class EnsureClubContextForPlatformAdmin
     /**
      * Prefixos/nomes de rota liberados mesmo sem clube em contexto.
      */
-    private const ALLOWED_PREFIXES = ['platform.', 'backups.'];
+    // 'usuarios.'/'invites.' liberados para o admin gerir a EQUIPE DA PLATAFORMA
+    // (outros admins de plataforma) sem precisar entrar em modo suporte. Os
+    // controllers garantem o escopo: sem clube ativo, so enxergam platform admins.
+    private const ALLOWED_PREFIXES = ['platform.', 'backups.', 'usuarios.', 'invites.'];
 
     private const ALLOWED_NAMES = [
         'profile.edit',

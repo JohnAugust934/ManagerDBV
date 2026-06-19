@@ -78,11 +78,11 @@
                             Cargo Hierárquico base
                         </h4>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            @foreach (['diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'] as $role)
+                            @foreach (($assignableRoles ?? ['diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor']) as $role)
                                 <label class="relative cursor-pointer group">
-                                    <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" {{ $role == 'conselheiro' ? 'checked' : '' }}>
+                                    <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" {{ old('role', 'conselheiro') == $role ? 'checked' : '' }}>
                                     <div class="px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-black uppercase tracking-widest text-[11px] text-slate-500 peer-checked:border-[#002F6C] peer-checked:bg-[#002F6C]/5 peer-checked:text-[#002F6C] dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500/10 dark:peer-checked:text-blue-400 transition-colors">
-                                        {{ $role }}
+                                        {{ \App\Models\User::ROLES_LABEL[$role] ?? $role }}
                                     </div>
                                 </label>
                             @endforeach

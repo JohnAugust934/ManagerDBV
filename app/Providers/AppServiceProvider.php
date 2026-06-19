@@ -61,7 +61,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('pedagogico', fn (User $user) => $user->temPermissao('pedagogico'));
         Gate::define('eventos', fn (User $user) => $user->temPermissao('eventos'));
         Gate::define('relatorios', fn (User $user) => $user->temPermissao('relatorios'));
-        Gate::define('gerenciar-colunas-chamada', fn (User $user) => in_array($user->role, ['master', 'diretor', 'secretario'], true));
+        Gate::define('gerenciar-colunas-chamada', fn (User $user) => $user->is_platform_admin || in_array($user->role, ['master', 'diretor', 'secretario'], true));
 
         Gate::define('gerir-unidade', function (User $user, $unidade = null) {
             if ($user->temPermissao('unidades')) {
