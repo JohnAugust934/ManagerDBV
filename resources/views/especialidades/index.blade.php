@@ -51,12 +51,14 @@
                     </div>
                 </form>
 
+                @can('platform-admin')
                 <div class="mt-3 flex justify-stretch sm:justify-end">
                     <a href="{{ route('especialidades.create') }}" class="ui-btn-primary h-12 w-full sm:w-auto px-6 rounded-2xl flex items-center justify-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
                         <span>Nova <span class="hidden sm:inline">Especialidade</span></span>
                     </a>
                 </div>
+                @endcan
             </div>
         </div>
 
@@ -144,9 +146,11 @@
                     <p class="ui-empty-description">{{ $search ? 'A busca não retornou resultados. Tente usar outras palavras.' : 'A biblioteca de especialidades do seu clube ainda está vazia.' }}</p>
                     
                     @if(!$search)
+                    @can('platform-admin')
                     <div class="mt-6">
                         <a href="{{ route('especialidades.create') }}" class="ui-btn-primary">Criar a Primeira Especialidade</a>
                     </div>
+                    @endcan
                     @endif
                 </div>
             </div>

@@ -214,7 +214,32 @@ filtrados À MÃO passam a ter o global scope:
 > `ClubContext::actAs($this->clubId, fn () => ...)`. Idem para chamadas de console
 > que processam vários clubes: um `actAs` por clube.
 
-## Fase 6 — Ciclo de vida do clube + catálogo
+## Fase 6 — Ciclo de vida do clube + catálogo ✅ FEITO
+
+Reorganizada em torno da **desativação** (mais valiosa/segura que exclusão dura):
+
+- [x] **Desativação/suspensão de clube** (uso comercial + admin): coluna
+  `clubs.is_active`; middleware `EnsureClubIsActive` desloga e bloqueia usuários
+  de clube desativado (platform admin é isento — reativa/dá suporte);
+  `PlatformController::toggleActive` (gate platform-admin) + UI (badge + botão).
+- [x] **Exclusão definitiva** (`PlatformController::destroy` + `ClubLifecycleService`):
+  cascade EXPLÍCITO por club_id em ordem de dependência, em transação — portável
+  nos 3 bancos (não depende do FK cascade ausente no SQLite). Trava: só exclui
+  clube já DESATIVADO. Teste valida zero-órfãos (`tenant:check-integrity`).
+- [x] **Catálogo global read-only para clubes** (decisão confirmada): a EDIÇÃO de
+  especialidades/requisitos (compartilhados) migrou de `can:pedagogico` para
+  `can:platform-admin`; clubes só LEEM o catálogo e registram o progresso dos
+  desbravadores (que continua deles). Botões de escrita escondidos via
+  `@can('platform-admin')`. Gotcha resolvido: `especialidades/{especialidade}`
+  com `->whereNumber()` para não capturar `/especialidades/create`.
+- [x] Testes: `ClubDeactivationTest`, `ClubDeletionTest`, `ClubCatalogReadOnlyTest`;
+  `EspecialidadeTest`/`ClassesSystemTest` ajustados (escrita de catálogo agora via
+  admin em modo suporte). Suíte: 346.
+
+> Nota: o platform admin gerencia o catálogo entrando em modo suporte a um clube
+> (as telas de catálogo são club-styled; ele edita o catálogo GLOBAL de lá).
+
+### Fase 6 — detalhes originais do plano
 
 - [ ] `PlatformController::destroy` com cascade real (habilitado pela Fase 2);
   arquivar antes de apagar. LGPD-export já existe (`ClubExportService`).

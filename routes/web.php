@@ -148,13 +148,16 @@ Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubCont
     Route::get('/unidades/{unidade}', [UnidadeController::class, 'show'])->name('unidades.show');
     Route::get('/desbravadores/{desbravador}', [DesbravadorController::class, 'show'])->name('desbravadores.show');
 
-    // 6. Pedagogico
+    // 6. Pedagogico — clubes CONSOMEM o catálogo global (leitura) e registram o
+    //    progresso dos seus desbravadores. A EDIÇÃO do catálogo é da plataforma (6.1).
     Route::middleware('can:pedagogico')->group(function () {
-        Route::resource('especialidades', EspecialidadeController::class);
+        Route::get('especialidades', [EspecialidadeController::class, 'index'])->name('especialidades.index');
+        // whereNumber evita que /especialidades/create case com este wildcard
+        // (a rota create, no grupo platform-admin, é registrada depois).
+        Route::get('especialidades/{especialidade}', [EspecialidadeController::class, 'show'])->name('especialidades.show')->whereNumber('especialidade');
         Route::get('/especialidades/{especialidade}/historico', [EspecialidadeController::class, 'historico'])->name('especialidades.historico');
-        Route::post('/especialidades/{especialidade}/requisitos', [EspecialidadeController::class, 'storeRequisito'])->name('especialidades.requisitos.store');
-        Route::put('/especialidades/{especialidade}/requisitos/{requisito}', [EspecialidadeController::class, 'updateRequisito'])->name('especialidades.requisitos.update');
-        Route::delete('/especialidades/{especialidade}/requisitos/{requisito}', [EspecialidadeController::class, 'destroyRequisito'])->name('especialidades.requisitos.destroy');
+
+        // Progresso do desbravador (por clube) — permanece com os clubes.
         Route::get('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'gerenciarEspecialidades'])->name('desbravadores.especialidades');
         Route::post('/desbravadores/{desbravador}/especialidades', [DesbravadorController::class, 'salvarEspecialidades'])->name('desbravadores.salvar-especialidades');
         Route::delete('/desbravadores/{desbravador}/especialidades/{especialidade}', [DesbravadorController::class, 'removerEspecialidade'])->name('desbravadores.remover-especialidade');
@@ -162,10 +165,7 @@ Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubCont
         Route::prefix('classes')->name('classes.')->group(function () {
             Route::get('/', [ClassesController::class, 'index'])->name('index');
             Route::get('/{classe}', [ClassesController::class, 'show'])->name('show');
-            Route::post('/toggle-requisito', [ClassesController::class, 'toggle'])->name('toggle');
-            Route::post('/{classe}/requisitos', [ClassesController::class, 'storeRequisito'])->name('requisitos.store');
-            Route::put('/{classe}/requisitos/{requisito}', [ClassesController::class, 'updateRequisito'])->name('requisitos.update');
-            Route::delete('/{classe}/requisitos/{requisito}', [ClassesController::class, 'destroyRequisito'])->name('requisitos.destroy');
+            Route::post('/toggle-requisito', [ClassesController::class, 'toggle'])->name('toggle'); // progresso
         });
 
         Route::prefix('frequencia')->name('frequencia.')->group(function () {
@@ -173,6 +173,22 @@ Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubCont
             Route::get('/chamada', [FrequenciaController::class, 'create'])->name('create');
             Route::post('/store', [FrequenciaController::class, 'store'])->name('store');
             Route::delete('/data/{data}', [FrequenciaController::class, 'destroyData'])->name('destroy-data');
+        });
+    });
+
+    // 6.1 Gestão do CATÁLOGO GLOBAL (especialidades, requisitos, requisitos de
+    //     classe) — compartilhado entre todos os clubes, então editável SÓ pela
+    //     plataforma. Clubes apenas consomem (grupo 6).
+    Route::middleware('can:platform-admin')->group(function () {
+        Route::resource('especialidades', EspecialidadeController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
+        Route::post('/especialidades/{especialidade}/requisitos', [EspecialidadeController::class, 'storeRequisito'])->name('especialidades.requisitos.store');
+        Route::put('/especialidades/{especialidade}/requisitos/{requisito}', [EspecialidadeController::class, 'updateRequisito'])->name('especialidades.requisitos.update');
+        Route::delete('/especialidades/{especialidade}/requisitos/{requisito}', [EspecialidadeController::class, 'destroyRequisito'])->name('especialidades.requisitos.destroy');
+
+        Route::prefix('classes')->name('classes.')->group(function () {
+            Route::post('/{classe}/requisitos', [ClassesController::class, 'storeRequisito'])->name('requisitos.store');
+            Route::put('/{classe}/requisitos/{requisito}', [ClassesController::class, 'updateRequisito'])->name('requisitos.update');
+            Route::delete('/{classe}/requisitos/{requisito}', [ClassesController::class, 'destroyRequisito'])->name('requisitos.destroy');
         });
     });
 

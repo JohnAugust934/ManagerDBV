@@ -165,6 +165,8 @@
         {{-- DRAWER LATERAL (SISTEMA DE ASINATURA INDIVIDUAL) --}}
         {{-- TAB VIEW: REQUISITOS --}}
         <div x-show="activeTab === 'requisitos'" x-cloak class="ui-animate-fade-up" x-data="{ editandoId: null }">
+            @can('platform-admin')
+            {{-- Gestão do catálogo de requisitos da classe — global, só plataforma. --}}
             <div class="ui-card p-6 sm:p-8">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-[15px] font-black uppercase tracking-widest text-[#002F6C] dark:text-blue-400">Gerenciar Requisitos</h3>
@@ -243,6 +245,7 @@
                     </form>
                 </div>
             </div>
+            @endcan
         </div>
 
         <template x-teleport="body">

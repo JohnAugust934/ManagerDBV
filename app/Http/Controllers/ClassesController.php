@@ -72,7 +72,7 @@ class ClassesController extends Controller
 
     public function storeRequisito(Request $request, Classe $classe)
     {
-        Gate::authorize('pedagogico');
+        Gate::authorize('platform-admin'); // catálogo global: só plataforma edita
 
         $request->validate([
             'codigo' => 'nullable|string|max:20',
@@ -91,7 +91,7 @@ class ClassesController extends Controller
 
     public function updateRequisito(Request $request, Classe $classe, Requisito $requisito)
     {
-        Gate::authorize('pedagogico');
+        Gate::authorize('platform-admin'); // catálogo global: só plataforma edita
         abort_if($requisito->classe_id !== $classe->id, 404);
 
         $request->validate([
@@ -111,7 +111,7 @@ class ClassesController extends Controller
 
     public function destroyRequisito(Classe $classe, Requisito $requisito)
     {
-        Gate::authorize('pedagogico');
+        Gate::authorize('platform-admin'); // catálogo global: só plataforma edita
         abort_if($requisito->classe_id !== $classe->id, 404);
 
         // Remove o vínculo com desbravadores antes de excluir
