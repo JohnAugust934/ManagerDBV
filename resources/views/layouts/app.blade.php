@@ -13,7 +13,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#002F6C">
 
@@ -73,9 +73,9 @@
                 @endif
                 
                 <div class="flex flex-col overflow-hidden" x-show="sidebarExpanded" x-transition.opacity.duration.300ms>
-                    <h1 class="font-black text-[17px] text-slate-800 dark:text-white leading-tight uppercase tracking-wide text-gradient-dbv whitespace-nowrap">
+                    <p class="font-black text-[17px] text-slate-800 dark:text-white leading-tight uppercase tracking-wide text-gradient-dbv whitespace-nowrap">
                         {{ Str::limit(Auth::user()->club->nome ?? 'MANAGER', 15) }}
-                    </h1>
+                    </p>
                     <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 whitespace-nowrap">
                         {{ Auth::user()->role === 'master' ? 'Master Admin' : 'Sistema de Gestão' }}
                     </span>
@@ -150,7 +150,7 @@
                     </button>
                     <!-- Submenu -->
                     <div x-show="docMenuOpen && sidebarExpanded" x-transition class="pl-12 pr-4 py-1 space-y-1 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl" x-cloak>
-                        <a href="{{ route('atas.index') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('atas*') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Atas Reunões</a>
+                        <a href="{{ route('atas.index') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('atas*') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Atas de Reuniões</a>
                         <a href="{{ route('atos.index') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('atos*') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Atos Administrativos</a>
                     </div>
                 </div>
