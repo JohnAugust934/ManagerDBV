@@ -95,6 +95,7 @@ Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubCont
             Route::post('/clubs/exit', [PlatformController::class, 'exitClub'])->name('exit');
             Route::get('/clubs/{club}/export', [PlatformController::class, 'exportClub'])->name('export');
             Route::post('/clubs/{club}/toggle-active', [PlatformController::class, 'toggleActive'])->name('toggle-active');
+            Route::delete('/clubs/{club}', [PlatformController::class, 'destroy'])->name('clubs.destroy');
         });
 
     // 3. Backups completos do banco — responsabilidade da PLATAFORMA (super admin),

@@ -8,6 +8,7 @@ use App\Models\Unidade;
 use App\Models\User;
 use App\Services\ClubContext;
 use App\Services\ClubExportService;
+use App\Services\ClubLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -88,6 +89,28 @@ class PlatformController extends Controller
         return redirect()->route('platform.index')
             ->with('success', "Clube “{$club->nome}” {$status}. ".
                 ($club->is_active ? 'Os usuários já podem acessar.' : 'Nenhum usuário do clube consegue mais entrar.'));
+    }
+
+    public function destroy(Club $club, ClubLifecycleService $lifecycle): RedirectResponse
+    {
+        Gate::authorize('platform-admin');
+
+        // Trava de segurança: só exclui um clube já DESATIVADO (passo deliberado).
+        if ($club->is_active) {
+            return redirect()->route('platform.index')
+                ->with('error', 'Desative o clube antes de excluí-lo definitivamente.');
+        }
+
+        // Se estiver dando suporte a ESTE clube, encerra a impersonação antes.
+        if (ClubContext::isImpersonating() && ClubContext::currentClubId() === $club->id) {
+            session()->forget(ClubContext::SESSION_KEY);
+        }
+
+        $nome = $club->nome;
+        $lifecycle->delete($club);
+
+        return redirect()->route('platform.index')
+            ->with('success', "Clube “{$nome}” e todos os seus dados foram removidos definitivamente.");
     }
 
     public function createClub()

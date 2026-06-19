@@ -66,6 +66,14 @@
                                 {{ $row->model->is_active ? 'Desativar' : 'Reativar' }}
                             </button>
                         </form>
+                        @unless($row->model->is_active)
+                            <form method="POST" action="{{ route('platform.clubs.destroy', $row->model) }}" class="w-full sm:w-auto"
+                                onsubmit="return confirm('EXCLUIR DEFINITIVAMENTE “{{ $row->model->nome }}” e TODOS os seus dados? Esta ação não pode ser desfeita.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="ui-btn-danger w-full sm:w-auto">Excluir</button>
+                            </form>
+                        @endunless
                     </div>
                 </div>
             @empty
