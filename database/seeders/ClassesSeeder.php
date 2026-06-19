@@ -390,7 +390,7 @@ class ClassesSeeder extends Seeder
                 ['classe_id' => $classe->id, 'descricao' => $req['desc']],
                 [
                     'categoria' => $req['cat'],
-                    'codigo' => $prefixo . '-' . ($index + 1),
+                    'codigo' => $prefixo.'-'.($index + 1),
                 ]
             );
         }

@@ -146,6 +146,7 @@ class BackupController extends Controller
 
             if ($zipCheck !== true) {
                 @unlink($temporaryValidationFile);
+
                 return back()->with('error', 'O arquivo enviado não é um ZIP válido ou está corrompido.');
             }
 

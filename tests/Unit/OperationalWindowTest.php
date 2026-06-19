@@ -38,4 +38,3 @@ class OperationalWindowTest extends TestCase
         $this->assertFalse(OperationalWindow::isNowInAnyWindow('05:00-06:00', 'America/Sao_Paulo', $now));
     }
 }
-

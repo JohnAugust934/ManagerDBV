@@ -44,13 +44,13 @@ class FilaConviteTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $master = User::factory()->create([
             'club_id' => $clube->id,
-            'role'    => 'master',
+            'role' => 'master',
         ]);
 
         // 3. Dispara a criação do convite
         $response = $this->actingAs($master)->post(route('invites.store'), [
             'email' => 'conselheiro@clube.com',
-            'role'  => 'conselheiro',
+            'role' => 'conselheiro',
         ]);
 
         // 4. Verifica HTTP e sessão
@@ -79,12 +79,12 @@ class FilaConviteTest extends TestCase
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
         $master = User::factory()->create([
             'club_id' => $clube->id,
-            'role'    => 'master',
+            'role' => 'master',
         ]);
 
         $this->actingAs($master)->post(route('invites.store'), [
             'email' => 'instrutor@clube.com',
-            'role'  => 'instrutor',
+            'role' => 'instrutor',
         ]);
 
         // assertSentCount garante idempotência: exatamente 1 e-mail, sem duplicatas

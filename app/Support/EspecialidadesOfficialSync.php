@@ -100,7 +100,7 @@ class EspecialidadesOfficialSync
             return $url;
         }
 
-        return 'https://mda.wiki.br/' . ltrim($url, '/');
+        return 'https://mda.wiki.br/'.ltrim($url, '/');
     }
 
     private function cleanText(string $value): string

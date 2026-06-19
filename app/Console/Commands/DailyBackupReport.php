@@ -19,7 +19,7 @@ class DailyBackupReport extends Command
         if (empty($results)) {
             $this->warn('Nenhum resultado de tarefa encontrado no Cache. Enviando aviso ao Telegram.');
         } else {
-            $total    = count($results);
+            $total = count($results);
             $failures = collect($results)->where('status', 'failure')->count();
             $this->info("Lendo {$total} resultado(s) do Cache ({$failures} falha(s)).");
         }

@@ -24,16 +24,16 @@ class ScheduledTaskTracker
     /**
      * Registra o sucesso silencioso de uma tarefa agendada.
      *
-     * @param  string  $taskKey    Identificador único da tarefa (ex: 'backup_run')
-     * @param  string  $label      Nome legível (ex: 'Geração de Backup')
+     * @param  string  $taskKey  Identificador único da tarefa (ex: 'backup_run')
+     * @param  string  $label  Nome legível (ex: 'Geração de Backup')
      * @param  array<string, string>  $details  Detalhes adicionais opcionais
      */
     public function recordSuccess(string $taskKey, string $label, array $details = []): void
     {
         $this->writeEntry($taskKey, [
-            'status'      => 'success',
-            'label'       => $label,
-            'details'     => $details,
+            'status' => 'success',
+            'label' => $label,
+            'details' => $details,
             'recorded_at' => now()->toIso8601String(),
         ]);
     }
@@ -42,15 +42,15 @@ class ScheduledTaskTracker
      * Registra a falha de uma tarefa agendada.
      *
      * @param  string  $taskKey  Identificador único da tarefa
-     * @param  string  $label    Nome legível
-     * @param  string  $reason   Mensagem de erro
+     * @param  string  $label  Nome legível
+     * @param  string  $reason  Mensagem de erro
      */
     public function recordFailure(string $taskKey, string $label, string $reason): void
     {
         $this->writeEntry($taskKey, [
-            'status'      => 'failure',
-            'label'       => $label,
-            'reason'      => $reason,
+            'status' => 'failure',
+            'label' => $label,
+            'reason' => $reason,
             'recorded_at' => now()->toIso8601String(),
         ]);
     }
@@ -98,7 +98,7 @@ class ScheduledTaskTracker
 
     private function writeEntry(string $taskKey, array $entry): void
     {
-        $key  = $this->cacheKey();
+        $key = $this->cacheKey();
         $data = Cache::get($key, []);
 
         $data[$taskKey] = $entry;
@@ -112,6 +112,6 @@ class ScheduledTaskTracker
      */
     private function cacheKey(): string
     {
-        return self::CACHE_PREFIX . Carbon::now(config('app.timezone', 'UTC'))->toDateString();
+        return self::CACHE_PREFIX.Carbon::now(config('app.timezone', 'UTC'))->toDateString();
     }
 }

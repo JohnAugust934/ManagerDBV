@@ -32,4 +32,3 @@ class FrequenciaColumnValue extends Model
         return $this->belongsTo(AttendanceColumn::class, 'attendance_column_id');
     }
 }
-
