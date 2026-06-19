@@ -1,7 +1,5 @@
 ﻿<x-app-layout>
-    <x-slot name="header">Nova Movimentação</x-slot>
-
-    {{-- 
+    {{--
         Alpine Data: 
         Gerencia o estado do formulário e as listas de categorias dinâmicas.
     --}}
@@ -45,6 +43,8 @@
         }
     }">
         <div class="max-w-3xl mx-auto">
+
+            <x-page-title title="Nova Movimentação" :back="route('caixa.index')" />
 
             <div
                 class="bg-white dark:bg-slate-800 shadow-lg rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">

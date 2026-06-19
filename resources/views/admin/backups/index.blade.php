@@ -1,6 +1,4 @@
 ﻿<x-app-layout>
-    <x-slot name="header">Recuperação de Desastres (Backups)</x-slot>
-
     <div class="ui-page" x-data="{
         isBackingUp: false,
         isImporting: false,
@@ -29,6 +27,8 @@
         }
     }">
         <div>
+
+            <x-page-title title="Recuperação de Desastres (Backups)" />
 
             {{-- PAINEL DE CONTROLE --}}
             <div

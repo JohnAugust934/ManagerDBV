@@ -1,14 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col gap-1">
-            <h2 class="text-2xl font-black text-slate-900 dark:text-white">
-                Central de Relatórios
-            </h2>
-        </div>
-    </x-slot>
-
     <div class="ui-page" x-data="{ tipo: '' }">
         <div class="mx-auto flex max-w-7xl flex-col gap-8">
+            <x-page-title title="Central de Relatórios" subtitle="Gere documentos e relatórios do clube." />
             <section class="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
                 <div class="ui-card p-0 overflow-hidden border-0 xl:border">
                     <div class="bg-gradient-to-r from-slate-900 via-sky-900 to-teal-800 px-8 py-8 text-white">

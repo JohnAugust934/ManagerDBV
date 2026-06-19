@@ -1,17 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('especialidades.show', $especialidade) }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            </a>
-            <div>
-                <p class="text-xs font-black uppercase tracking-widest text-slate-400">Histórico</p>
-                <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">{{ $especialidade->nome }}</h2>
-            </div>
-        </div>
-    </x-slot>
-
     <div class="ui-page max-w-4xl mx-auto ui-animate-fade-up pb-20">
+
+        <x-page-title :title="$especialidade->nome" subtitle="Histórico da especialidade" :back="route('especialidades.show', $especialidade)" />
         <div class="ui-card overflow-hidden">
             <div class="h-1.5 w-full" style="background: {{ $especialidade->cor_fundo ?? '#9CA3AF' }}"></div>
 

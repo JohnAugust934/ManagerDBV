@@ -1,7 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">Gestão de Convites</x-slot>
-
     <div class="ui-page">
+
+        <x-page-title title="Gestão de Convites" />
+
         <div class="ui-card overflow-hidden">
             <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <p class="ui-subtitle">{{ ($isPlatformContext ?? false) ? 'Convide outros admins para gerenciar a plataforma com você. Links usados/expirados ficam no histórico.' : 'Gerencie convites enviados. Links utilizados ou expirados continuam no histórico.' }}</p>

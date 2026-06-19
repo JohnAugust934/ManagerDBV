@@ -1,8 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">Publicar Ato Oficial</x-slot>
-
     <div class="ui-page">
         <div class="max-w-2xl mx-auto">
+
+            <x-page-title title="Publicar Ato Oficial" :back="route('atos.index')" />
+
             <div class="ui-card p-6 md:p-8">
                 <form method="POST" action="{{ route('atos.store') }}" class="space-y-6">
                     @csrf

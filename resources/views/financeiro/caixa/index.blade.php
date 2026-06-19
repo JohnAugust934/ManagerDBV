@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">Fluxo de Caixa</x-slot>
-
     <div class="ui-page space-y-6 max-w-[1200px] ui-animate-fade-up">
+
+        <x-page-title title="Fluxo de Caixa" subtitle="Entradas, saídas e saldo do clube." />
 
         {{-- 3 Cards de Resumo --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 sm:px-0">
