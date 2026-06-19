@@ -381,28 +381,29 @@
 
                 async toggleRequirement(studentId, reqId, isChecked) {
                     let student = this.students.find(s => s.id === studentId);
-                    if (isChecked) {
-                        student.ids_cumpridos.push(parseInt(reqId));
-                    } else {
-                        student.ids_cumpridos = student.ids_cumpridos.filter(id => id !== parseInt(reqId));
-                    }
+                    const totalReqs = {{ $classe->requisitos->count() }};
 
-                    // Recalcula o progresso de forma otimista
-                    if(student.ids_cumpridos.length === 0) {
-                        student.progresso_percentual = 0;
-                    } else {
-                        // Calcula % vs total de requisitos no blade
-                        let totalReqs = {{ $classe->requisitos->count() }};
-                        let filledReqs = student.ids_cumpridos.length;
-                        student.progresso_percentual = Math.round((filledReqs / totalReqs) * 100);
-                        if(student.progresso_percentual > 100) student.progresso_percentual = 100;
-                    }
+                    // Aplica (ou reverte) a marcação e recalcula o progresso.
+                    const aplicar = (marcado) => {
+                        const id = parseInt(reqId);
+                        if (marcado) {
+                            if (!student.ids_cumpridos.includes(id)) student.ids_cumpridos.push(id);
+                        } else {
+                            student.ids_cumpridos = student.ids_cumpridos.filter(x => x !== id);
+                        }
+                        student.progresso_percentual = totalReqs > 0
+                            ? Math.min(100, Math.round((student.ids_cumpridos.length / totalReqs) * 100))
+                            : 0;
+                    };
+
+                    aplicar(isChecked); // atualização otimista
 
                     try {
                         const response = await fetch("{{ route('classes.toggle') }}", {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             },
                             body: JSON.stringify({
@@ -414,8 +415,8 @@
 
                         if (!response.ok) throw new Error('Erro ao salvar no backend');
                     } catch (error) {
-                        console.error(error);
-                        // Idealmente exibir Toast de erro via componente
+                        aplicar(!isChecked); // desfaz a marcação otimista
+                        window.notify('Não foi possível salvar a alteração. Tente novamente.', 'error');
                     }
                 }
             }

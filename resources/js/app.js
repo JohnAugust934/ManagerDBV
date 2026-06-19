@@ -61,6 +61,17 @@ window.addEventListener("pageshow", () => {
     mostrarPagina();
 });
 
+// --- PWA: registra o service worker (instalável + fallback offline) ---
+// SW só roda em contexto seguro (HTTPS ou localhost); em outros hosts de dev
+// o navegador simplesmente ignora, sem erro.
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {
+            /* registro do SW é best-effort; falha não deve quebrar a app */
+        });
+    });
+}
+
 // 3. Ao clicar em links (Saída Suave)
 document.addEventListener("click", (e) => {
     const link = e.target.closest("a");

@@ -98,15 +98,24 @@ class UnidadeController extends Controller
             ->with('success', 'Unidade excluída com sucesso!');
     }
 
-    public function toggleRanking(Unidade $unidade)
+    public function toggleRanking(Request $request, Unidade $unidade)
     {
         $this->authorizeAccess($unidade);
 
         $unidade->update(['no_ranking' => ! $unidade->no_ranking]);
 
         $status = $unidade->no_ranking ? 'incluída no' : 'excluída do';
+        $mensagem = "Unidade \"{$unidade->nome}\" {$status} ranking.";
 
-        return back()->with('success', "Unidade \"{$unidade->nome}\" {$status} ranking.");
+        // Requisição AJAX (toggle in-place, sem recarregar a tela de edição).
+        if ($request->expectsJson()) {
+            return response()->json([
+                'no_ranking' => $unidade->no_ranking,
+                'message' => $mensagem,
+            ]);
+        }
+
+        return back()->with('success', $mensagem);
     }
 
     /**

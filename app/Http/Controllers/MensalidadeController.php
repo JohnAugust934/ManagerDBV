@@ -116,7 +116,7 @@ class MensalidadeController extends Controller
         return back()->with('success', "$count mensalidades geradas com sucesso!");
     }
 
-    public function pagar($id)
+    public function pagar(Request $request, $id)
     {
         Gate::authorize('financeiro');
 
@@ -124,10 +124,14 @@ class MensalidadeController extends Controller
 
         // Garante que a mensalidade pertence ao clube do usuário.
         $mensalidade = Mensalidade::doClube($clubId)
-            ->with('desbravador')
+            ->with('desbravador.unidade')
             ->findOrFail($id);
 
         if ($mensalidade->status === 'pago') {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Esta mensalidade já consta como paga.'], 422);
+            }
+
             return back()->with('error', 'Esta mensalidade já consta como paga.');
         }
 
@@ -147,6 +151,39 @@ class MensalidadeController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Pagamento recebido e lançado no caixa com sucesso!');
+        $mensagem = 'Pagamento recebido e lançado no caixa com sucesso!';
+
+        // Requisição AJAX (atualização parcial, sem recarregar a tela): devolve o
+        // HTML atualizado do card + os totais recalculados do mês.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $mensagem,
+                'id' => $mensalidade->id,
+                'card' => view('financeiro.mensalidades._card', ['m' => $mensalidade])->render(),
+                'resumo' => $this->resumoMes($clubId, (int) $mensalidade->mes, (int) $mensalidade->ano),
+            ]);
+        }
+
+        return back()->with('success', $mensagem);
+    }
+
+    /**
+     * Totais do mês (recebido/pendente em R$ formatado e contagens) usados pela
+     * atualização parcial após confirmar um pagamento. Fonte única de verdade no
+     * servidor — o cliente apenas reflete os números recebidos.
+     */
+    private function resumoMes(int $clubId, int $mes, int $ano): array
+    {
+        $mensalidades = Mensalidade::doClube($clubId)
+            ->where('mes', $mes)
+            ->where('ano', $ano)
+            ->get(['status', 'valor']);
+
+        return [
+            'valorRecebido' => number_format($mensalidades->where('status', 'pago')->sum('valor'), 2, ',', '.'),
+            'valorPendente' => number_format($mensalidades->where('status', 'pendente')->sum('valor'), 2, ',', '.'),
+            'totalPago' => $mensalidades->where('status', 'pago')->count(),
+            'totalPendente' => $mensalidades->where('status', 'pendente')->count(),
+        ];
     }
 }
