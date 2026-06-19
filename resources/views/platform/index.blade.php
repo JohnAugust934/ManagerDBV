@@ -33,7 +33,14 @@
             @forelse($clubs as $row)
                 <div class="ui-card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div class="min-w-0">
-                        <h3 class="text-base font-black text-slate-800 dark:text-white truncate">{{ $row->model->nome }}</h3>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-black text-slate-800 dark:text-white truncate">{{ $row->model->nome }}</h3>
+                            @unless($row->model->is_active)
+                                <span class="shrink-0 inline-flex items-center rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                                    Desativado
+                                </span>
+                            @endunless
+                        </div>
                         <p class="text-sm text-slate-500 dark:text-slate-400">
                             {{ $row->model->cidade }} · {{ $row->model->associacao ?? 'Sem associação' }}
                         </p>
@@ -52,6 +59,13 @@
                         <a href="{{ route('platform.export', $row->model) }}" target="dl_frame" class="ui-btn-secondary w-full sm:w-auto text-center">
                             Exportar
                         </a>
+                        <form method="POST" action="{{ route('platform.toggle-active', $row->model) }}" class="w-full sm:w-auto"
+                            onsubmit="return confirm('{{ $row->model->is_active ? 'Desativar o acesso deste clube? Nenhum usuário vinculado poderá entrar.' : 'Reativar o acesso deste clube?' }}');">
+                            @csrf
+                            <button type="submit" class="{{ $row->model->is_active ? 'ui-btn-danger' : 'ui-btn-primary' }} w-full sm:w-auto">
+                                {{ $row->model->is_active ? 'Desativar' : 'Reativar' }}
+                            </button>
+                        </form>
                     </div>
                 </div>
             @empty

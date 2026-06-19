@@ -23,6 +23,7 @@ use App\Http\Controllers\RelatorioController;
 use App\Http\Controllers\UnidadeController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Middleware\EnsureClubContextForPlatformAdmin;
+use App\Http\Middleware\EnsureClubIsActive;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -59,7 +60,7 @@ Route::get('/register-invite', [RegisteredUserController::class, 'create'])->nam
 Route::post('/register-invite', [RegisteredUserController::class, 'store'])->name('register.store_invite');
 
 // Area restrita
-Route::middleware(['auth', 'verified', EnsureClubContextForPlatformAdmin::class])->group(function () {
+Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubContextForPlatformAdmin::class])->group(function () {
     // 1. Dashboard e perfil
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -93,6 +94,7 @@ Route::middleware(['auth', 'verified', EnsureClubContextForPlatformAdmin::class]
             Route::post('/clubs/{club}/enter', [PlatformController::class, 'enterClub'])->name('enter');
             Route::post('/clubs/exit', [PlatformController::class, 'exitClub'])->name('exit');
             Route::get('/clubs/{club}/export', [PlatformController::class, 'exportClub'])->name('export');
+            Route::post('/clubs/{club}/toggle-active', [PlatformController::class, 'toggleActive'])->name('toggle-active');
         });
 
     // 3. Backups completos do banco — responsabilidade da PLATAFORMA (super admin),

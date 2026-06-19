@@ -14,15 +14,21 @@ class Club extends Model
         'cidade',
         'associacao',
         'logo', // Novo campo
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     // Helper para pegar a URL do logo ou uma imagem padrão
     public function getLogoUrlAttribute()
     {
         if ($this->logo) {
-            return asset('storage/' . $this->logo);
+            return asset('storage/'.$this->logo);
         }
+
         // Retorna um placeholder se não tiver logo
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->nome) . '&color=7F9CF5&background=EBF4FF';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->nome).'&color=7F9CF5&background=EBF4FF';
     }
 }

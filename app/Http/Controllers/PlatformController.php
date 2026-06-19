@@ -77,6 +77,19 @@ class PlatformController extends Controller
         );
     }
 
+    public function toggleActive(Club $club): RedirectResponse
+    {
+        Gate::authorize('platform-admin');
+
+        $club->update(['is_active' => ! $club->is_active]);
+
+        $status = $club->is_active ? 'reativado' : 'desativado';
+
+        return redirect()->route('platform.index')
+            ->with('success', "Clube “{$club->nome}” {$status}. ".
+                ($club->is_active ? 'Os usuários já podem acessar.' : 'Nenhum usuário do clube consegue mais entrar.'));
+    }
+
     public function createClub()
     {
         Gate::authorize('platform-admin');
