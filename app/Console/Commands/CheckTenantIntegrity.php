@@ -14,13 +14,12 @@ use Illuminate\Support\Facades\DB;
  * qualquer problema. Detecta — não corrige (a correção é papel do
  * `tenant:upgrade-legacy` e das migrations de backfill).
  *
- * Invariantes checadas (schema atual, pré-desnormalização da Fase 1):
+ * Invariantes checadas:
  *  - Tabela com club_id direto: nenhuma linha pode ter club_id NULL (ficaria
  *    invisível sob fail-closed do ClubScope) nem apontar para clube inexistente.
  *  - Usuário comum (não platform admin) sem clube ficaria travado pelo fail-closed.
- *  - Desbravador sem unidade não tem vínculo de clube (hoje o tenant vem da
- *    unidade) → invisível. Na Fase 1, quando `desbravadores` ganhar club_id
- *    direto, mover essa tabela para TABELAS_COM_CLUB_ID e remover esta checagem.
+ *  - Desbravador sem unidade não tem vínculo de clube (club_id desnormalizado
+ *    deve bater com o da unidade pai — verificado em checarDivergencia).
  */
 class CheckTenantIntegrity extends Command
 {

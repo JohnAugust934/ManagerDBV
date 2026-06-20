@@ -111,11 +111,14 @@ class UpgradeLegacyTenant extends Command
                 DB::table($tabela)->whereNull('club_id')->update(['club_id' => $club->id]);
             }
 
-            // Platform admins (cross-tenant): sem clube, flag ligada.
+            // Platform admins (cross-tenant): sem clube, flag ligada, cargo próprio.
+            // Nota: a migration set_platform_admin_role é no-op no upgrade (roda antes
+            // de qualquer usuário ter is_platform_admin=true), então definimos o role aqui.
             foreach ($platformAdmins as $admin) {
                 $admin->forceFill([
                     'is_platform_admin' => true,
                     'club_id' => null,
+                    'role' => 'platform_admin',
                 ])->save();
             }
 

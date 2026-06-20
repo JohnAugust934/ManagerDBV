@@ -199,7 +199,7 @@ autenticado, para cargos como conselheiro. Registro só por convite (`/register-
   embutido para ambientes sem `fakerphp/faker` (`composer --no-dev`).
 
 ## Deploy
-Guia completo em `DEPLOY.md`; runbook de restauração em `RESTORE.md`. Pontos-chave: `composer
+Guia completo em `docs/DEPLOY.md`; runbook de restauração em `docs/RESTORE.md`. Pontos-chave: `composer
 install --no-dev --optimize-autoloader`, `npm ci && npm run build`, `migrate --force`,
 `storage:link`, `config:cache`/`route:cache`/`view:cache`, worker de fila via Supervisor
 (`queue:work database`), cron de 1 minuto rodando `schedule:run`. Sempre `backup:run` antes de

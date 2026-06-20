@@ -1,6 +1,6 @@
 # CHANGES — Revisão de Frontend (2026-06-19)
 
-Mudanças aplicadas a partir do `FRONTEND_AUDIT.md`. Stack: Laravel 12 + Blade + Alpine + Tailwind.
+Mudanças aplicadas a partir do `FRONTEND_AUDIT.md` (neste mesmo diretório). Stack: Laravel 12 + Blade + Alpine + Tailwind.
 Trabalhadas **dentro** do design system existente (`ui-*` / tokens `--ui-*`) — sem sistema de CSS
 paralelo. Build validado com `npm run build` (✓ 54 módulos).
 
