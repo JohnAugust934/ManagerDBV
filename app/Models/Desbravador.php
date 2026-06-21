@@ -22,6 +22,7 @@ class Desbravador extends Model
         'data_nascimento',
         'sexo',
         'cpf',
+        'cpf_hash',
         'rg',
         'unidade_id',
         'club_id',
@@ -44,12 +45,50 @@ class Desbravador extends Model
     ];
 
     protected $casts = [
-        'data_nascimento' => 'date',
-        'ativo' => 'boolean',
-        'consentimento_lgpd' => 'boolean',
-        'consentimento_lgpd_em' => 'datetime',
-        'usa_imagem_autorizado' => 'boolean',
+        'data_nascimento'        => 'date',
+        'ativo'                  => 'boolean',
+        'consentimento_lgpd'     => 'boolean',
+        'consentimento_lgpd_em'  => 'datetime',
+        'usa_imagem_autorizado'  => 'boolean',
+        // CPF usa mutator/accessor manuais (precisa gerar cpf_hash antes de cifrar).
+        // Os demais campos sensíveis usam o cast 'encrypted' do Laravel.
+        'rg'                     => 'encrypted',
+        'alergias'               => 'encrypted',
+        'medicamentos_continuos' => 'encrypted',
+        'plano_saude'            => 'encrypted',
     ];
+
+    /**
+     * Grava o CPF criptografado e atualiza cpf_hash (SHA-256 dos dígitos).
+     * cpf_hash é a coluna usada pela unique constraint (club_id, cpf_hash),
+     * pois o cast 'encrypted' é não-determinístico.
+     */
+    public function setCpfAttribute(?string $value): void
+    {
+        if ($value !== null) {
+            $this->attributes['cpf_hash'] = hash('sha256', preg_replace('/\D/', '', $value));
+            $this->attributes['cpf'] = encrypt($value);
+        } else {
+            $this->attributes['cpf_hash'] = null;
+            $this->attributes['cpf'] = null;
+        }
+    }
+
+    /**
+     * Descriptografa o CPF ao ler. Retorna plaintext como fallback seguro para
+     * linhas inseridas diretamente via SQL (testes de migração, seeds legados).
+     */
+    public function getCpfAttribute(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        try {
+            return decrypt($value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            return $value;
+        }
+    }
 
     public function unidade(): BelongsTo
     {

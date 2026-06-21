@@ -23,7 +23,9 @@ class TenantScopedUniqueTest extends TestCase
         Desbravador::factory()->create(['unidade_id' => $unidadeA->id, 'cpf' => '111.111.111-11']);
         Desbravador::factory()->create(['unidade_id' => $unidadeB->id, 'cpf' => '111.111.111-11']);
 
-        $this->assertSame(2, Desbravador::withoutGlobalScopes()->where('cpf', '111.111.111-11')->count());
+        // CPF é armazenado criptografado — busca pelo hash determinístico
+        $cpfHash = hash('sha256', '11111111111');
+        $this->assertSame(2, Desbravador::withoutGlobalScopes()->where('cpf_hash', $cpfHash)->count());
     }
 
     public function test_cpf_duplicado_no_mesmo_clube_e_rejeitado(): void

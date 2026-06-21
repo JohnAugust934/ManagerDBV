@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Rules\UnidadePertenceAoClube;
 use App\Services\ClubContext;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class StoreDesbravadorRequest extends FormRequest
@@ -47,14 +48,31 @@ class StoreDesbravadorRequest extends FormRequest
     }
 
     /**
-     * Regra de unicidade do CPF — POR CLUBE (a mesma pessoa pode estar em clubes
-     * distintos). O update sobrescreve para ignorar o próprio registro.
+     * Regra de unicidade do CPF — POR CLUBE.
+     * O CPF é armazenado criptografado (não-determinístico), então a unique
+     * constraint usa cpf_hash (SHA-256 dos dígitos). A closure hasha o input
+     * antes de comparar com cpf_hash no banco.
      *
      * @return array<int, mixed>
      */
     protected function cpfRule(): array
     {
-        return ['required', 'string', 'max:14',
-            Rule::unique('desbravadores', 'cpf')->where('club_id', ClubContext::currentClubId())];
+        $clubId = ClubContext::currentClubId();
+
+        return [
+            'required',
+            'string',
+            'max:14',
+            function ($attribute, $value, $fail) use ($clubId) {
+                $hash = hash('sha256', preg_replace('/\D/', '', $value));
+                $exists = DB::table('desbravadores')
+                    ->where('cpf_hash', $hash)
+                    ->where('club_id', $clubId)
+                    ->exists();
+                if ($exists) {
+                    $fail('Este CPF já está cadastrado neste clube.');
+                }
+            },
+        ];
     }
 }

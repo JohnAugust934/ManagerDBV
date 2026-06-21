@@ -42,7 +42,8 @@ class AuditoriaTest extends TestCase
 
         $this->actingAs($autor)->post(route('desbravadores.store'), $payload)->assertSessionHasNoErrors();
 
-        $desbravador = Desbravador::where('cpf', '123.456.789-00')->firstOrFail();
+        $cpfHash = hash('sha256', preg_replace('/\D/', '', '123.456.789-00'));
+        $desbravador = Desbravador::where('cpf_hash', $cpfHash)->firstOrFail();
         $this->assertSame($autor->id, $desbravador->created_by);
         $this->assertSame($autor->id, $desbravador->updated_by);
 
@@ -78,7 +79,8 @@ class AuditoriaTest extends TestCase
             'endereco' => 'Rua Teste, 123',
         ], $this->consentimentoLgpd()))->assertSessionHasNoErrors();
 
-        $desbravador = Desbravador::where('cpf', '123.456.789-00')->firstOrFail();
+        $cpfHash = hash('sha256', preg_replace('/\D/', '', '123.456.789-00'));
+        $desbravador = Desbravador::where('cpf_hash', $cpfHash)->firstOrFail();
 
         $response = $this->actingAs($autor)->get(route('desbravadores.show', $desbravador));
 

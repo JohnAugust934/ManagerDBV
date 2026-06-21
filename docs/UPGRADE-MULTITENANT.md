@@ -80,6 +80,13 @@ A v4.0.0-beta já tinha `club_id` na maioria das tabelas, mas:
 
 ### 0. Backup ANTES de qualquer coisa (obrigatório)
 
+> **Pré-requisito:** confirme que `APP_KEY` está definida no `.env` antes de continuar.
+> A migration `encrypt_sensitive_desbravador_fields` criptografa CPF, RG e dados médicos
+> usando essa chave. Sem ela, o `migrate --force` falhará imediatamente.
+> ```bash
+> grep APP_KEY .env   # deve retornar base64:... com 44 caracteres
+> ```
+
 ```bash
 php artisan down        # entra em modo manutenção
 php artisan backup:run  # ou: cp database/database.sqlite database/database.sqlite.bak
@@ -125,6 +132,8 @@ de proteção de dados:
 | `lgpd_fields_and_registros_table` | Adiciona campos LGPD em `desbravadores` (`consentimento_lgpd`, `usa_imagem_autorizado`, etc.), `termos_aceitos_em` em `users`, e cria `lgpd_registros` (ROPA). Todos os campos novos são anuláveis/com default — registros antigos não são afetados. |
 | `create_relatorios_gerados_table` | Cria `relatorio_gerados` (fila assíncrona de geração de PDFs por clube). Tabela nova, sem dados legados. |
 | `create_club_backup_logs_table` | Cria `club_backup_logs` (auditoria de backups por clube). Tabela nova, sem dados legados. |
+| `add_frequencia_column_values_index` | Índice explícito em `frequencia_column_values(frequencia_id)` para aggregations do ranking. Sem risco de dados. |
+| `encrypt_sensitive_desbravador_fields` | **Criptografa em repouso:** CPF, RG, alergias, medicamentos e plano de saúde com AES-256-CBC via `APP_KEY`. Adiciona coluna `cpf_hash` (SHA-256) para a unique constraint. A migration usa `chunkById(200)` para processar linhas existentes sem travar o banco. **Requer `APP_KEY` definida antes de rodar** — o script verifica isso automaticamente. |
 
 > **Se `migrate` abortar** com `RuntimeException`, leia a mensagem: ela indica qual
 > tabela tem problema (nulos ambíguos ou club_id pendente) e qual comando rodar

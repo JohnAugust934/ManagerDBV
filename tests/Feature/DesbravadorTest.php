@@ -48,7 +48,7 @@ class DesbravadorTest extends TestCase
         $this->assertDatabaseHas('desbravadores', [
             'nome' => 'João Desbravador',
             'classe_atual' => $classe->id,
-            'cpf' => '123.456.789-00',
+            'cpf_hash' => hash('sha256', '12345678900'),
         ]);
     }
 
@@ -131,8 +131,9 @@ class DesbravadorTest extends TestCase
             'id' => $desbravador->id,
             'nome' => 'João Editado',
             'classe_atual' => $novaClasse->id,
-            'rg' => '99.999.999-X',
         ]);
+        // RG é armazenado criptografado — verificar via accessor
+        $this->assertSame('99.999.999-X', $desbravador->fresh()->rg);
     }
 
     public function test_pode_filtrar_desbravadores_por_status_ativo_inativo()

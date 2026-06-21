@@ -151,11 +151,11 @@
                     <div class="space-y-4">
                         <div>
                             <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">CPF</p>
-                            <p class="font-mono font-bold text-slate-700 dark:text-slate-300">{{ $desbravador->cpf }}</p>
+                            <p class="font-mono font-bold text-slate-700 dark:text-slate-300">{{ mascaraCpf($desbravador->cpf) }}</p>
                         </div>
                         <div>
                             <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">RG</p>
-                            <p class="font-mono font-bold text-slate-700 dark:text-slate-300">{{ $desbravador->rg ?? 'N/I' }}</p>
+                            <p class="font-mono font-bold text-slate-700 dark:text-slate-300">{{ mascaraRg($desbravador->rg) }}</p>
                         </div>
                     </div>
                 </div>

@@ -44,7 +44,7 @@ class FluxoOperacionalCentralTest extends TestCase
             'ativo' => false,
         ]);
 
-        $ativo = Desbravador::where('cpf', '111.222.333-44')->firstOrFail();
+        $ativo = Desbravador::where('cpf_hash', hash('sha256', '11122233344'))->firstOrFail();
 
         $this->actingAs($tesoureiro)->post(route('mensalidades.gerar'), [
             'mes' => now()->month,
