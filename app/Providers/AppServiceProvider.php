@@ -43,6 +43,17 @@ class AppServiceProvider extends ServiceProvider
         $this->registerTelegramBackupListeners();
         $this->registerOperationalListeners();
 
+        if (app()->isLocal()) {
+            \Illuminate\Support\Facades\DB::listen(function ($query) {
+                if ($query->time > 500) {
+                    logger()->warning('Slow query detectada', [
+                        'sql' => $query->sql,
+                        'time_ms' => $query->time,
+                    ]);
+                }
+            });
+        }
+
         // Super admin de plataforma (cross-tenant). Controla o painel /platform.
         Gate::define('platform-admin', function (User $user) {
             return $user->is_platform_admin === true;
@@ -182,9 +193,12 @@ class AppServiceProvider extends ServiceProvider
         // participam do ranking (no_ranking = true) entram no snapshot.
         $unitEntries = Unidade::where('club_id', $clubId)
             ->where('no_ranking', true)
-            ->with(['desbravadores.frequencias' => $frequenciasLoader])
+            ->with([
+                'desbravadores:id,nome,unidade_id,ativo',
+                'desbravadores.frequencias' => $frequenciasLoader,
+            ])
             ->orderBy('nome')
-            ->get()
+            ->get(['id', 'nome', 'club_id', 'no_ranking'])
             ->map(function (Unidade $unidade) {
                 $members = $unidade->desbravadores;
                 $points = $members->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
@@ -207,11 +221,14 @@ class AppServiceProvider extends ServiceProvider
             })
             ->all();
 
-        $memberEntries = Desbravador::with(['unidade', 'frequencias' => $frequenciasLoader])
+        $memberEntries = Desbravador::with([
+            'unidade:id,nome,no_ranking',
+            'frequencias' => $frequenciasLoader,
+        ])
             ->where('ativo', true)
             ->whereHas('unidade', fn ($q) => $q->where('club_id', $clubId)->where('no_ranking', true))
             ->orderBy('nome')
-            ->get()
+            ->get(['id', 'nome', 'unidade_id', 'ativo'])
             ->map(function (Desbravador $desbravador) {
                 return [
                     'id' => $desbravador->id,

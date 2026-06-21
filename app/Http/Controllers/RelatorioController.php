@@ -449,10 +449,13 @@ class RelatorioController extends Controller
     private function relatorioUnidades()
     {
         $unidades = $this->baseUnidadeQuery()
-            ->with(['desbravadores.frequencias'])
+            ->with([
+                'desbravadores:id,nome,unidade_id,ativo',
+                'desbravadores.frequencias:id,desbravador_id,presente,pontual,biblia,uniforme',
+            ])
             ->withCount('desbravadores')
             ->orderBy('nome')
-            ->get();
+            ->get(['id', 'nome', 'conselheiro', 'club_id']);
 
         return $this->renderTablePdf(
             titulo: 'Relatório de Unidades',
@@ -480,8 +483,11 @@ class RelatorioController extends Controller
     {
         $ano = $this->rankingYear();
         $ranking = $this->baseUnidadeQuery()
-            ->with(['desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)])
-            ->get()
+            ->with([
+                'desbravadores:id,nome,unidade_id,ativo',
+                'desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)->select('id', 'desbravador_id', 'presente', 'pontual', 'biblia', 'uniforme'),
+            ])
+            ->get(['id', 'nome', 'club_id'])
             ->map(function (Unidade $unidade) {
                 $membros = $unidade->desbravadores->count();
                 $pontos = $unidade->desbravadores->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
@@ -523,9 +529,12 @@ class RelatorioController extends Controller
     {
         $ano = $this->rankingYear();
         $ranking = $this->baseDesbravadorQuery(new Request(['status' => 'ativos']))
-            ->with(['unidade:id,nome', 'frequencias' => fn ($query) => $query->whereYear('data', $ano)])
+            ->with([
+                'unidade:id,nome',
+                'frequencias' => fn ($query) => $query->whereYear('data', $ano)->select('id', 'desbravador_id', 'presente', 'pontual', 'biblia', 'uniforme'),
+            ])
             ->orderBy('nome')
-            ->get()
+            ->get(['id', 'nome', 'unidade_id'])
             ->map(function (Desbravador $desbravador) {
                 return [
                     'nome' => $desbravador->nome,

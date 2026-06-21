@@ -26,8 +26,11 @@ class RankingController extends Controller
 
         $data = Unidade::where('club_id', $clubId)
             ->where('no_ranking', true)
-            ->with(['desbravadores.frequencias' => $frequenciasLoader])
-            ->get()
+            ->with([
+                'desbravadores:id,nome,unidade_id,ativo',
+                'desbravadores.frequencias' => $frequenciasLoader,
+            ])
+            ->get(['id', 'nome', 'club_id', 'no_ranking'])
             ->map(function ($unidade) {
                 $stats = $this->calcularPontos($unidade->desbravadores);
 
@@ -59,12 +62,12 @@ class RankingController extends Controller
 
         // GlobalScope DesbravadorClubScope aplica o filtro de clube automaticamente.
         $data = Desbravador::with([
-            'unidade',
+            'unidade:id,nome,no_ranking',
             'frequencias' => $frequenciasLoader,
         ])
             ->where('ativo', true)
             ->whereHas('unidade', fn ($q) => $q->where('no_ranking', true))
-            ->get()
+            ->get(['id', 'nome', 'unidade_id', 'ativo'])
             ->map(function ($dbv) {
                 $stats = $this->calcularPontos(collect([$dbv]));
 
