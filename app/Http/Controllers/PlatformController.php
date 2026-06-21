@@ -11,6 +11,7 @@ use App\Services\ClubExportService;
 use App\Services\ClubLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -37,10 +38,14 @@ class PlatformController extends Controller
                 ];
             });
 
+        // Dados operacionais para o painel de observabilidade
+        $operacional = $this->coletarDadosOperacionais();
+
         return view('platform.index', [
             'clubs' => $clubs,
             'totalClubes' => $clubs->count(),
             'totalUsuarios' => User::whereNotNull('club_id')->count(),
+            'operacional' => $operacional,
         ]);
     }
 
@@ -151,6 +156,58 @@ class PlatformController extends Controller
         ]);
 
         return redirect()->route('platform.index')
-            ->with('success', "Clube “{$club->nome}” criado com seu master inicial.");
+            ->with('success', 'Clube “'.$club->nome.'” criado com seu master inicial.');
+    }
+
+    private function coletarDadosOperacionais(): array
+    {
+        // Jobs na fila
+        try {
+            $queueSize = DB::table('jobs')->count();
+        } catch (\Exception) {
+            $queueSize = null;
+        }
+
+        // Jobs falhos nas últimas 24h
+        try {
+            $falhasRecentes = DB::table('failed_jobs')
+                ->where('failed_at', '>=', now()->subDay()->toDateTimeString())
+                ->count();
+            $totalFalhas = DB::table('failed_jobs')->count();
+        } catch (\Exception) {
+            $falhasRecentes = null;
+            $totalFalhas = null;
+        }
+
+        // Versão da aplicação (commit mais recente)
+        try {
+            $versao = trim((string) shell_exec('git rev-parse --short HEAD 2>/dev/null'));
+            $versao = $versao ?: 'desconhecida';
+        } catch (\Exception) {
+            $versao = 'desconhecida';
+        }
+
+        // Relatórios batch pendentes/processando
+        try {
+            $relatoriosPendentes = \App\Models\RelatorioGerado::withoutGlobalScopes()
+                ->whereIn('status', ['pendente', 'processando'])
+                ->count();
+        } catch (\Exception) {
+            $relatoriosPendentes = null;
+        }
+
+        // Clubes ativos vs inativos
+        $clubesAtivos = Club::where('is_active', true)->count();
+        $clubesInativos = Club::where('is_active', false)->count();
+
+        return compact(
+            'queueSize',
+            'falhasRecentes',
+            'totalFalhas',
+            'versao',
+            'relatoriosPendentes',
+            'clubesAtivos',
+            'clubesInativos',
+        );
     }
 }
