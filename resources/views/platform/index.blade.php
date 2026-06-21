@@ -82,7 +82,6 @@
                 </div>
             @endforelse
         </div>
-    </div>
 
     {{-- Painel de Observabilidade --}}
     <div class="mt-8">
