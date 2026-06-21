@@ -15,10 +15,9 @@ class InviteSystemTest extends TestCase
     use RefreshDatabase;
 
     // -------------------------------------------------------------------------
-    // CENÁRIO 1 — Fluxo feliz: master cria convite, e-mail é disparado
+    // CENÁRIO 1 — Fluxo feliz: master cria convite, e-mail é enfileirado
     // -------------------------------------------------------------------------
-    // ClubInvitation NÃO implementa mais ShouldQueue, portanto o envio é
-    // SÍNCRONO. A asserção correta é assertSent(), não assertQueued().
+    // Mail::queue() enfileira o e-mail → assertQueued() é a asserção correta.
     // -------------------------------------------------------------------------
     public function test_master_pode_criar_convite_e_envia_email(): void
     {
@@ -41,8 +40,7 @@ class InviteSystemTest extends TestCase
             'club_id' => $club->id,
         ]);
 
-        // Envio síncrono → assertSent (não assertQueued)
-        Mail::assertSent(ClubInvitation::class, function ($mail) {
+        Mail::assertQueued(ClubInvitation::class, function ($mail) {
             return $mail->hasTo('novo@clube.com');
         });
     }
@@ -114,8 +112,7 @@ class InviteSystemTest extends TestCase
         $this->assertEquals('tesoureiro', $conviteAtualizado->role);
         $this->assertNotEquals('token-antigo', $conviteAtualizado->token);
 
-        // Envio síncrono → assertSent (não assertQueued)
-        Mail::assertSent(ClubInvitation::class, function ($mail) {
+        Mail::assertQueued(ClubInvitation::class, function ($mail) {
             return $mail->hasTo('pendente@clube.com');
         });
     }
@@ -151,8 +148,7 @@ class InviteSystemTest extends TestCase
 
         $this->assertDatabaseCount('invitations', 1);
 
-        // Envio síncrono → assertNothingSent (não assertNothingQueued)
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     // -------------------------------------------------------------------------
@@ -186,7 +182,6 @@ class InviteSystemTest extends TestCase
         $response->assertSessionHasErrors('role');
         $this->assertDatabaseMissing('invitations', ['email' => 'master-convite@clube.com']);
 
-        // Envio síncrono → assertNothingSent (não assertNothingQueued)
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 }

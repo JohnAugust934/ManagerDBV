@@ -472,6 +472,60 @@ class RelatorioTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
+    // -------------------------------------------------------------------------
+    // Testes para as correções da Parte 1 do Plano de Escalabilidade
+    // -------------------------------------------------------------------------
+
+    public function test_index_calcula_saldo_caixa_via_agregacao_sql_sem_carregar_todos_registros(): void
+    {
+        Caixa::create(['descricao' => 'Entrada 1', 'valor' => 100, 'tipo' => 'entrada', 'data_movimentacao' => now(), 'club_id' => $this->clube->id]);
+        Caixa::create(['descricao' => 'Entrada 2', 'valor' => 50,  'tipo' => 'entrada', 'data_movimentacao' => now(), 'club_id' => $this->clube->id]);
+        Caixa::create(['descricao' => 'Saída 1',   'valor' => 30,  'tipo' => 'saida',   'data_movimentacao' => now(), 'club_id' => $this->clube->id]);
+
+        $response = $this->actingAs($this->user)->get(route('relatorios.index'));
+
+        $response->assertOk();
+        // saldo esperado = (100 + 50) - 30 = 120
+        $response->assertViewHas('stats', fn ($stats) => $stats['saldo_caixa'] === 120.0);
+    }
+
+    public function test_index_calcula_patrimonio_total_com_quantidade_via_agregacao_sql(): void
+    {
+        \App\Models\Patrimonio::create([
+            'item' => 'Barraca',
+            'quantidade' => 3,
+            'valor_estimado' => 200.00,
+            'estado_conservacao' => 'bom',
+            'club_id' => $this->clube->id,
+        ]);
+        \App\Models\Patrimonio::create([
+            'item' => 'Lanterna',
+            'quantidade' => 5,
+            'valor_estimado' => 40.00,
+            'estado_conservacao' => 'bom',
+            'club_id' => $this->clube->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('relatorios.index'));
+
+        $response->assertOk();
+        // (3 * 200) + (5 * 40) = 600 + 200 = 800
+        $response->assertViewHas('stats', fn ($stats) => $stats['patrimonio_total'] === 800.0);
+    }
+
+    public function test_index_saldo_caixa_ignora_registros_de_outro_clube(): void
+    {
+        $outroClube = Club::create(['nome' => 'Clube Rival', 'cidade' => 'RJ']);
+
+        Caixa::create(['descricao' => 'Entrada própria', 'valor' => 100, 'tipo' => 'entrada', 'data_movimentacao' => now(), 'club_id' => $this->clube->id]);
+        Caixa::create(['descricao' => 'Entrada alheia', 'valor' => 9999, 'tipo' => 'entrada', 'data_movimentacao' => now(), 'club_id' => $outroClube->id]);
+
+        $response = $this->actingAs($this->user)->get(route('relatorios.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('stats', fn ($stats) => $stats['saldo_caixa'] === 100.0);
+    }
+
     private function mockPdfLoadView(string $expectedView, callable $assertion): void
     {
         $pdfWrapper = \Mockery::mock(DomPdfWrapper::class);

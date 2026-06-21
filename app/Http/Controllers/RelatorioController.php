@@ -57,9 +57,12 @@ class RelatorioController extends Controller
             ->where('ativo', false)
             ->count();
 
-        $movimentacoes = Caixa::all();
-        $saldoCaixa = $movimentacoes->where('tipo', 'entrada')->sum('valor')
-            - $movimentacoes->where('tipo', 'saida')->sum('valor');
+        $caixaTotais = Caixa::selectRaw("
+            SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) as total_entradas,
+            SUM(CASE WHEN tipo = 'saida'   THEN valor ELSE 0 END) as total_saidas
+        ")->first();
+        $saldoCaixa = (float) ($caixaTotais->total_entradas ?? 0)
+            - (float) ($caixaTotais->total_saidas ?? 0);
 
         $inadimplentesCount = Mensalidade::inadimplentes()
             ->whereHas('desbravador.unidade', fn (Builder $q) => $this->applyUnidadeScope($q))
@@ -75,8 +78,7 @@ class RelatorioController extends Controller
             ->whereMonth('data_nascimento', now()->month)
             ->count();
 
-        $patrimonioTotal = Patrimonio::all()
-            ->sum(fn (Patrimonio $item) => (float) $item->valor_estimado * $item->quantidade);
+        $patrimonioTotal = (float) Patrimonio::selectRaw('SUM(valor_estimado * quantidade) as total')->value('total');
 
         $patrimonioItens = Patrimonio::count();
 

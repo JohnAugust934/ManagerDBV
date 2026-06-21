@@ -138,7 +138,7 @@ class InvitationController extends Controller
         }
 
         try {
-            Mail::to($request->email)->send(new ClubInvitation($invitation));
+            Mail::to($request->email)->queue(new ClubInvitation($invitation));
         } catch (\Exception $e) {
             Log::error('Erro ao enviar e-mail de convite: '.$e->getMessage());
 
@@ -198,7 +198,7 @@ class InvitationController extends Controller
         }
 
         try {
-            Mail::to($request->email)->send(new ClubInvitation($invitation));
+            Mail::to($request->email)->queue(new ClubInvitation($invitation));
         } catch (\Exception $e) {
             Log::error('Erro ao enviar e-mail de convite de plataforma: '.$e->getMessage());
 
@@ -226,7 +226,7 @@ class InvitationController extends Controller
         ]);
 
         try {
-            Mail::to($invite->email)->send(new ClubInvitation($invite->fresh()));
+            Mail::to($invite->email)->queue(new ClubInvitation($invite->fresh()));
         } catch (\Exception $e) {
             Log::error('Erro ao reenviar convite: '.$e->getMessage());
 
