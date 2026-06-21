@@ -41,6 +41,8 @@ class StoreDesbravadorRequest extends FormRequest
             'medicamentos_continuos' => 'nullable|string',
             'plano_saude' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'consentimento_lgpd' => 'accepted',
+            'consentimento_lgpd_responsavel' => 'required|string|max:255',
         ];
     }
 

@@ -48,6 +48,7 @@ class FluxoCadastroCompletoTest extends TestCase
             'name' => 'João Diretor',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+                    'aceite_termos' => '1',
         ]);
 
         // 5. ONBOARDING: DIRETOR É "SEQUESTRADO" PARA A TELA DE CRIAR CLUBE
@@ -91,6 +92,7 @@ class FluxoCadastroCompletoTest extends TestCase
             'name' => 'Pedro Conselheiro',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+                    'aceite_termos' => '1',
         ])->assertRedirect(route('dashboard'));
 
         $conselheiro = User::where('email', 'conselheiro@teste.com')->first();

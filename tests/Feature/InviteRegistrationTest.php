@@ -35,6 +35,7 @@ class InviteRegistrationTest extends TestCase
             'name' => 'Diretor Teste',
             'password' => 'password',
             'password_confirmation' => 'password',
+                    'aceite_termos' => '1',
         ]);
 
         $response->assertRedirect(route('club.edit'));
@@ -61,6 +62,7 @@ class InviteRegistrationTest extends TestCase
             'name' => 'Conselheiro Teste',
             'password' => 'password',
             'password_confirmation' => 'password',
+                    'aceite_termos' => '1',
         ]);
 
         $response->assertRedirect(route('dashboard'));
@@ -93,7 +95,8 @@ class InviteRegistrationTest extends TestCase
                 'name' => 'Outro Nome',
                 'password' => 'password',
                 'password_confirmation' => 'password',
-            ]);
+                        'aceite_termos' => '1',
+        ]);
 
         $response->assertRedirect(route('register.invite', ['token' => 'token-duplicado']));
         $response->assertSessionHasErrors([

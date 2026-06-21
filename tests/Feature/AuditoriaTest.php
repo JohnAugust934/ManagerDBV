@@ -26,7 +26,7 @@ class AuditoriaTest extends TestCase
         $unidade = Unidade::factory()->create(['club_id' => $club->id]);
         $classe = Classe::factory()->create();
 
-        $payload = [
+        $payload = array_merge([
             'nome' => 'João Desbravador',
             'data_nascimento' => '2010-01-01',
             'sexo' => 'M',
@@ -38,7 +38,7 @@ class AuditoriaTest extends TestCase
             'telefone_responsavel' => '11999999999',
             'numero_sus' => '12345678900',
             'endereco' => 'Rua Teste, 123',
-        ];
+        ], $this->consentimentoLgpd());
 
         $this->actingAs($autor)->post(route('desbravadores.store'), $payload)->assertSessionHasNoErrors();
 
@@ -64,7 +64,7 @@ class AuditoriaTest extends TestCase
         $unidade = Unidade::factory()->create(['club_id' => $club->id]);
         $classe = Classe::factory()->create();
 
-        $this->actingAs($autor)->post(route('desbravadores.store'), [
+        $this->actingAs($autor)->post(route('desbravadores.store'), array_merge([
             'nome' => 'João Desbravador',
             'data_nascimento' => '2010-01-01',
             'sexo' => 'M',
@@ -76,7 +76,7 @@ class AuditoriaTest extends TestCase
             'telefone_responsavel' => '11999999999',
             'numero_sus' => '12345678900',
             'endereco' => 'Rua Teste, 123',
-        ])->assertSessionHasNoErrors();
+        ], $this->consentimentoLgpd()))->assertSessionHasNoErrors();
 
         $desbravador = Desbravador::where('cpf', '123.456.789-00')->firstOrFail();
 

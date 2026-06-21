@@ -46,7 +46,7 @@ class SuperAdminImpersonacaoTest extends TestCase
         $this->actingAs($admin);
         $this->post(route('platform.enter', $clubA));
 
-        $base = [
+        $base = array_merge([
             'nome' => 'Fulano',
             'data_nascimento' => '2014-01-01',
             'sexo' => 'M',
@@ -57,7 +57,7 @@ class SuperAdminImpersonacaoTest extends TestCase
             'nome_responsavel' => 'Responsável',
             'telefone_responsavel' => '99999-9999',
             'numero_sus' => '12345678901',
-        ];
+        ], $this->consentimentoLgpd());
 
         // Unidade do clube atendido → a regra UnidadePertenceAoClube usa ClubContext e passa.
         $this->post(route('desbravadores.store'), [...$base, 'unidade_id' => $unidadeA->id])

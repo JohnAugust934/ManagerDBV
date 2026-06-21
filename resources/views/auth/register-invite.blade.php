@@ -65,8 +65,29 @@
             @error('password_confirmation')<p class="mt-1.5 text-xs text-red-400 font-medium ml-1">{{ $message }}</p>@enderror
         </div>
 
-        {{-- Botão Submit --}}
+        {{-- Aceite dos Termos (LGPD Art. 7 / Art. 8) --}}
         <div class="pt-2">
+            <label class="flex items-start gap-3 cursor-pointer group">
+                <div class="relative mt-0.5 shrink-0">
+                    <input type="checkbox" name="aceite_termos" id="aceite_termos" value="1"
+                        {{ old('aceite_termos') ? 'checked' : '' }}
+                        class="w-5 h-5 rounded border-2 border-white/30 bg-white/10 text-[#FCD116] focus:ring-[#FCD116] cursor-pointer">
+                </div>
+                <span class="text-sm text-slate-300 font-medium leading-relaxed">
+                    Li e concordo com os
+                    <a href="{{ route('legal.termos') }}" target="_blank" class="font-black text-[#FCD116] hover:underline">Termos de Uso</a>
+                    e a
+                    <a href="{{ route('legal.privacidade') }}" target="_blank" class="font-black text-[#FCD116] hover:underline">Política de Privacidade</a>.
+                    *
+                </span>
+            </label>
+            @error('aceite_termos')
+                <p class="mt-1.5 text-xs text-red-400 font-medium ml-1">{{ $message }}</p>
+            @enderror
+        </div>
+
+        {{-- Botão Submit --}}
+        <div class="pt-1">
             <button type="submit" class="w-full relative inline-flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-sm font-black text-white uppercase tracking-widest bg-gradient-to-r from-[#D9222A] to-red-600 hover:from-red-600 hover:to-[#D9222A] transition-all duration-300 shadow-xl shadow-red-900/30 overflow-hidden group active:scale-[0.98]">
                 <span class="relative z-10 transition-transform duration-300 group-hover:-translate-y-10">Acessar Sistema</span>
                 <span class="absolute inset-0 z-10 flex items-center justify-center translate-y-10 group-hover:translate-y-0 transition-transform duration-300">

@@ -14,6 +14,9 @@ class UpdateDesbravadorRequest extends StoreDesbravadorRequest
     {
         return array_merge(parent::rules(), [
             'ativo' => 'boolean',
+            // Consentimento já foi registrado no cadastro — não exigir novamente na edição
+            'consentimento_lgpd' => 'nullable|boolean',
+            'consentimento_lgpd_responsavel' => 'nullable|string|max:255',
         ]);
     }
 

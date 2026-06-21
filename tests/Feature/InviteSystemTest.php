@@ -60,12 +60,12 @@ class InviteSystemTest extends TestCase
             'expires_at' => now()->addDays(7),
         ]);
 
-        $response = $this->post(route('register.store_invite'), [
+        $response = $this->post(route('register.store_invite'), array_merge([
             'token' => 'token-falso-123',
             'name' => 'Usuário Convidado',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-        ]);
+        ], $this->aceiteTermos()));
 
         $response->assertRedirect(route('dashboard'));
 

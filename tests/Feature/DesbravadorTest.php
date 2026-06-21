@@ -27,7 +27,7 @@ class DesbravadorTest extends TestCase
         $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $classe = Classe::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('desbravadores.store'), [
+        $response = $this->actingAs($user)->post(route('desbravadores.store'), array_merge([
             'nome' => 'João Desbravador',
             'data_nascimento' => '2010-01-01',
             'sexo' => 'M',
@@ -40,7 +40,7 @@ class DesbravadorTest extends TestCase
             'telefone_responsavel' => '11999999999',
             'numero_sus' => '12345678900',
             'endereco' => 'Rua Teste, 123',
-        ]);
+        ], $this->consentimentoLgpd()));
 
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('desbravadores.index'));

@@ -9,6 +9,7 @@ use App\Models\Desbravador;
 use App\Models\Especialidade;
 use App\Models\Unidade;
 use App\Services\ClubContext;
+use App\Services\LgpdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -63,6 +64,7 @@ class DesbravadorController extends Controller
         $dados = $request->validated();
 
         $dados['ativo'] = true;
+        $dados['consentimento_lgpd_em'] = now();
         unset($dados['foto']); // UploadedFile não pode ir para create(); tratado abaixo
 
         $desbravador = Desbravador::create($dados);
@@ -70,6 +72,10 @@ class DesbravadorController extends Controller
         if ($request->hasFile('foto')) {
             $desbravador->update(['foto' => $this->processarFoto($request->file('foto'))]);
         }
+
+        LgpdService::registrar('consentimento', 'desbravador', $desbravador->id, [
+            'responsavel' => $dados['consentimento_lgpd_responsavel'],
+        ], $request);
 
         return redirect()->route('desbravadores.index')->with('success', 'Desbravador cadastrado com sucesso!');
     }
@@ -126,9 +132,14 @@ class DesbravadorController extends Controller
 
     public function destroy(Desbravador $desbravador)
     {
+        $id = $desbravador->id;
+        $nome = $desbravador->nome;
+
         DB::transaction(function () use ($desbravador) {
             $desbravador->delete();
         });
+
+        LgpdService::registrar('exclusao', 'desbravador', $id, ['nome' => $nome]);
 
         return redirect()
             ->route('desbravadores.index')
@@ -154,6 +165,56 @@ class DesbravadorController extends Controller
         $desbravador->update(['classe_atual' => $proximaClasse->id]);
 
         return back()->with('success', "Classe avançada para {$proximaClasse->nome} com sucesso!");
+    }
+
+    public function exportarDadosLgpd(Desbravador $desbravador)
+    {
+        $desbravador->loadMissing(['unidade:id,nome', 'classe:id,nome', 'especialidades:id,nome,area', 'frequencias:id,desbravador_id,data,presente,pontos']);
+
+        $dados = [
+            'exportado_em' => now()->toIso8601String(),
+            'base_legal' => 'LGPD Art. 18 — Direito de acesso e portabilidade',
+            'titular' => [
+                'nome' => $desbravador->nome,
+                'data_nascimento' => $desbravador->data_nascimento?->format('d/m/Y'),
+                'sexo' => $desbravador->sexo,
+                'cpf' => $desbravador->cpf,
+                'rg' => $desbravador->rg,
+                'email' => $desbravador->email,
+                'telefone' => $desbravador->telefone,
+                'endereco' => $desbravador->endereco,
+                'ativo' => $desbravador->ativo,
+            ],
+            'responsavel_legal' => [
+                'nome' => $desbravador->nome_responsavel,
+                'telefone' => $desbravador->telefone_responsavel,
+                'consentimento_lgpd_em' => $desbravador->consentimento_lgpd_em?->toIso8601String(),
+                'consentimento_lgpd_responsavel' => $desbravador->consentimento_lgpd_responsavel,
+            ],
+            'saude' => [
+                'tipo_sanguineo' => $desbravador->tipo_sanguineo,
+                'numero_sus' => $desbravador->numero_sus,
+                'alergias' => $desbravador->alergias,
+                'medicamentos_continuos' => $desbravador->medicamentos_continuos,
+                'plano_saude' => $desbravador->plano_saude,
+            ],
+            'clube' => [
+                'unidade' => $desbravador->unidade?->nome,
+                'classe' => $desbravador->classe?->nome,
+                'especialidades' => $desbravador->especialidades->map(fn ($e) => $e->nome)->values(),
+            ],
+            'frequencias' => $desbravador->frequencias->map(fn ($f) => [
+                'data' => $f->data?->format('d/m/Y'),
+                'presente' => $f->presente,
+                'pontos' => $f->pontos,
+            ])->values(),
+        ];
+
+        LgpdService::registrar('exportacao', 'desbravador', $desbravador->id);
+
+        return response()->json($dados, 200, [
+            'Content-Disposition' => 'attachment; filename="dados_lgpd_'.$desbravador->id.'.json"',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
     public function removerFoto(Desbravador $desbravador)

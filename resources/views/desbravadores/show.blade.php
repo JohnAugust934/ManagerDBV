@@ -423,6 +423,57 @@
             </div>
         </div>
 
+        {{-- Seção LGPD / Privacidade (apenas para secretaria e master) --}}
+        @can('secretaria')
+        <div class="ui-card p-6 border-l-4 border-l-amber-400 ui-animate-fade-up" style="animation-delay: 260ms;">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-base font-black text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    Privacidade (LGPD)
+                </h3>
+                <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full {{ $desbravador->consentimento_lgpd ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }}">
+                    {{ $desbravador->consentimento_lgpd ? 'Consentimento Registrado' : 'Sem Consentimento' }}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                <div>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Responsável que assinou</p>
+                    <p class="font-semibold text-slate-700 dark:text-slate-300 text-sm">
+                        {{ $desbravador->consentimento_lgpd_responsavel ?? '—' }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data do consentimento</p>
+                    <p class="font-semibold text-slate-700 dark:text-slate-300 text-sm">
+                        {{ $desbravador->consentimento_lgpd_em?->format('d/m/Y H:i') ?? '—' }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Uso de imagem</p>
+                    <p class="font-semibold text-slate-700 dark:text-slate-300 text-sm">
+                        {{ $desbravador->usa_imagem_autorizado ? 'Autorizado' : 'Não autorizado / não informado' }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('desbravadores.exportar-dados', $desbravador) }}"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Exportar dados (Art. 18)
+                </a>
+                <a href="{{ route('legal.privacidade') }}" target="_blank"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Ver Política de Privacidade
+                </a>
+            </div>
+        </div>
+        @endcan
+
         {{-- Trilha de auditoria --}}
         @if ($desbravador->criadoPor || $desbravador->atualizadoPor)
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 px-2 pt-2 text-[11px] font-semibold text-slate-400 ui-animate-fade-up" style="animation-delay: 275ms;">

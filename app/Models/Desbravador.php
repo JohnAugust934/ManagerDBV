@@ -37,11 +37,18 @@ class Desbravador extends Model
         'medicamentos_continuos',
         'plano_saude',
         'foto',
+        'consentimento_lgpd',
+        'consentimento_lgpd_em',
+        'consentimento_lgpd_responsavel',
+        'usa_imagem_autorizado',
     ];
 
     protected $casts = [
         'data_nascimento' => 'date',
         'ativo' => 'boolean',
+        'consentimento_lgpd' => 'boolean',
+        'consentimento_lgpd_em' => 'datetime',
+        'usa_imagem_autorizado' => 'boolean',
     ];
 
     public function unidade(): BelongsTo

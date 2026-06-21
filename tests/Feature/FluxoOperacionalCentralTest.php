@@ -23,7 +23,7 @@ class FluxoOperacionalCentralTest extends TestCase
         $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $classe = Classe::factory()->create();
 
-        $this->actingAs($secretario)->post(route('desbravadores.store'), [
+        $this->actingAs($secretario)->post(route('desbravadores.store'), array_merge([
             'nome' => 'Ativo Operacional',
             'data_nascimento' => '2010-01-01',
             'sexo' => 'M',
@@ -36,7 +36,7 @@ class FluxoOperacionalCentralTest extends TestCase
             'telefone_responsavel' => '11999999999',
             'numero_sus' => '12345678900',
             'endereco' => 'Rua A, 10',
-        ])->assertRedirect(route('desbravadores.index'));
+        ], $this->consentimentoLgpd()))->assertRedirect(route('desbravadores.index'));
 
         $inativo = Desbravador::factory()->create([
             'unidade_id' => $unidade->id,

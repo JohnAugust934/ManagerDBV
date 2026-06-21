@@ -19,6 +19,7 @@ class User extends Authenticatable
         'extra_permissions', // array json
         'is_master',         // mantido para compatibilidade, mas o foco agora e 'role'
         'is_platform_admin', // super admin de plataforma (cross-tenant)
+        'termos_aceitos_em',
     ];
 
     protected $hidden = [
@@ -32,6 +33,7 @@ class User extends Authenticatable
         'is_master' => 'boolean',
         'is_platform_admin' => 'boolean',
         'extra_permissions' => 'array', // Converte JSON para Array automaticamente
+        'termos_aceitos_em' => 'datetime',
     ];
 
     // Rotulos amigaveis dos cargos hierarquicos (incl. o cargo de plataforma,

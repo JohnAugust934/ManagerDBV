@@ -20,6 +20,7 @@ use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RankingController;
 use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\UnidadeController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Middleware\EnsureClubContextForPlatformAdmin;
@@ -54,6 +55,10 @@ Route::get('/health', function () {
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Páginas legais — acessíveis sem autenticação (LGPD Art. 9 — transparência)
+Route::get('/privacidade', [LegalController::class, 'privacidade'])->name('legal.privacidade');
+Route::get('/termos', [LegalController::class, 'termos'])->name('legal.termos');
 
 // Registro via convite
 Route::get('/register-invite', [RegisteredUserController::class, 'create'])->name('register.invite');
@@ -132,6 +137,7 @@ Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubCont
         Route::resource('desbravadores', DesbravadorController::class)->parameters(['desbravadores' => 'desbravador']);
         Route::delete('desbravadores/{desbravador}/foto', [DesbravadorController::class, 'removerFoto'])->name('desbravadores.remover-foto');
         Route::post('desbravadores/{desbravador}/avancar-classe', [DesbravadorController::class, 'avancarClasse'])->name('desbravadores.avancar-classe');
+        Route::get('desbravadores/{desbravador}/exportar-dados', [DesbravadorController::class, 'exportarDadosLgpd'])->name('desbravadores.exportar-dados');
         Route::resource('unidades', UnidadeController::class)->except(['index', 'show']);
         Route::patch('unidades/{unidade}/toggle-ranking', [UnidadeController::class, 'toggleRanking'])->name('unidades.toggle-ranking');
 

@@ -51,6 +51,7 @@ class RegisteredUserController extends Controller
             'token' => ['required', 'exists:invitations,token'],
             'name' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'aceite_termos' => ['accepted'],
         ]);
 
         $resultado = DB::transaction(function () use ($request) {
@@ -86,6 +87,7 @@ class RegisteredUserController extends Controller
                 'extra_permissions' => $invitation->extra_permissions ?? null,
                 'is_master' => false,
                 'is_platform_admin' => $isPlatformAdmin,
+                'termos_aceitos_em' => now(),
             ]);
 
             $invitation->update(['registered_at' => now()]);

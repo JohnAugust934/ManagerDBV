@@ -153,6 +153,7 @@ class IsolamentoControllersTest extends TestCase
             'name' => 'Futuro Admin',
             'password' => 'SenhaForte123!',
             'password_confirmation' => 'SenhaForte123!',
+                    'aceite_termos' => '1',
         ]);
 
         $this->assertDatabaseHas('users', [
