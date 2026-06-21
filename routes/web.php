@@ -238,7 +238,7 @@ Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubCont
     // 10. Relatorios
     Route::prefix('relatorios')->name('relatorios.')->middleware('can:relatorios')->group(function () {
         Route::get('/', [RelatorioController::class, 'index'])->name('index');
-        Route::match(['get', 'post'], '/gerar-personalizado', [RelatorioController::class, 'gerarPersonalizado'])->name('custom');
+        Route::match(['get', 'post'], '/gerar-personalizado', [RelatorioController::class, 'gerarPersonalizado'])->middleware('throttle:relatorios')->name('custom');
         Route::get('/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('autorizacao');
         Route::get('/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('carteirinha');
         Route::get('/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('ficha-medica');

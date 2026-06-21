@@ -8,6 +8,7 @@ use App\Services\ClubExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClubController extends Controller
@@ -28,7 +29,7 @@ class ClubController extends Controller
             'nome' => 'required|string|max:255',
             'cidade' => 'required|string|max:255',
             'associacao' => 'required|string|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'logo' => ['nullable', 'file', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
         ]);
 
         $club = ClubContext::currentClub();
@@ -57,7 +58,8 @@ class ClubController extends Controller
             if ($club->logo) {
                 Storage::disk('public')->delete($club->logo);
             }
-            $path = $request->file('logo')->store('logos', 'public');
+            $ext = $request->file('logo')->extension();
+            $path = $request->file('logo')->storeAs('logos', Str::uuid().'.'.$ext, 'public');
             $club->update(['logo' => $path]);
         }
 

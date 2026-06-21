@@ -12,9 +12,12 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Queue\Events\QueueBusy;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -53,6 +56,12 @@ class AppServiceProvider extends ServiceProvider
                 }
             });
         }
+
+        // Rate limiting por tenant: 10 gerações de relatório por minuto por clube.
+        // Evita que um único clube sobrecarregue o sistema com PDFs pesados em lote.
+        RateLimiter::for('relatorios', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->club_id ?? $request->ip());
+        });
 
         // Super admin de plataforma (cross-tenant). Controla o painel /platform.
         Gate::define('platform-admin', function (User $user) {
