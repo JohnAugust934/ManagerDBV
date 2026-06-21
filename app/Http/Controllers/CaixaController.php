@@ -54,7 +54,7 @@ class CaixaController extends Controller
 
         $validado['club_id'] = ClubContext::currentClubId();
 
-        $caixa = Caixa::create($validado);
+        $caixa = \Illuminate\Support\Facades\DB::retryOnDeadlock(fn () => Caixa::create($validado));
 
         CaixaAuditLog::registrar('criado', $caixa, null, $this->dadosAuditaveis($caixa));
 
@@ -83,7 +83,7 @@ class CaixaController extends Controller
 
         $antes = $this->dadosAuditaveis($caixa);
 
-        $caixa->update($validado);
+        \Illuminate\Support\Facades\DB::retryOnDeadlock(fn () => $caixa->update($validado));
 
         CaixaAuditLog::registrar('editado', $caixa, $antes, $this->dadosAuditaveis($caixa));
 

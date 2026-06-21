@@ -65,6 +65,48 @@ Schedule::command('daily:backup-report')
     ->withoutOverlapping()
     ->onOneServer();
 
+// ==== LIMPEZA OPERACIONAL ====
+
+// Remove PDFs de relatórios batch expirados (gerados via fila, expiram em 24h).
+// Nota: o cleanup horário em memória já existe (closure acima); esta versão
+// agendada garante cobertura mesmo se o schedule horário falhar.
+Schedule::call(function () {
+    $expirados = \App\Models\RelatorioGerado::withoutGlobalScopes()
+        ->where('expires_at', '<', now())
+        ->where('status', '!=', 'expirado')
+        ->whereNotNull('arquivo')
+        ->get();
+
+    foreach ($expirados as $relatorio) {
+        \Illuminate\Support\Facades\Storage::disk('local')->delete($relatorio->arquivo);
+        $relatorio->update(['arquivo' => null, 'status' => 'expirado']);
+    }
+})
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('03:30')
+    ->name('relatorios:limpar-expirados-diario')
+    ->withoutOverlapping(30);
+
+// Remove jobs falhos com mais de 7 dias da tabela failed_jobs.
+Schedule::command('queue:prune-failed', ['--hours' => 168])
+    ->timezone('America/Sao_Paulo')
+    ->weekly()
+    ->onOneServer();
+
+// Limpa sessões expiradas do banco (relevante quando SESSION_DRIVER=database).
+Schedule::command('session:gc')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('03:45')
+    ->onOneServer();
+
+// LGPD: anonimiza desbravadores desligados há mais de 5 anos (Art. 14).
+Schedule::command('lgpd:anonimizar-desligados')
+    ->timezone('America/Sao_Paulo')
+    ->monthly()
+    ->onOneServer();
+
+// ==== FILA ====
+
 if ((bool) env('QUEUE_MONITOR_ENABLED', false)) {
     $queueConnection = env('QUEUE_CONNECTION', 'database');
     $queueName = env('QUEUE_MONITOR_QUEUE', 'default');

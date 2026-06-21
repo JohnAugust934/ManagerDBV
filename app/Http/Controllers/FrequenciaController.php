@@ -103,8 +103,8 @@ class FrequenciaController extends Controller
         $presencas = $request->input('presencas', []);
 
         if ($this->attendanceColumnService->usesLegacyColumns()) {
-            // Caminho legado — envolto em transação para garantir atomicidade.
-            DB::transaction(function () use ($request, $presencas, $desbravadoresValidos) {
+            // Caminho legado — retryOnDeadlock garante atomicidade e recuperação automática.
+            DB::retryOnDeadlock(function () use ($request, $presencas, $desbravadoresValidos) {
                 foreach ($presencas as $id => $dados) {
                     $id = (int) $id;
 
@@ -143,7 +143,7 @@ class FrequenciaController extends Controller
         $columns = $this->attendanceColumnService->getActiveColumnsForClub($clubId)->keyBy('id');
         $fixedColumns = $columns->where('is_fixed', true)->keyBy('key');
 
-        DB::transaction(function () use ($request, $columns, $fixedColumns, $desbravadoresValidos, $presencas) {
+        DB::retryOnDeadlock(function () use ($request, $columns, $fixedColumns, $desbravadoresValidos, $presencas) {
             foreach ($presencas as $id => $dados) {
                 $id = (int) $id;
 

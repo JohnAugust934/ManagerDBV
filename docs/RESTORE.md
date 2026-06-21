@@ -182,3 +182,64 @@ O fluxo é o mesmo; muda **o binário e a sintaxe**:
 **Atenção:** um dump MySQL **não** é restaurável diretamente num PostgreSQL (e
 vice-versa). Restaure sempre no **mesmo motor** em que o backup foi gerado, e
 garanta que o `DB_CONNECTION` do destino bate com o do dump.
+
+---
+
+## 9. Jobs travados após reinício do servidor
+
+Se o servidor reiniciar com jobs em estado `reserved` (worker foi morto a força),
+eles ficam presos até o `retry_after` expirar (padrão: 90 segundos).
+
+**Procedimento:**
+
+```bash
+# 1. Sinaliza workers para parar graciosamente após o job atual
+php artisan queue:restart
+
+# 2. Aguarde ~90s: jobs sem ACK são automaticamente recolocados na fila
+
+# 3. Verifique jobs que excederam todas as tentativas
+php artisan queue:failed
+
+# 4. Se necessário, reprocesse todos os falhos
+php artisan queue:retry all
+
+# 5. Limpe os que não têm mais solução
+php artisan queue:flush
+```
+
+**Verificar jobs travados (presos em `reserved_at` mas nunca concluídos):**
+
+```sql
+-- SQLite
+SELECT id, queue, payload, attempts, reserved_at
+FROM jobs
+WHERE reserved_at IS NOT NULL
+  AND reserved_at < strftime('%s', 'now') - 90
+ORDER BY reserved_at;
+
+-- MySQL
+SELECT id, queue, attempts, reserved_at,
+       FROM_UNIXTIME(reserved_at) AS reservado_em
+FROM jobs
+WHERE reserved_at IS NOT NULL
+  AND reserved_at < UNIX_TIMESTAMP(NOW() - INTERVAL 90 SECOND);
+```
+
+Se a consulta retornar linhas após o `retry_after`, force a liberação:
+
+```sql
+-- Libera todos os jobs travados (use com cautela em produção)
+UPDATE jobs SET reserved_at = NULL, attempts = 0 WHERE reserved_at IS NOT NULL;
+```
+
+**Relatórios batch (GerarRelatorioPDF) com status "processando" após reinício:**
+
+```bash
+# Redefine relatórios travados para "pendente" para serem reprocessados
+php artisan tinker --execute="
+  App\Models\RelatorioGerado::withoutGlobalScopes()
+    ->where('status', 'processando')
+    ->update(['status' => 'pendente']);
+"
+```

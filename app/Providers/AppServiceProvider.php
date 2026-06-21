@@ -57,10 +57,39 @@ class AppServiceProvider extends ServiceProvider
             });
         }
 
+        // Slow query log em produção, opt-in via LOG_SLOW_QUERIES=true.
+        // Alternativa ao slow query log nativo do MySQL quando o plano não dá acesso ao my.cnf.
+        if (app()->isProduction() && env('LOG_SLOW_QUERIES', false)) {
+            \Illuminate\Support\Facades\DB::listen(function ($query) {
+                if ($query->time > 2000) {
+                    \Illuminate\Support\Facades\Log::warning('Slow query em produção', [
+                        'sql' => $query->sql,
+                        'time_ms' => $query->time,
+                    ]);
+                }
+            });
+        }
+
         // Rate limiting por tenant: 10 gerações de relatório por minuto por clube.
         // Evita que um único clube sobrecarregue o sistema com PDFs pesados em lote.
         RateLimiter::for('relatorios', function (Request $request) {
             return Limit::perMinute(10)->by($request->user()?->club_id ?? $request->ip());
+        });
+
+        // Macro para retry automático em deadlocks MySQL (SQLSTATE 40001).
+        // Uso: DB::retryOnDeadlock(fn() => Caixa::create([...]));
+        \Illuminate\Support\Facades\DB::macro('retryOnDeadlock', function (callable $callback, int $maxAttempts = 3) {
+            $attempt = 0;
+            while (true) {
+                try {
+                    return \Illuminate\Support\Facades\DB::transaction($callback);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if ($attempt++ >= $maxAttempts || $e->getCode() !== '40001') {
+                        throw $e;
+                    }
+                    usleep(100_000 * $attempt); // backoff linear: 100ms, 200ms, 300ms
+                }
+            }
         });
 
         // Super admin de plataforma (cross-tenant). Controla o painel /platform.

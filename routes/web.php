@@ -35,6 +35,7 @@ use Illuminate\Support\Facades\Route;
 
 // Health check — para load balancers, uptime monitors e alertas de disponibilidade.
 Route::get('/health', function () {
+    // Banco de dados
     try {
         \Illuminate\Support\Facades\DB::connection()->getPdo();
         $dbStatus = 'ok';
@@ -42,11 +43,41 @@ Route::get('/health', function () {
         $dbStatus = 'error';
     }
 
-    $httpStatus = $dbStatus === 'ok' ? 200 : 503;
+    // Cache
+    try {
+        \Illuminate\Support\Facades\Cache::put('health_check', true, 5);
+        $cacheStatus = \Illuminate\Support\Facades\Cache::get('health_check') === true ? 'ok' : 'error';
+    } catch (\Exception) {
+        $cacheStatus = 'error';
+    }
+
+    // Fila — jobs pendentes
+    try {
+        $queueSize = \Illuminate\Support\Facades\DB::table('jobs')->count();
+    } catch (\Exception) {
+        $queueSize = -1;
+    }
+
+    // Jobs falhos recentes (últimas 24h)
+    try {
+        $failedJobs = \Illuminate\Support\Facades\DB::table('failed_jobs')
+            ->where('failed_at', '>=', now()->subDay())
+            ->count();
+    } catch (\Exception) {
+        $failedJobs = -1;
+    }
+
+    $isHealthy = $dbStatus === 'ok';
+    $isDegraded = $queueSize > 100 || $failedJobs > 10;
+    $overallStatus = $isHealthy ? ($isDegraded ? 'degraded' : 'ok') : 'error';
+    $httpStatus = $isHealthy ? 200 : 503;
 
     return response()->json([
-        'status' => $dbStatus === 'ok' ? 'healthy' : 'degraded',
+        'status' => $overallStatus,
         'database' => $dbStatus,
+        'cache' => $cacheStatus,
+        'queue_size' => $queueSize,
+        'failed_jobs_24h' => $failedJobs,
         'timestamp' => now()->toIso8601String(),
     ], $httpStatus);
 })->name('health');
