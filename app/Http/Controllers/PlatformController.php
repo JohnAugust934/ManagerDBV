@@ -181,9 +181,11 @@ class PlatformController extends Controller
 
         // Versão da aplicação (commit mais recente)
         try {
-            $versao = trim((string) shell_exec('git rev-parse --short HEAD 2>/dev/null'));
+            $versao = function_exists('shell_exec')
+                ? trim((string) shell_exec('git rev-parse --short HEAD 2>/dev/null'))
+                : '';
             $versao = $versao ?: 'desconhecida';
-        } catch (\Exception) {
+        } catch (\Throwable) {
             $versao = 'desconhecida';
         }
 
