@@ -109,6 +109,16 @@ ok "artisan encontrado"
 [[ -f "$PROJECT_ROOT/.env" ]] || fatal ".env não encontrado. Copie .env.example e configure antes de prosseguir."
 ok ".env presente"
 
+# APP_KEY — obrigatória para a migration de criptografia de campos sensíveis
+APP_KEY_VALUE=$(grep '^APP_KEY=' "$PROJECT_ROOT/.env" | cut -d'=' -f2- | tr -d '"')
+if [[ -z "$APP_KEY_VALUE" ]]; then
+  fatal "APP_KEY não definida no .env. Execute: php artisan key:generate"
+fi
+if [[ "${APP_KEY_VALUE:0:7}" != "base64:" ]]; then
+  fatal "APP_KEY inválida (deve começar com 'base64:'). Execute: php artisan key:generate"
+fi
+ok "APP_KEY presente e com formato correto"
+
 # Banco acessível
 if ! artisan db:show --json >/dev/null 2>&1; then
   fatal "Não foi possível conectar ao banco de dados. Verifique DB_* no .env"

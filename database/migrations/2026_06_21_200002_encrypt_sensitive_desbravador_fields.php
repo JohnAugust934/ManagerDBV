@@ -55,9 +55,7 @@ return new class extends Migration
             ->whereNotNull('rg')
             ->chunkById(200, function ($rows) {
                 foreach ($rows as $row) {
-                    // Identifica valores já criptografados: o Laravel usa base64+json
-                    // — é muito mais longo que um RG real (até ~20 chars).
-                    if (strlen($row->rg) <= 30) {
+                    if (! $this->jaEstaEncriptado($row->rg)) {
                         DB::table('desbravadores')->where('id', $row->id)->update([
                             'rg' => encrypt($row->rg),
                         ]);
@@ -72,8 +70,7 @@ return new class extends Migration
                 ->chunkById(200, function ($rows) use ($field) {
                     foreach ($rows as $row) {
                         $value = $row->{$field};
-                        // Pula valores que já parecem criptografados (> 80 chars base64).
-                        if (strlen($value) <= 80) {
+                        if (! $this->jaEstaEncriptado($value)) {
                             DB::table('desbravadores')->where('id', $row->id)->update([
                                 $field => encrypt($value),
                             ]);
@@ -87,6 +84,21 @@ return new class extends Migration
             $table->dropUnique('desbravadores_club_cpf_unique');
             $table->unique(['club_id', 'cpf_hash'], 'desbravadores_club_cpf_hash_unique');
         });
+    }
+
+    /**
+     * Verifica se um valor já está criptografado pelo Laravel (tentando decrypt).
+     * Mais confiável que checar comprimento: funciona para qualquer tamanho de texto.
+     */
+    private function jaEstaEncriptado(string $value): bool
+    {
+        try {
+            decrypt($value);
+
+            return true;
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            return false;
+        }
     }
 
     public function down(): void
@@ -107,8 +119,10 @@ return new class extends Migration
                             'rg'       => $row->rg ? decrypt($row->rg) : null,
                             'cpf_hash' => null,
                         ]);
-                    } catch (\Exception) {
-                        // Se a chave de decrypt falhou, mantém como está
+                    } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                        \Illuminate\Support\Facades\Log::warning(
+                            "migrate:rollback — falha ao descriptografar desbravador #{$row->id}: ".$e->getMessage()
+                        );
                     }
                 }
             });
@@ -122,7 +136,10 @@ return new class extends Migration
                             DB::table('desbravadores')->where('id', $row->id)->update([
                                 $field => decrypt($row->{$field}),
                             ]);
-                        } catch (\Exception) {
+                        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                            \Illuminate\Support\Facades\Log::warning(
+                                "migrate:rollback — falha ao descriptografar {$field} do desbravador #{$row->id}: ".$e->getMessage()
+                            );
                         }
                     }
                 });

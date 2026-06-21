@@ -231,8 +231,10 @@ php artisan up
   "Backup do Clube" no menu lateral e acessar `/backups/clube`.
 - **Navegar pelos módulos** (caixa, desbravadores, atas, etc.) e confirmar que todos
   os registros antigos aparecem corretamente.
-- **Checar desbravadores**: abrir o perfil de um e confirmar que a foto carrega
-  (prova que `storage/app/public/fotos` está íntegro).
+- **Checar desbravadores**: abrir o perfil de um e confirmar que:
+  - A foto carrega (prova que `storage/app/public/fotos` está íntegro).
+  - O CPF aparece **mascarado** (ex.: `123.***.***-00`), não como texto cifrado (`eyJpd...`).
+  - RG aparece mascarado. Se aparecer texto cifrado, a migration rodou mas o accessor não está ativo — verifique se `composer install` foi rodado com `--optimize-autoloader`.
 - **Checar categorias de caixa** (ver nota abaixo): abrir um lançamento antigo em
   modo edição e confirmar que a categoria aparece corretamente no `<select>`.
 - **Gerar um backup de clube**: como master, clicar em "Gerar Backup Agora" em
@@ -339,4 +341,9 @@ Se você tem **bancos separados** (uma instalação por clube) e quer juntá-los
   resolvidos são pulados com aviso.
 - **Não migra binários:** fotos e logo não vão no JSON. Recopie
   `storage/app/public` à parte.
+- **Criptografia preservada no ciclo export → import:** o `ClubExportService` exporta
+  campos sensíveis em plaintext via acessors do Eloquent; o `ClubImportService`
+  re-criptografa automaticamente (CPF, RG, alergias, medicamentos, plano de saúde)
+  antes de inserir no banco destino. O `cpf_hash` é recalculado no import para que
+  a unique constraint funcione corretamente no novo tenant.
 - Sempre **`backup:run`** no destino antes de importar.

@@ -261,6 +261,10 @@ class ClubImportService
             $row['created_by'] = $userMap[$d['created_by'] ?? null] ?? null;
             $row['updated_by'] = $userMap[$d['updated_by'] ?? null] ?? null;
 
+            // O export descriptografa via accessor do Eloquent — precisamos re-criptografar
+            // antes de inserir direto via DB::table (que não passa pelo model/mutator).
+            $row = $this->encryptDesbravadorSensitiveFields($row);
+
             $map[$d['id']] = DB::table('desbravadores')->insertGetId($row);
             $count++;
         }
@@ -428,6 +432,38 @@ class ClubImportService
 
         $row['created_at'] = $row['created_at'] ?? now();
         $row['updated_at'] = $row['updated_at'] ?? now();
+
+        return $row;
+    }
+
+    /**
+     * Recriptografa campos sensíveis de desbravadores antes do insert via DB::table.
+     *
+     * O ClubExportService usa Eloquent (->get()->toArray()), que aplica os accessors
+     * do model e retorna CPF, RG e dados médicos em plaintext no JSON de export.
+     * Como o import usa DB::table (sem passar pelo model/mutator), precisamos
+     * recalcular cpf_hash e criptografar os campos manualmente.
+     *
+     * @param  array<string,mixed>  $row
+     * @return array<string,mixed>
+     */
+    private function encryptDesbravadorSensitiveFields(array $row): array
+    {
+        // CPF: recalcula hash e criptografa
+        if (isset($row['cpf']) && $row['cpf'] !== null) {
+            $row['cpf_hash'] = hash('sha256', preg_replace('/\D/', '', (string) $row['cpf']));
+            $row['cpf'] = encrypt($row['cpf']);
+        } else {
+            $row['cpf_hash'] = null;
+            $row['cpf'] = null;
+        }
+
+        // Campos sem unique constraint — apenas criptografar
+        foreach (['rg', 'alergias', 'medicamentos_continuos', 'plano_saude'] as $field) {
+            if (isset($row[$field]) && $row[$field] !== null) {
+                $row[$field] = encrypt((string) $row[$field]);
+            }
+        }
 
         return $row;
     }
