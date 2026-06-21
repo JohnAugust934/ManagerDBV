@@ -11,6 +11,7 @@
         .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; color: #0f766e; font-size: 9px; font-weight: 700; }
         h1 { margin: 6px 0 4px; font-size: 22px; }
         .meta { color: #64748b; font-size: 10px; }
+        .signature { margin-top: 24px; text-align: center; }
         .panel { border: 1px solid #dbe4ee; border-radius: 14px; padding: 12px; background: #f8fafc; margin-bottom: 12px; }
         .panel h2 { margin: 0 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #0f766e; }
         .list { list-style: none; margin: 0; padding: 0; }
@@ -21,12 +22,11 @@
 </head>
 <body>
     <div class="header">
+        @include('relatorios._club_brand')
         <div class="eyebrow">Ficha Médica de Emergência</div>
         <h1>{{ $desbravador->nome }}</h1>
         <div class="meta">
-            Clube: {{ Auth::user()->club->nome?? 'Clube de Desbravadores' }} |
-            Unidade: {{ $desbravador->unidade->nome?? 'Sem unidade' }} |
-            Emitido em {{ now()->format('d/m/Y H:i') }}
+            Unidade: {{ $desbravador->unidade->nome ?? 'Sem unidade' }} &nbsp;|&nbsp; Emitido em {{ $emitidoEm }}
         </div>
     </div>
 

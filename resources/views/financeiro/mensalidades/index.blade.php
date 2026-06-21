@@ -2,6 +2,8 @@
     <x-slot name="header">Financeiro & Mensalidades</x-slot>
 
     <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up" x-data="{
+        visualizacao: localStorage.getItem('mensalidades_viz') ?? 'cards',
+        setViz(v) { this.visualizacao = v; localStorage.setItem('mensalidades_viz', v); },
         modalPagamentoOpen: false,
         modalGerarOpen: false,
         pagamentoUrl: '',
@@ -31,9 +33,10 @@
                     window.notify(data.message || 'Não foi possível registrar o pagamento.', 'error');
                     return;
                 }
-                // Troca o card pelo HTML atualizado (estado 'pago') — Alpine reinicializa o subtree.
+                // Troca o elemento pelo HTML atualizado — usa row ou card conforme a visualização ativa.
                 const card = document.getElementById('mensalidade-card-' + data.id);
-                if (card && data.card) card.outerHTML = data.card;
+                const html = (this.visualizacao === 'linhas' && data.row) ? data.row : data.card;
+                if (card && html) card.outerHTML = html;
                 // Reflete os totais recalculados no servidor.
                 if (data.resumo) {
                     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -167,14 +170,56 @@
         </div>
         @endif
 
-        <!-- Área de Listagem (Grid) -->
-        <h3 class="text-[13px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-black/5 dark:border-white/5 pb-2">Status Individual</h3>
-        
+        <!-- Área de Listagem -->
+        <div class="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-2">
+            <h3 class="text-[13px] font-black text-slate-400 uppercase tracking-widest">Status Individual</h3>
+
+            {{-- Toggle cards / linhas (só desktop) --}}
+            <div class="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <button @click="setViz('cards')"
+                    :class="visualizacao === 'cards' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    Cards
+                </button>
+                <button @click="setViz('linhas')"
+                    :class="visualizacao === 'linhas' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    Linhas
+                </button>
+            </div>
+        </div>
+
         @if ($mensalidades->count() > 0)
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+        {{-- Cards (padrão e mobile) --}}
+        <div x-show="visualizacao === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             @foreach ($mensalidades as $m)
                 @include('financeiro.mensalidades._card', ['m' => $m])
             @endforeach
+        </div>
+
+        {{-- Linhas --}}
+        <div x-show="visualizacao === 'linhas'" style="display:none" class="ui-card overflow-hidden p-0">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+                            <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500">Membro</th>
+                            <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500 hidden md:table-cell">Unidade</th>
+                            <th class="px-5 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-slate-500">Valor</th>
+                            <th class="px-5 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-slate-500 hidden sm:table-cell">Status</th>
+                            <th class="px-5 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-slate-500">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        @foreach ($mensalidades as $m)
+                            @include('financeiro.mensalidades._row', ['m' => $m])
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
         @else
         <div class="ui-card p-12 flex flex-col items-center justify-center text-center border-dashed border-2 border-slate-200 dark:border-slate-800 bg-transparent shadow-none">

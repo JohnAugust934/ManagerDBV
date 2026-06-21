@@ -29,7 +29,7 @@ class PatrimonioController extends Controller
             });
         }
 
-        $patrimonios = $query->orderBy('item', 'asc')->paginate(10)->withQueryString();
+        $patrimonios = $query->with('criadoPor')->orderBy('item', 'asc')->paginate(10)->withQueryString();
 
         $totalItens = Patrimonio::sum('quantidade');
         $valorTotal = Patrimonio::sum(DB::raw('valor_estimado * quantidade'));

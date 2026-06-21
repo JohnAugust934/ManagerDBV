@@ -73,6 +73,7 @@ de proteção de dados:
 | `tenant_scoped_uniques_and_indexes` | CPF único por clube (ao invés de globalmente) + índices compostos `(club_id, <coluna quente>)`. Aborta se houver CPF duplicado dentro de um mesmo clube. |
 | `add_is_active_to_clubs_table` | Adiciona `clubs.is_active` (default `true`). Clubes existentes ficam ativos. |
 | `set_platform_admin_role` | No contexto de upgrade é **no-op** (roda antes de qualquer usuário ter `is_platform_admin=true`). |
+| `create_caixa_audit_logs_table` | Cria `caixa_audit_logs` (trilha de auditoria de criação/edição/exclusão de lançamentos por clube). Também adiciona `created_by`/`updated_by` (nuláveis) em `patrimonios` e `mensalidades`. Anuláveis — registros antigos sem autor ficam com `NULL`, sem impacto de dados. |
 
 > **Se `migrate` abortar** com `RuntimeException`, leia a mensagem: ela indica qual
 > tabela tem problema (nulos ambíguos ou club_id pendente) e qual comando rodar
@@ -169,6 +170,51 @@ php artisan up
   os registros antigos aparecem corretamente.
 - **Checar desbravadores**: abrir o perfil de um e confirmar que a foto carrega
   (prova que `storage/app/public/fotos` está íntegro).
+- **Checar categorias de caixa** (ver nota abaixo): abrir um lançamento antigo em
+  modo edição e confirmar que a categoria aparece corretamente no `<select>`.
+
+#### Nota: categorias de caixa hardcoded
+
+As categorias de entrada/saída em `caixas` são listas fixas no frontend (Alpine.js) —
+não ficam em banco de dados. Os valores aceitos atualmente são:
+
+| Entrada | Saída |
+|---|---|
+| Mensalidade | Materiais de Secretaria |
+| Ofertas e Doações | Alimentação/Lanche |
+| Inscrições de Eventos | Transporte/Combustível |
+| Venda de Uniformes | Compra de Uniformes |
+| Cantina | Equipamentos |
+| Campanha | Taxas e Repasses |
+| Outros | Devolução / Outros |
+
+Se a instalação de origem gravou **categorias fora dessa lista** (ex.: "Dízimo",
+"Aluguel"), o valor permanece correto no banco e aparece no índice, mas ao editar
+o lançamento o `<select>` só o exibirá via fallback (o `edit.blade.php` trata isso
+— a opção aparece selecionada mesmo não constando da lista). **Não há perda de
+dado**, mas o clube não conseguirá reutilizar aquela categoria em lançamentos novos.
+
+Antes de abrir o sistema após o upgrade, rode a query abaixo para identificar
+categorias fora do padrão:
+
+```sql
+-- SQLite / MySQL / PostgreSQL
+SELECT tipo, categoria, COUNT(*) AS total
+FROM caixas
+WHERE categoria NOT IN (
+    'Mensalidade','Ofertas e Doações','Inscrições de Eventos',
+    'Venda de Uniformes','Cantina','Campanha','Outros',
+    'Materiais de Secretaria','Alimentação/Lanche','Transporte/Combustível',
+    'Compra de Uniformes','Equipamentos','Taxas e Repasses','Devolução'
+)
+GROUP BY tipo, categoria
+ORDER BY tipo, total DESC;
+```
+
+Se houver resultados, decida: ou **adiciona** a categoria nas listas dos dois Blade
+views (`resources/views/financeiro/caixa/create.blade.php` e `edit.blade.php`)
+antes de liberar, ou deixa como está (os lançamentos existentes continuam acessíveis,
+mas a categoria fica inacessível para novos lançamentos).
 
 ---
 

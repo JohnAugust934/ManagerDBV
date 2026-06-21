@@ -160,6 +160,7 @@ class MensalidadeController extends Controller
                 'message' => $mensagem,
                 'id' => $mensalidade->id,
                 'card' => view('financeiro.mensalidades._card', ['m' => $mensalidade])->render(),
+                'row' => view('financeiro.mensalidades._row', ['m' => $mensalidade])->render(),
                 'resumo' => $this->resumoMes($clubId, (int) $mensalidade->mes, (int) $mensalidade->ano),
             ]);
         }

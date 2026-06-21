@@ -13,6 +13,13 @@
         .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; color: #0f766e; font-size: 8px; font-weight: 700; }
         h1 { margin: 6px 0 4px; font-size: 20px; line-height: 1.15; }
         .meta { color: #64748b; font-size: 9px; }
+        .cb-wrap { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+        .cb-logo-cell { width: 50px; vertical-align: middle; padding-right: 10px; }
+        .cb-logo { width: 42px; height: 42px; border-radius: 6px; object-fit: contain; display: block; }
+        .cb-info-cell { vertical-align: middle; }
+        .cb-nome { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+        .cb-meta { font-size: 8px; color: #64748b; margin-top: 2px; }
+        .cb-divider { border: none; border-top: 1.5px solid #334155; margin: 8px 0; }
         .summary { margin-bottom: 12px; border: 1px solid #dbe4ee; border-radius: 14px; padding: 10px 12px; background: #f8fafc; }
         .grid { width: 100%; border-collapse: separate; border-spacing: 10px 10px; margin-left: -10px; }
         .grid td { width: 50%; vertical-align: top; }
@@ -32,12 +39,28 @@
     @foreach ($desbravadores as $desbravador)
         <div class="sheet">
             <div class="header">
+                <table class="cb-wrap">
+                    <tr>
+                        @if (!empty($clubeLogoBase64))
+                            <td class="cb-logo-cell">
+                                <img src="{{ $clubeLogoBase64 }}" class="cb-logo" alt="Brasão">
+                            </td>
+                        @endif
+                        <td class="cb-info-cell">
+                            <div class="cb-nome">{{ $clubeNome }}</div>
+                            <div class="cb-meta">
+                                @if (!empty($clubeCidade)){{ $clubeCidade }}@endif
+                                @if (!empty($clubeCidade) && !empty($clubeAssociacao)) &nbsp;•&nbsp; @endif
+                                @if (!empty($clubeAssociacao)){{ $clubeAssociacao }}@endif
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <hr class="cb-divider">
                 <div class="eyebrow">Ficha Completa do Desbravador</div>
                 <h1>{{ $desbravador['nome'] }}</h1>
                 <div class="meta">
-                    Clube: {{ $clubeNome }} |
-                    Emitido em {{ $emitidoEm }} |
-                    Responsável: {{ $responsavelNome }}
+                    Emitido em {{ $emitidoEm }} &nbsp;|&nbsp; Responsável: {{ $responsavelNome }}
                 </div>
             </div>
 

@@ -161,7 +161,10 @@
                                             </div>
                                             <div>
                                                 <p class="font-black text-slate-800 dark:text-white text-sm uppercase tracking-tight">{{ $item->item }}</p>
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Aq: {{ $item->data_aquisicao ? \Carbon\Carbon::parse($item->data_aquisicao)->format('d/m/Y') : '-' }}</p>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                                    Aq: {{ $item->data_aquisicao ? \Carbon\Carbon::parse($item->data_aquisicao)->format('d/m/Y') : '-' }}
+                                                    @if($item->criadoPor) · por {{ $item->criadoPor->name }} @endif
+                                                </p>
                                             </div>
                                         </div>
                                     </td>
