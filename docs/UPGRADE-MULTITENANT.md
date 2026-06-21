@@ -1,4 +1,4 @@
-# Upgrade: single-tenant (v4.0.0-beta) → multi-tenant (v5.0.0)
+# Upgrade: single-tenant (v4.0.0-beta) → multi-tenant (v5.0.0+)
 
 Guia para migrar uma instalação **em produção** da versão single-tenant para a
 versão multi-tenant **sem perda de dados**.
@@ -7,6 +7,53 @@ versão multi-tenant **sem perda de dados**.
 > O schema multi-tenant é aditivo (nenhuma coluna/linha é removida); os dados
 > existentes são reatribuídos ao clube via backfill automático. Tudo é reversível
 > pelo backup do passo 0.
+
+---
+
+## Script automatizado (recomendado)
+
+O script `scripts/upgrade-para-multitenant.sh` executa todos os passos abaixo de
+forma automática, com redundâncias, log persistente e rollback guiado em caso de
+falha.
+
+```bash
+# Uso básico (uma única linha):
+./scripts/upgrade-para-multitenant.sh \
+    --platform-admin=admin@seuclube.com
+
+# Simular sem gravar nada (dry-run):
+./scripts/upgrade-para-multitenant.sh \
+    --platform-admin=admin@seuclube.com \
+    --dry-run
+
+# Múltiplos admins, banco com vários clubes:
+./scripts/upgrade-para-multitenant.sh \
+    --platform-admin=admin1@seuclube.com,admin2@seuclube.com \
+    --club=1 \
+    --yes
+
+# Se o código já foi atualizado e o npm build já foi gerado:
+./scripts/upgrade-para-multitenant.sh \
+    --platform-admin=admin@seuclube.com \
+    --skip-pull --skip-npm
+```
+
+**O script:**
+1. Valida PHP 8.2+, Composer, `.env` e conexão com o banco.
+2. Entra em modo manutenção.
+3. Cria backup automático via `backup:run --only-db` (+ cópia do arquivo SQLite, se aplicável).
+4. Faz `git pull` + `composer install --no-dev` + `npm run build`.
+5. Roda `migrate --force`.
+6. Roda `tenant:upgrade-legacy` com as opções fornecidas.
+7. Valida com `tenant:check-integrity` — **aborta se encontrar problemas**.
+8. Exibe contagem de registros por tabela para conferência visual.
+9. Verifica categorias de caixa fora do padrão (aviso, não bloqueante).
+10. Regenera caches e reinicia workers de fila (Supervisor, se disponível).
+11. Sobe a aplicação (`artisan up`).
+
+O log completo fica em `storage/logs/upgrade-multitenant-YYYYMMDD-HHMMSS.log`.
+
+> Se preferir executar manualmente, siga o passo a passo abaixo.
 
 ---
 
@@ -73,7 +120,11 @@ de proteção de dados:
 | `tenant_scoped_uniques_and_indexes` | CPF único por clube (ao invés de globalmente) + índices compostos `(club_id, <coluna quente>)`. Aborta se houver CPF duplicado dentro de um mesmo clube. |
 | `add_is_active_to_clubs_table` | Adiciona `clubs.is_active` (default `true`). Clubes existentes ficam ativos. |
 | `set_platform_admin_role` | No contexto de upgrade é **no-op** (roda antes de qualquer usuário ter `is_platform_admin=true`). |
-| `create_caixa_audit_logs_table` | Cria `caixa_audit_logs` (trilha de auditoria de criação/edição/exclusão de lançamentos por clube). Também adiciona `created_by`/`updated_by` (nuláveis) em `patrimonios` e `mensalidades`. Anuláveis — registros antigos sem autor ficam com `NULL`, sem impacto de dados. |
+| `create_caixa_audit_logs_table` | Cria `caixa_audit_logs` (auditoria de lançamentos). Adiciona `created_by`/`updated_by` (nuláveis) em `patrimonios` e `mensalidades` — registros antigos ficam com `NULL`, sem impacto. |
+| `add_missing_performance_indexes` | Índices de performance adicionais em tabelas quentes. |
+| `lgpd_fields_and_registros_table` | Adiciona campos LGPD em `desbravadores` (`consentimento_lgpd`, `usa_imagem_autorizado`, etc.), `termos_aceitos_em` em `users`, e cria `lgpd_registros` (ROPA). Todos os campos novos são anuláveis/com default — registros antigos não são afetados. |
+| `create_relatorios_gerados_table` | Cria `relatorio_gerados` (fila assíncrona de geração de PDFs por clube). Tabela nova, sem dados legados. |
+| `create_club_backup_logs_table` | Cria `club_backup_logs` (auditoria de backups por clube). Tabela nova, sem dados legados. |
 
 > **Se `migrate` abortar** com `RuntimeException`, leia a mensagem: ela indica qual
 > tabela tem problema (nulos ambíguos ou club_id pendente) e qual comando rodar
@@ -162,16 +213,21 @@ php artisan up
 ### 7. Validação manual (obrigatória antes de liberar)
 
 - **Login como platform admin** (`admin@seuclube.com`) → deve cair em `/platform`,
-  ver o(s) clube(s), conseguir entrar em modo suporte e acessar **Backups**.
-- **Login como master/diretor do clube** → deve ver apenas os dados do próprio clube;
-  **não** deve acessar `/platform` nem `/backups`; deve ter "Exportar dados" em
-  Configurações do Clube.
+  ver o(s) clube(s), conseguir entrar em modo suporte.
+  - Acessar `/backups` → backup completo do sistema (Spatie).
+  - Entrar em modo suporte → acessar `/backups` novamente → deve redirecionar
+    automaticamente para `/backups/clube` (backup isolado do clube).
+- **Login como master do clube** → deve ver apenas os dados do próprio clube;
+  **não** deve acessar `/platform` nem `/backups` (sistema); deve ver o link
+  "Backup do Clube" no menu lateral e acessar `/backups/clube`.
 - **Navegar pelos módulos** (caixa, desbravadores, atas, etc.) e confirmar que todos
   os registros antigos aparecem corretamente.
 - **Checar desbravadores**: abrir o perfil de um e confirmar que a foto carrega
   (prova que `storage/app/public/fotos` está íntegro).
 - **Checar categorias de caixa** (ver nota abaixo): abrir um lançamento antigo em
   modo edição e confirmar que a categoria aparece corretamente no `<select>`.
+- **Gerar um backup de clube**: como master, clicar em "Gerar Backup Agora" em
+  `/backups/clube` e confirmar que o arquivo aparece na listagem.
 
 #### Nota: categorias de caixa hardcoded
 

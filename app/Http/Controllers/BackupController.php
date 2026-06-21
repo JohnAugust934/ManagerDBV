@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ClubContext;
 use App\Services\TelegramNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -19,6 +20,13 @@ class BackupController extends Controller
     public function index(Request $request)
     {
         Gate::authorize('platform-admin');
+
+        // Quando impersonando um clube, o admin deve operar somente os backups
+        // daquele clube — redireciona para não dar acesso acidental ao backup geral.
+        if (ClubContext::isImpersonating()) {
+            return redirect()->route('club-backups.index')
+                ->with('info', 'Você está em modo suporte. Mostrando backups do clube selecionado.');
+        }
 
         $disks = ['local', 'r2'];
         $backups = [];

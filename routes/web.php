@@ -5,6 +5,7 @@ use App\Http\Controllers\AtoController;
 use App\Http\Controllers\AttendanceColumnController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\ClubBackupController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\ClubController;
@@ -147,9 +148,19 @@ Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubCont
         });
     });
 
-    // 3.1 Exportação dos próprios dados do clube — restrita ao master do clube.
+    // 3.1 Exportação JSON dos dados do clube (migração entre instalações) — master.
     Route::middleware('can:master')->group(function () {
         Route::get('/clube/exportar-dados', [ClubController::class, 'exportarDados'])->name('club.export');
+    });
+
+    // 3.2 Backups isolados por clube — master do próprio clube OU platform-admin
+    //     impersonando um clube (ClubBackupController valida o contexto internamente).
+    Route::prefix('backups/clube')->name('club-backups.')->group(function () {
+        Route::get('/', [ClubBackupController::class, 'index'])->name('index');
+        Route::post('/', [ClubBackupController::class, 'store'])->name('store');
+        Route::get('/download', [ClubBackupController::class, 'download'])->name('download');
+        Route::delete('/destroy', [ClubBackupController::class, 'destroy'])->name('destroy');
+        Route::post('/restore', [ClubBackupController::class, 'restore'])->name('restore');
     });
 
     // 4. Secretaria (gestao de membros, clube e eventos CRUD)

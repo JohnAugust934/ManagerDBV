@@ -25,6 +25,84 @@ class ClubImportService
 
     private array $counts = [];
 
+    /**
+     * Importa apenas os filhos de um clube já existente (usado pelo ClubRestoreService).
+     * O clube alvo deve ter sido limpo (deleteClubChildren) antes de chamar este método.
+     */
+    public function importChildren(array $data, int $existingClubId): array
+    {
+        $this->warnings = [];
+        $this->counts = [];
+
+        $catalogo = $data['_catalogo'] ?? ['classes' => [], 'especialidades' => [], 'requisitos' => []];
+
+        $userMap = $this->importUsers($data['users'] ?? [], $existingClubId);
+        $acMap = $this->importSimple('attendance_columns', $data['attendance_columns'] ?? [], ['club_id' => $existingClubId]);
+        $unidadeMap = $this->importUnidades($data['unidades'] ?? [], $existingClubId, $userMap);
+        $dbvMap = $this->importDesbravadores($data['desbravadores'] ?? [], $unidadeMap, $userMap, $catalogo, $existingClubId);
+
+        $freqMap = $this->importEach('frequencias', $data['frequencias'] ?? [], fn ($r) => [
+            'desbravador_id' => $dbvMap[$r['desbravador_id']] ?? null,
+            'club_id' => $existingClubId,
+        ], requiredKeys: ['desbravador_id']);
+
+        $this->importEach('frequencia_column_values', $data['frequencia_column_values'] ?? [], fn ($r) => [
+            'frequencia_id' => $freqMap[$r['frequencia_id']] ?? null,
+            'attendance_column_id' => $acMap[$r['attendance_column_id']] ?? null,
+        ], requiredKeys: ['frequencia_id', 'attendance_column_id']);
+
+        $this->importSimple('caixas', $data['caixas'] ?? [], ['club_id' => $existingClubId], remap: fn ($r) => [
+            'created_by' => $userMap[$r['created_by'] ?? null] ?? null,
+            'updated_by' => $userMap[$r['updated_by'] ?? null] ?? null,
+        ]);
+
+        $this->importEach('mensalidades', $data['mensalidades'] ?? [], fn ($r) => [
+            'desbravador_id' => $dbvMap[$r['desbravador_id']] ?? null,
+            'club_id' => $existingClubId,
+        ], requiredKeys: ['desbravador_id']);
+
+        $eventoMap = $this->importSimple('eventos', $data['eventos'] ?? [], ['club_id' => $existingClubId]);
+
+        $this->importEach('desbravador_evento', $data['desbravador_evento'] ?? [], fn ($r) => [
+            'evento_id' => $eventoMap[$r['evento_id']] ?? null,
+            'desbravador_id' => $dbvMap[$r['desbravador_id']] ?? null,
+        ], requiredKeys: ['evento_id', 'desbravador_id']);
+
+        $this->importSimple('atas', $data['atas'] ?? [], ['club_id' => $existingClubId]);
+
+        $this->importSimple('atos', $data['atos'] ?? [], ['club_id' => $existingClubId], remap: fn ($r) => [
+            'desbravador_id' => $dbvMap[$r['desbravador_id'] ?? null] ?? null,
+        ]);
+
+        $patrMap = $this->importSimple('patrimonios', $data['patrimonios'] ?? [], ['club_id' => $existingClubId]);
+
+        $this->importEach('patrimonio_manutencoes', $data['patrimonio_manutencoes'] ?? [], fn ($r) => [
+            'patrimonio_id' => $patrMap[$r['patrimonio_id']] ?? null,
+            'user_id' => $userMap[$r['user_id'] ?? null] ?? null,
+        ], requiredKeys: ['patrimonio_id']);
+
+        $this->importSimple('ranking_snapshots', $data['ranking_snapshots'] ?? [], ['club_id' => $existingClubId], remap: fn ($r) => [
+            'generated_by' => $userMap[$r['generated_by'] ?? null] ?? null,
+        ]);
+
+        $this->importEach('desbravador_especialidade', $data['desbravador_especialidade'] ?? [], fn ($r) => [
+            'desbravador_id' => $dbvMap[$r['desbravador_id']] ?? null,
+            'especialidade_id' => $this->resolveEspecialidade($r['especialidade_id'], $catalogo),
+        ], requiredKeys: ['desbravador_id', 'especialidade_id']);
+
+        $this->importEach('desbravador_requisito', $data['desbravador_requisito'] ?? [], fn ($r) => [
+            'desbravador_id' => $dbvMap[$r['desbravador_id']] ?? null,
+            'requisito_id' => $this->resolveRequisito($r['requisito_id'], $catalogo),
+            'user_id' => $userMap[$r['user_id'] ?? null] ?? null,
+        ], requiredKeys: ['desbravador_id', 'requisito_id']);
+
+        return [
+            'club_id' => $existingClubId,
+            'counts' => $this->counts,
+            'warnings' => $this->warnings,
+        ];
+    }
+
     public function import(array $data, ?string $nomeOverride = null): array
     {
         $this->validate($data);

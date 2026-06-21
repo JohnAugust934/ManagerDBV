@@ -269,12 +269,20 @@
                     <svg class="w-6 h-6 {{ request()->routeIs('platform*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Plataforma</span>
                 </a>
-                <a href="{{ route('backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('backups*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
-                     @if(request()->routeIs('backups*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-6 h-6 {{ request()->routeIs('backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                <a href="{{ route('backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('backups*') && !request()->routeIs('club-backups*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                     @if(request()->routeIs('backups*') && !request()->routeIs('club-backups*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('backups*') && !request()->routeIs('club-backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Backups Cloud</span>
                 </a>
                 @endcan
+
+                @if (\Illuminate\Support\Facades\Gate::check('master') || \App\Services\ClubContext::isImpersonating())
+                <a href="{{ route('club-backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('club-backups*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                     @if(request()->routeIs('club-backups*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('club-backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Backup do Clube</span>
+                </a>
+                @endif
 
                 <div class="pt-4 pb-1">
                     <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Ajuda</p>

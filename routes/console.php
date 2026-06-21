@@ -7,6 +7,14 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 // ==== BACKUP AUTOMATED SCHEDULES ====
+
+// Backup isolado por clube — roda 1h antes do backup geral do sistema
+Schedule::command('club:backup-all')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('02:00')
+    ->withoutOverlapping(60)
+    ->onOneServer();
+
 Schedule::command('backup:run')
     ->timezone('America/Sao_Paulo')
     ->dailyAt('03:00')

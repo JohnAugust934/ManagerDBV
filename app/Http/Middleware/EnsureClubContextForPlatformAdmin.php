@@ -24,7 +24,9 @@ class EnsureClubContextForPlatformAdmin
     // 'usuarios.'/'invites.' liberados para o admin gerir a EQUIPE DA PLATAFORMA
     // (outros admins de plataforma) sem precisar entrar em modo suporte. Os
     // controllers garantem o escopo: sem clube ativo, so enxergam platform admins.
-    private const ALLOWED_PREFIXES = ['platform.', 'backups.', 'usuarios.', 'invites.'];
+    // club-backups. precisa de clube em contexto (isImpersonating), mas o controller
+    // valida isso internamente — deixar passar o middleware para receber 403 do controller.
+    private const ALLOWED_PREFIXES = ['platform.', 'backups.', 'club-backups.', 'usuarios.', 'invites.'];
 
     private const ALLOWED_NAMES = [
         'profile.edit',
