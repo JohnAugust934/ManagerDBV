@@ -7,13 +7,16 @@ use App\Models\Classe;
 use App\Models\Club;
 use App\Models\Desbravador;
 use App\Models\Evento;
+use App\Jobs\GerarRelatorioPDF;
 use App\Models\Frequencia;
 use App\Models\Mensalidade;
+use App\Models\RelatorioGerado;
 use App\Models\Unidade;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\DomPDF\PDF as DomPdfWrapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class RelatorioTest extends TestCase
@@ -134,19 +137,29 @@ class RelatorioTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
-    public function test_pode_gerar_fichas_medicas_em_lote()
+    public function test_fichas_medicas_em_lote_despacha_job_assincrono()
     {
+        Queue::fake();
+
         $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
             'tipo' => 'fichas_medicas',
             'status' => 'ativos',
         ]);
 
-        $response->assertStatus(200);
-        $response->assertHeader('content-type', 'application/pdf');
+        $response->assertRedirect(route('relatorios.downloads'));
+        $response->assertSessionHas('success');
+        Queue::assertPushed(GerarRelatorioPDF::class);
+        $this->assertDatabaseHas('relatorio_gerados', [
+            'club_id' => $this->clube->id,
+            'tipo' => 'fichas_medicas',
+            'status' => 'pendente',
+        ]);
     }
 
-    public function test_ficha_completa_em_lote_respeita_filtros_e_carrega_dados_relacionados()
+    public function test_ficha_completa_em_lote_despacha_job_com_filtros()
     {
+        Queue::fake();
+
         $outraUnidade = Unidade::factory()->create([
             'club_id' => $this->clube->id,
             'nome' => 'Aguias',
@@ -181,26 +194,23 @@ class RelatorioTest extends TestCase
             'nome' => 'Inativo Fora do Filtro',
         ]);
 
-        $this->mockPdfLoadView('relatorios.fichas_completas_lote', function (array $data) {
-            $this->assertCount(1, $data['desbravadores']);
-            $this->assertSame('Daniel Silva', $data['desbravadores'][0]['nome']);
-            $this->assertSame('Companheiro', $data['desbravadores'][0]['classe']);
-            $this->assertSame('Maria Silva', $data['desbravadores'][0]['nome_responsavel']);
-            $this->assertSame('Lobos', $data['desbravadores'][0]['unidade']);
-            $this->assertSame('Acampamento', $data['desbravadores'][0]['eventos'][0]['nome']);
-            $this->assertSame(30, $data['desbravadores'][0]['frequencias']['pontos']);
-            $this->assertSame('Somente ativos', $data['filtros']['Status']);
-            $this->assertSame('Lobos', $data['filtros']['Unidade']);
-        });
-
         $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
             'tipo' => 'fichas_completas',
             'status' => 'ativos',
             'unidade_id' => $this->unidade->id,
         ]);
 
-        $response->assertStatus(200);
-        $response->assertHeader('content-type', 'application/pdf');
+        $response->assertRedirect(route('relatorios.downloads'));
+        Queue::assertPushed(GerarRelatorioPDF::class);
+
+        $registro = RelatorioGerado::withoutGlobalScopes()
+            ->where('club_id', $this->clube->id)
+            ->where('tipo', 'fichas_completas')
+            ->first();
+
+        $this->assertNotNull($registro);
+        $this->assertEquals('ativos', $registro->filtros['status'] ?? null);
+        $this->assertEquals($this->unidade->id, $registro->filtros['unidade_id'] ?? null);
     }
 
     public function test_pode_gerar_relatorio_de_frequencia_com_pontuacao_calculada()

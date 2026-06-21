@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GerarRelatorioPDF;
 use App\Models\Caixa;
 use App\Models\Desbravador;
 use App\Models\Evento;
 use App\Models\Mensalidade;
 use App\Models\Patrimonio;
+use App\Models\RelatorioGerado;
 use App\Models\Unidade;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class RelatorioController extends Controller
 {
@@ -112,10 +115,13 @@ class RelatorioController extends Controller
             'mes_aniversario' => 'nullable|integer|min:1|max:12',
         ]);
 
+        // Tipos pesados são gerados de forma assíncrona para não travar a requisição.
+        if (in_array($validated['tipo'], ['fichas_completas', 'fichas_medicas', 'financeiro'])) {
+            return $this->despacharRelatorioBatch($validated['tipo'], $validated, $request);
+        }
+
         return match ($validated['tipo']) {
             'desbravadores' => $this->relatorioDesbravadores($request),
-            'fichas_completas' => $this->relatorioFichasCompletas($request),
-            'fichas_medicas' => $this->relatorioFichasMedicas($request),
             'contatos_emergencia' => $this->relatorioContatosEmergencia($request),
             'frequencia' => $this->relatorioFrequencia($request),
             'inadimplencia' => $this->relatorioInadimplencia($request),
@@ -123,7 +129,7 @@ class RelatorioController extends Controller
             'unidades' => $this->relatorioUnidades(),
             'ranking_unidades' => $this->relatorioRankingUnidades(),
             'ranking_desbravadores' => $this->relatorioRankingDesbravadores(),
-            'financeiro', 'caixa' => $this->relatorioFinanceiroPersonalizado($request),
+            'caixa' => $this->relatorioFinanceiroPersonalizado($request),
             'patrimonio' => $this->patrimonio(),
             'especialidades' => $this->relatorioEspecialidades($request),
             'progresso_classe' => $this->relatorioProgressoClasse($request),
@@ -1011,6 +1017,51 @@ class RelatorioController extends Controller
 
         return 'Período completo';
     }
+
+    // -------------------------------------------------------------------------
+    // Downloads (relatórios gerados de forma assíncrona)
+    // -------------------------------------------------------------------------
+
+    public function downloads()
+    {
+        $relatorios = RelatorioGerado::latest()
+            ->get();
+
+        return view('relatorios.downloads', compact('relatorios'));
+    }
+
+    public function download(RelatorioGerado $relatorio)
+    {
+        if (! $relatorio->isPronto()) {
+            return back()->with('error', 'Este relatório não está disponível para download.');
+        }
+
+        return Storage::disk('local')->download(
+            $relatorio->arquivo,
+            $relatorio->tipoLabel().'_'.now()->format('Y-m-d').'.pdf',
+        );
+    }
+
+    private function despacharRelatorioBatch(string $tipo, array $filtros, Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $clubId = $this->currentClubId();
+        $userId = auth()->id();
+
+        $relatorio = RelatorioGerado::create([
+            'club_id' => $clubId,
+            'user_id' => $userId,
+            'tipo' => $tipo,
+            'status' => 'pendente',
+            'filtros' => array_filter($filtros, fn ($v) => $v !== null && $v !== ''),
+        ]);
+
+        GerarRelatorioPDF::dispatch($relatorio->id, $clubId, $userId);
+
+        return redirect()->route('relatorios.downloads')
+            ->with('success', 'Seu relatório está sendo gerado. Ele aparecerá aqui quando estiver pronto.');
+    }
+
+    // -------------------------------------------------------------------------
 
     private function rankingYear(): int
     {

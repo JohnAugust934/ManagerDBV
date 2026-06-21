@@ -247,6 +247,9 @@ Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubCont
             Route::get('/financeiro', [RelatorioController::class, 'financeiro'])->name('financeiro');
             Route::get('/patrimonio', [RelatorioController::class, 'patrimonio'])->name('patrimonio');
         });
+
+        Route::get('/downloads', [RelatorioController::class, 'downloads'])->name('downloads');
+        Route::get('/downloads/{relatorio}', [RelatorioController::class, 'download'])->name('download');
     });
 
     // Manual do sistema

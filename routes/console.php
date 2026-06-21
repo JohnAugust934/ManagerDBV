@@ -25,6 +25,23 @@ Schedule::command('backup:monitor')
     ->withoutOverlapping(60)
     ->onOneServer();
 
+// Remove PDFs de relatórios expirados (gerados em batch via fila, expiram em 24h).
+Schedule::call(function () {
+    $expirados = \App\Models\RelatorioGerado::withoutGlobalScopes()
+        ->where('expires_at', '<', now())
+        ->whereNotNull('arquivo')
+        ->get();
+
+    foreach ($expirados as $relatorio) {
+        \Illuminate\Support\Facades\Storage::disk('local')->delete($relatorio->arquivo);
+        $relatorio->update(['arquivo' => null, 'status' => 'expirado']);
+    }
+})
+    ->timezone('America/Sao_Paulo')
+    ->hourly()
+    ->name('relatorios:limpar-expirados')
+    ->withoutOverlapping(30);
+
 // Remove manifests orfaos (.manifest.json sem zip) deixados apos o backup:clean
 // e poda o historico antigo de backup_logs. Roda logo apos a limpeza do spatie.
 Schedule::command('backup:prune-manifests')
