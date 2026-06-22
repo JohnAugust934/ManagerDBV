@@ -30,7 +30,21 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'is_platform_admin' => false,
+            // Usuário provisionado já aceitou os termos (LGPD). O caso retroativo
+            // de quem ainda não aceitou é representado pelo state semTermosAceitos().
+            'termos_aceitos_em' => now(),
         ];
+    }
+
+    /**
+     * Usuário criado antes da exigência de aceite dos termos (LGPD): precisa
+     * aceitar no próximo acesso.
+     */
+    public function semTermosAceitos(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'termos_aceitos_em' => null,
+        ]);
     }
 
     /**

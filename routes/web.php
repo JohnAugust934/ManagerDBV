@@ -5,9 +5,9 @@ use App\Http\Controllers\AtoController;
 use App\Http\Controllers\AttendanceColumnController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BackupController;
-use App\Http\Controllers\ClubBackupController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\ClassesController;
+use App\Http\Controllers\ClubBackupController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesbravadorController;
@@ -15,17 +15,18 @@ use App\Http\Controllers\EspecialidadeController;
 use App\Http\Controllers\EventoController;
 use App\Http\Controllers\FrequenciaController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MensalidadeController;
 use App\Http\Controllers\PatrimonioController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RankingController;
 use App\Http\Controllers\RelatorioController;
-use App\Http\Controllers\LegalController;
 use App\Http\Controllers\UnidadeController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Middleware\EnsureClubContextForPlatformAdmin;
 use App\Http\Middleware\EnsureClubIsActive;
+use App\Http\Middleware\EnsureTermosAceitos;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -96,8 +97,16 @@ Route::get('/termos', [LegalController::class, 'termos'])->name('legal.termos');
 Route::get('/register-invite', [RegisteredUserController::class, 'create'])->name('register.invite');
 Route::post('/register-invite', [RegisteredUserController::class, 'store'])->name('register.store_invite');
 
+// Aceite de termos para usuários existentes (LGPD). Fica FORA do grupo principal
+// (sem EnsureTermosAceitos) para que a própria tela de aceite seja acessível e
+// não gere loop de redirecionamento. Basta estar autenticado.
+Route::middleware('auth')->group(function () {
+    Route::get('/aceitar-termos', [LegalController::class, 'mostrarAceiteTermos'])->name('termos.aceitar');
+    Route::post('/aceitar-termos', [LegalController::class, 'registrarAceiteTermos'])->name('termos.aceitar.store');
+});
+
 // Area restrita
-Route::middleware(['auth', 'verified', EnsureClubIsActive::class, EnsureClubContextForPlatformAdmin::class])->group(function () {
+Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsActive::class, EnsureClubContextForPlatformAdmin::class])->group(function () {
     // 1. Dashboard e perfil
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

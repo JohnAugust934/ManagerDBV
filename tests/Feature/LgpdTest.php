@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Club;
 use App\Models\Desbravador;
-use App\Models\LgpdRegistro;
 use App\Models\Unidade;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,7 +14,9 @@ class LgpdTest extends TestCase
     use RefreshDatabase;
 
     protected Club $clube;
+
     protected User $secretaria;
+
     protected Unidade $unidade;
 
     protected function setUp(): void
@@ -228,6 +229,73 @@ class LgpdTest extends TestCase
         $user = User::where('email', 'aceite@clube.com')->first();
         $this->assertNotNull($user);
         $this->assertNotNull($user->termos_aceitos_em);
+    }
+
+    // -------------------------------------------------------------------------
+    // 2.8 — Aceite retroativo de termos para usuários existentes
+    // -------------------------------------------------------------------------
+
+    public function test_usuario_sem_aceite_e_redirecionado_para_aceitar_termos(): void
+    {
+        $usuario = User::factory()->semTermosAceitos()->create([
+            'role' => 'secretario',
+            'club_id' => $this->clube->id,
+        ]);
+
+        $response = $this->actingAs($usuario)->get(route('dashboard'));
+
+        $response->assertRedirect(route('termos.aceitar'));
+    }
+
+    public function test_usuario_que_ja_aceitou_nao_e_redirecionado(): void
+    {
+        // $this->secretaria já vem com termos_aceitos_em (default do factory).
+        $response = $this->actingAs($this->secretaria)->get(route('dashboard'));
+
+        $response->assertOk();
+    }
+
+    public function test_tela_de_aceite_redireciona_quem_ja_aceitou(): void
+    {
+        $response = $this->actingAs($this->secretaria)->get(route('termos.aceitar'));
+
+        $response->assertRedirect(route('dashboard'));
+    }
+
+    public function test_aceite_sem_marcar_checkbox_e_rejeitado(): void
+    {
+        $usuario = User::factory()->semTermosAceitos()->create([
+            'role' => 'secretario',
+            'club_id' => $this->clube->id,
+        ]);
+
+        $response = $this->actingAs($usuario)->post(route('termos.aceitar.store'), []);
+
+        $response->assertSessionHasErrors('aceite_termos');
+        $this->assertNull($usuario->fresh()->termos_aceitos_em);
+    }
+
+    public function test_aceite_marcado_grava_timestamp_e_registra_ropa(): void
+    {
+        $usuario = User::factory()->semTermosAceitos()->create([
+            'role' => 'secretario',
+            'club_id' => $this->clube->id,
+        ]);
+
+        $response = $this->actingAs($usuario)->post(route('termos.aceitar.store'), [
+            'aceite_termos' => '1',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+
+        $this->assertNotNull($usuario->fresh()->termos_aceitos_em);
+
+        $this->assertDatabaseHas('lgpd_registros', [
+            'acao' => 'consentimento',
+            'entidade' => 'usuario',
+            'entidade_id' => $usuario->id,
+            'user_id' => $usuario->id,
+        ]);
     }
 
     // -------------------------------------------------------------------------
