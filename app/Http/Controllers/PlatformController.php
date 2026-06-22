@@ -180,14 +180,7 @@ class PlatformController extends Controller
         }
 
         // Versão da aplicação (commit mais recente)
-        try {
-            $versao = function_exists('shell_exec')
-                ? trim((string) shell_exec('git rev-parse --short HEAD 2>/dev/null'))
-                : '';
-            $versao = $versao ?: 'desconhecida';
-        } catch (\Throwable) {
-            $versao = 'desconhecida';
-        }
+        $versao = $this->resolverVersao();
 
         // Relatórios batch pendentes/processando
         try {
@@ -211,5 +204,112 @@ class PlatformController extends Controller
             'clubesAtivos',
             'clubesInativos',
         );
+    }
+
+    /**
+     * Resolve a versão da aplicação (hash curto do commit) sem depender de
+     * shell_exec/git — vários hostings (ex.: Hostinger) desabilitam shell_exec.
+     *
+     * Ordem de resolução:
+     *  1. leitura direta dos arquivos .git/ via PHP puro (fonte da verdade,
+     *     atualiza sozinho a cada deploy via git);
+     *  2. shell_exec (git), se o hosting permitir;
+     *  3. arquivo VERSION na raiz do projeto (gerado no deploy);
+     *  4. APP_VERSION explícito no .env (override manual).
+     */
+    private function resolverVersao(): string
+    {
+        // 1. Lê o commit direto do diretório .git sem precisar do binário git.
+        $versao = $this->lerCommitDoGit();
+        if ($versao !== '') {
+            return $versao;
+        }
+
+        // 2. shell_exec, se o hosting permitir (a maioria dos planos Hostinger não).
+        try {
+            if (function_exists('shell_exec')) {
+                $versao = trim((string) shell_exec('git rev-parse --short HEAD 2>/dev/null'));
+                if ($versao !== '') {
+                    return $versao;
+                }
+            }
+        } catch (\Throwable) {
+            // ignora e tenta próximas estratégias
+        }
+
+        // 3. Arquivo VERSION na raiz (pode ser gerado no passo de deploy).
+        try {
+            $versionFile = base_path('VERSION');
+            if (is_file($versionFile)) {
+                $versao = trim((string) file_get_contents($versionFile));
+                if ($versao !== '') {
+                    return $versao;
+                }
+            }
+        } catch (\Throwable) {
+            // ignora
+        }
+
+        // 4. Override manual via .env (APP_VERSION) — só se diferente do default.
+        $appVersion = trim((string) env('APP_VERSION', ''));
+        if ($appVersion !== '') {
+            return $appVersion;
+        }
+
+        return 'desconhecida';
+    }
+
+    /**
+     * Lê o hash do commit atual lendo os arquivos do diretório .git
+     * diretamente (HEAD -> ref -> sha, ou packed-refs). Retorna o hash
+     * curto (7 caracteres) ou string vazia se não conseguir resolver.
+     */
+    private function lerCommitDoGit(): string
+    {
+        try {
+            $gitDir = base_path('.git');
+            if (! is_dir($gitDir)) {
+                return '';
+            }
+
+            $head = trim((string) @file_get_contents($gitDir.'/HEAD'));
+            if ($head === '') {
+                return '';
+            }
+
+            // HEAD detached: já é o próprio hash.
+            if (! str_starts_with($head, 'ref:')) {
+                return substr($head, 0, 7);
+            }
+
+            $ref = trim(substr($head, 4)); // ex.: refs/heads/multi-tenant
+            $refFile = $gitDir.'/'.$ref;
+
+            if (is_file($refFile)) {
+                $sha = trim((string) @file_get_contents($refFile));
+                if ($sha !== '') {
+                    return substr($sha, 0, 7);
+                }
+            }
+
+            // Ref empacotada em packed-refs.
+            $packed = @file_get_contents($gitDir.'/packed-refs');
+            if ($packed !== false) {
+                foreach (preg_split('/\R/', $packed) as $linha) {
+                    $linha = trim($linha);
+                    if ($linha === '' || $linha[0] === '#' || $linha[0] === '^') {
+                        continue;
+                    }
+                    [$sha, $nome] = array_pad(explode(' ', $linha, 2), 2, '');
+                    if (trim($nome) === $ref && $sha !== '') {
+                        return substr($sha, 0, 7);
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // ignora
+        }
+
+        return '';
     }
 }
