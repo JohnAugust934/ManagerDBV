@@ -213,7 +213,7 @@ class DatabaseSeeder extends Seeder
         // ---------------------------------------------------------
         // 1. SUPER ADMIN DE PLATAFORMA (cross-tenant, sem clube)
         // ---------------------------------------------------------
-        User::updateOrCreate(['email' => 'admin@clube.com'], [
+        User::updateOrCreate(['email' => 'admin@plataforma.com'], [
             'name' => 'Administrador da Plataforma',
             'password' => Hash::make('password'),
             'role' => 'platform_admin',
@@ -221,7 +221,7 @@ class DatabaseSeeder extends Seeder
             'is_platform_admin' => true,
             'club_id' => null,
         ]);
-        $this->command->info('🛡️  Platform admin: admin@clube.com / password');
+        $this->command->info('🛡️  Platform admin: admin@plataforma.com / password');
 
         // ---------------------------------------------------------
         // 2. CLUBES (5) — cada um isolado por club_id

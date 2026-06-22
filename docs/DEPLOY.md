@@ -41,13 +41,13 @@ php artisan migrate --force
 php artisan db:seed --class=MasterOnlySeeder
 ```
 
-> **Multi-tenant:** o `MasterOnlySeeder` cria:
-> - **Platform admin** (`admin@plataforma.com` / `password`) — `is_platform_admin = true`,
->   `club_id = null`. Acessa o painel `/platform`, vê todos os clubes, entra em modo suporte
->   (impersonação) e é o único com acesso a **Backups Cloud** completos.
-> - **Master do clube base** (`master@clube.com` / `password`) — dono de um clube específico.
+> **Multi-tenant:** o `MasterOnlySeeder` cria **somente** o catálogo global
+> (classes/especialidades) e o **admin da plataforma** (`admin@plataforma.com` / `password`) —
+> `is_platform_admin = true`, `club_id = null`. Ele acessa o painel `/platform`, vê todos os
+> clubes, entra em modo suporte (impersonação) e é o único com acesso a **Backups Cloud**
+> completos. **Nenhum clube ou usuário master é semeado** — a instalação de produção começa vazia.
 >
-> **Troque as senhas imediatamente após o primeiro login.**
+> **Troque a senha imediatamente após o primeiro login.**
 >
 > Novos clubes são criados pelo painel da plataforma (`/platform` → “Novo Clube”), que cria o
 > clube e seu master inicial. Cada master de clube exporta os próprios dados em
@@ -185,8 +185,8 @@ php artisan up
 
 | Seeder | Uso |
 |--------|-----|
-| `MasterOnlySeeder` | **Produção** — platform admin + clube base + catálogo (classes/especialidades) |
-| `DatabaseSeeder` | **Desenvolvimento** — 2 clubes com dados demo completos (`admin@clube.com` é platform admin) |
+| `MasterOnlySeeder` | **Produção** — somente admin da plataforma + catálogo (classes/especialidades); sem clubes |
+| `DatabaseSeeder` | **Desenvolvimento** — 5 clubes com dados demo completos (`admin@plataforma.com` é platform admin) |
 | `TestClubSeeder` | **Staging** (opcional) — clube "Beta" persistente p/ testes manuais (`php artisan db:seed --class=TestClubSeeder`) |
 
 > Em produção, o `DatabaseSeeder` redireciona automaticamente para `MasterOnlySeeder`.

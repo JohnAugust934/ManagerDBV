@@ -43,7 +43,7 @@ php artisan test tests/Feature/RankingTest.php          # Teste único por camin
 O `DatabaseSeeder` cria **5 clubes** (todos na cidade de São Paulo, um por Associação Paulista:
 `orion`, `aurora`, `vega`, `sirius`, `antares`). Após `--seed`:
 
-- **Platform admin (cross-tenant, sem clube):** `admin@clube.com`.
+- **Platform admin (cross-tenant, sem clube):** `admin@plataforma.com`.
 - **Por clube**, no padrão `<cargo>.<slug>@clube.com`: `master.`, `diretor.`, `secretaria.`,
   `tesoureiro.`, `instrutor.` e `conselheiro1.`–`conselheiro4.` (ex.: `diretor.orion@clube.com`).
 
@@ -195,8 +195,12 @@ autenticado, para cargos como conselheiro. Registro só por convite (`/register-
   com classes bespoke — não usar componentes Breeze genéricos lá.
 - **Seeders:** `DatabaseSeeder` (dev, dados demo completos) redireciona automaticamente para
   `MasterOnlySeeder` quando `app()->isProduction()`. Em produção, rode apenas
-  `php artisan db:seed --class=MasterOnlySeeder`. O `DatabaseSeeder` tem um `SeederFallbackFaker`
-  embutido para ambientes sem `fakerphp/faker` (`composer --no-dev`).
+  `php artisan db:seed --class=MasterOnlySeeder`. No modelo multi-tenant, o `MasterOnlySeeder`
+  cria **somente** o catálogo global (classes/especialidades) e o **admin da plataforma**
+  (`admin@plataforma.com` / `password`, `is_platform_admin = true`, `club_id = null`) — **não**
+  cria mais clube/master de exemplo. Clubes e seus usuários master passam a ser criados pelo painel
+  da plataforma (`/platform`). O `DatabaseSeeder` tem um `SeederFallbackFaker` embutido para
+  ambientes sem `fakerphp/faker` (`composer --no-dev`).
 
 ## Deploy
 Guia completo em `docs/DEPLOY.md`; runbook de restauração em `docs/RESTORE.md`. Pontos-chave: `composer

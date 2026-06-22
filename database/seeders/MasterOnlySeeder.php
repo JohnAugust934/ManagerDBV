@@ -2,9 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Club;
-use App\Models\Desbravador;
-use App\Models\Unidade;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +10,7 @@ class MasterOnlySeeder extends Seeder
 {
     public function run(): void
     {
-        $this->command->info('🌱 Iniciando população mínima do banco de dados...');
+        $this->command->info('🌱 Iniciando população mínima do banco de dados (multi-tenant)...');
 
         // ---------------------------------------------------------
         // 0. SEEDERS DE BASE (CATÁLOGO GLOBAL)
@@ -26,8 +23,12 @@ class MasterOnlySeeder extends Seeder
         // ---------------------------------------------------------
         // 1. SUPER ADMIN DE PLATAFORMA (cross-tenant, sem clube)
         // ---------------------------------------------------------
+        // No modelo multi-tenant, a instalação de produção começa apenas
+        // com o admin da plataforma. Os clubes (e seus respectivos usuários
+        // master) passam a ser criados pelo painel da plataforma, e não
+        // mais semeados aqui.
         User::firstOrCreate(['email' => 'admin@plataforma.com'], [
-            'name' => 'Platform Admin',
+            'name' => 'Administrador da Plataforma',
             'password' => Hash::make('password'),
             'role' => 'platform_admin',
             'is_master' => false,
@@ -35,46 +36,7 @@ class MasterOnlySeeder extends Seeder
             'club_id' => null,
         ]);
 
-        $this->command->info('🛡️  Platform Admin criado: admin@plataforma.com / password');
-
-        // ---------------------------------------------------------
-        // 2. CLUBE BASE + MASTER DO CLUBE (tenant inicial)
-        // ---------------------------------------------------------
-        $clube = Club::firstOrCreate(['nome' => 'Clube Desbravadores Exemplo'], [
-            'cidade' => 'São Paulo',
-            'associacao' => 'Associação Exemplo',
-        ]);
-
-        User::firstOrCreate(['email' => 'master@clube.com'], [
-            'name' => 'Master do Clube',
-            'password' => Hash::make('password'),
-            'role' => 'master',
-            'is_master' => true,
-            'is_platform_admin' => false,
-            'club_id' => $clube->id,
-        ]);
-
-        $this->command->info('🏢 Clube base criado com master: master@clube.com / password');
-
-        // ---------------------------------------------------------
-        // 3. DADOS MÍNIMOS DO CLUBE BASE (1 unidade, 2 desbravadores)
-        // ---------------------------------------------------------
-        $unidade = Unidade::firstOrCreate(
-            ['nome' => 'Unidade Exemplo', 'club_id' => $clube->id],
-            ['grito_guerra' => 'Sempre alerta!', 'conselheiro' => 'Conselheiro Exemplo']
-        );
-
-        foreach (['Desbravador Exemplo 1', 'Desbravador Exemplo 2'] as $nome) {
-            Desbravador::firstOrCreate(
-                ['nome' => $nome, 'unidade_id' => $unidade->id],
-                [
-                    'ativo' => true,
-                    'data_nascimento' => now()->subYears(12),
-                    'sexo' => 'M',
-                ]
-            );
-        }
-
-        $this->command->info('🧒 Dados mínimos do clube base criados (1 unidade, 2 desbravadores).');
+        $this->command->info('🛡️  Admin da Plataforma criado: admin@plataforma.com / password');
+        $this->command->warn('⚠️  Altere a senha do admin da plataforma imediatamente após o primeiro acesso.');
     }
 }
