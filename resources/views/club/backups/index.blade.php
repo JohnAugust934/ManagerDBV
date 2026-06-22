@@ -12,15 +12,18 @@
             this.showRestoreConfirm = true;
         },
 
-        showDeleteConfirm: false,
         deleteDisk: '',
         deletePath: '',
-        deleteName: '',
         prepareDelete(disk, path, name) {
             this.deleteDisk = disk;
             this.deletePath = path;
-            this.deleteName = name;
-            this.showDeleteConfirm = true;
+            window.confirmAction({
+                title: 'Excluir Backup',
+                message: `Excluir permanentemente o arquivo “${name}”? Esta ação não poderá ser desfeita e o arquivo será apagado do servidor.`,
+                formId: 'delete-club-backup-form',
+                confirmText: 'Excluir',
+                variant: 'danger',
+            });
         }
     }">
 
@@ -212,29 +215,13 @@
             </div>
         </div>
 
-        {{-- MODAL: Confirmar Exclusão --}}
-        <div x-show="showDeleteConfirm" x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6"
-                @click.outside="showDeleteConfirm = false">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2">Excluir Backup</h3>
-                <p class="text-sm text-slate-600 dark:text-slate-400 mb-5">
-                    Excluir permanentemente <span class="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-1 rounded" x-text="deleteName"></span>?
-                </p>
-
-                <form :action="'{{ route('club-backups.destroy') }}'" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <input type="hidden" name="disk" :value="deleteDisk">
-                    <input type="hidden" name="path" :value="deletePath">
-                    <div class="flex gap-3 justify-end">
-                        <button type="button" @click="showDeleteConfirm = false"
-                            class="ui-btn-secondary text-sm">Cancelar</button>
-                        <button type="submit" class="ui-btn-danger text-sm">Excluir</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        {{-- Form oculto de exclusão, submetido pelo diálogo de confirmação global --}}
+        <form id="delete-club-backup-form" action="{{ route('club-backups.destroy') }}" method="POST" class="hidden">
+            @csrf
+            @method('DELETE')
+            <input type="hidden" name="disk" :value="deleteDisk">
+            <input type="hidden" name="path" :value="deletePath">
+        </form>
 
         {{-- OVERLAY de carregamento --}}
         <div x-show="isRestoring" x-cloak

@@ -14,16 +14,19 @@
             this.showRestoreConfirm = true;
         },
     
-        {{-- Estados para o modal de exclusão --}}
-        showDeleteConfirm: false,
+        {{-- Estado para a exclusão (usa o diálogo de confirmação global) --}}
         deleteDisk: '',
         deletePath: '',
-        deleteName: '',
         prepareDelete(disk, path, name) {
             this.deleteDisk = disk;
             this.deletePath = path;
-            this.deleteName = name;
-            this.showDeleteConfirm = true;
+            window.confirmAction({
+                title: 'Excluir Backup',
+                message: `Excluir permanentemente o arquivo “${name}”? Esta ação não poderá ser desfeita e o arquivo será apagado do servidor.`,
+                formId: 'delete-backup-form',
+                confirmText: 'Excluir',
+                variant: 'danger',
+            });
         }
     }">
         <div>
@@ -265,67 +268,13 @@
         </div>
         {{-- ========================================== --}}
 
-        {{-- ========================================== --}}
-        {{-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO           --}}
-        {{-- ========================================== --}}
-        <div x-show="showDeleteConfirm" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4"
-            x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-            <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" @click="showDeleteConfirm = false"></div>
-
-            <div
-                class="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg p-8 transform transition-all animate-fade-in-up">
-                <div class="flex flex-col items-center text-center">
-                    <div
-                        class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6 text-red-600">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                            </path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-2">Excluir Arquivo?</h3>
-                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                        Você está prestes a excluir permanentemente o backup:
-                    </p>
-                    <div
-                        class="w-full bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 mb-6 border border-slate-100 dark:border-slate-600">
-                        <strong class="text-slate-900 dark:text-slate-200 break-all text-sm"
-                            x-text="deleteName"></strong>
-                    </div>
-                    <div
-                        class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 p-3 rounded-xl w-full mb-8">
-                        <p class="text-xs text-red-800 dark:text-red-400 font-semibold">Esta ação não poderá ser
-                            desfeita e o arquivo será apagado do servidor.</p>
-                    </div>
-                </div>
-
-                <form action="{{ route('backups.destroy') }}" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <input type="hidden" name="disk" :value="deleteDisk">
-                    <input type="hidden" name="path" :value="deletePath">
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <button type="button" @click="showDeleteConfirm = false"
-                            class="bg-white ui-btn-secondary py-3 px-4">
-                            Cancelar
-                        </button>
-                        <button type="submit" @click="showDeleteConfirm = false"
-                            class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-red-500/30 transition-all flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                </path>
-                            </svg>
-                            Sim, Excluir
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        {{-- ========================================== --}}
+        {{-- Form oculto de exclusão, submetido pelo diálogo de confirmação global --}}
+        <form id="delete-backup-form" action="{{ route('backups.destroy') }}" method="POST" class="hidden">
+            @csrf
+            @method('DELETE')
+            <input type="hidden" name="disk" :value="deleteDisk">
+            <input type="hidden" name="path" :value="deletePath">
+        </form>
 
         {{-- ========================================== --}}
         {{-- OVERLAY DE CARREGAMENTO GLOBAL CORRIGIDO   --}}
