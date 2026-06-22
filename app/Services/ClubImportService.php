@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Throwable;
 
 /**
  * Importa um JSON gerado pelo ClubExportService como um NOVO clube, remapeando
@@ -427,6 +429,8 @@ class ClubImportService
         foreach ($row as $k => $v) {
             if (is_array($v)) {
                 $row[$k] = json_encode($v, JSON_UNESCAPED_UNICODE);
+            } elseif (is_string($v)) {
+                $row[$k] = $this->normalizeDatetime($v);
             }
         }
 
@@ -434,6 +438,26 @@ class ClubImportService
         $row['updated_at'] = $row['updated_at'] ?? now();
 
         return $row;
+    }
+
+    /**
+     * Converte strings datetime no formato ISO 8601 (ex.: gerado por casts do
+     * Eloquent em SQLite: "2026-04-19T22:58:37.000000Z") para o formato aceito
+     * pelo MySQL ("Y-m-d H:i:s"). Valores que não casam com o padrão ISO são
+     * devolvidos intactos (colunas só-data, textos comuns etc.).
+     */
+    private function normalizeDatetime(string $valor): string
+    {
+        // Só toca em strings que começam como datetime ISO com separador "T".
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $valor)) {
+            return $valor;
+        }
+
+        try {
+            return Carbon::parse($valor)->format('Y-m-d H:i:s');
+        } catch (Throwable) {
+            return $valor;
+        }
     }
 
     /**
