@@ -397,5 +397,7 @@
             </button>
         </div>
     </div>
+
+    @include('partials.session-timeout')
 </body>
 </html>

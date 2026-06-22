@@ -10,6 +10,13 @@
         </div>
     @endif
 
+    @if (request()->boolean('expired'))
+        <div class="mb-5 bg-amber-500/10 border border-amber-500/20 text-amber-400 p-4 rounded-xl text-sm font-bold flex items-start gap-2.5">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Sua sessão expirou por inatividade. Faça login novamente para continuar.</span>
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('login') }}" class="space-y-4">
         @csrf
 
