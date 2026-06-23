@@ -126,10 +126,13 @@ php artisan backup:monitor
 ## Deploy de Atualização
 
 > **SEMPRE fazer backup antes de qualquer deploy com migrations.**
+>
+> Passo a passo completo (com explicação de cada opção do modo de manutenção) em
+> [`docs/UPGRADE-PRODUCAO.md`](UPGRADE-PRODUCAO.md).
 
 ```bash
-# 1. Ativar modo de manutenção
-php artisan down --retry=60
+# 1. Ativar modo de manutenção (tela customizada — ver seção abaixo)
+php artisan down --render="errors::503" --retry=60 --secret="token-secreto-do-deploy"
 
 # 2. Fazer backup do banco atual
 php artisan backup:run
@@ -156,6 +159,38 @@ php artisan queue:restart
 # 8. Desativar modo de manutenção
 php artisan up
 ```
+
+---
+
+## Modo de manutenção (tela customizada)
+
+Durante o deploy, ative o modo de manutenção para que os usuários vejam uma página amigável
+em vez de erros de meio de atualização. A tela é totalmente personalizada e segue a identidade
+visual do sistema (fundo azul DBV, logo e engrenagens animadas).
+
+- **View:** [`resources/views/errors/503.blade.php`](../resources/views/errors/503.blade.php)
+- É **autocontida** (todo o CSS é inline, sem depender do Vite/Tailwind), justamente para
+  funcionar mesmo quando o build do frontend ainda não está pronto ou o framework não subiu
+  por completo.
+
+```bash
+# Ativar — pré-renderiza a tela customizada
+php artisan down --render="errors::503" --retry=60
+
+# Desativar
+php artisan up
+```
+
+### Opções úteis do `php artisan down`
+
+| Opção | O que faz |
+|-------|-----------|
+| `--render="errors::503"` | **Pré-renderiza** a tela customizada e a serve *antes* do framework subir. Essencial em produção: a página aparece mesmo durante migrations ou se algo quebrar no boot. Sem essa flag, o Laravel ainda usa a `503.blade.php` no fluxo normal, mas só depois de bootar a aplicação. |
+| `--retry=60` | Envia o header HTTP `Retry-After: 60` (dica para navegadores/buscadores tentarem de novo em 60s). |
+| `--secret="token-secreto"` | Cria uma URL de bypass: acessando `https://SEU-DOMINIO/token-secreto` você navega no site normalmente (cookie de bypass), enquanto o público continua vendo a manutenção. Ideal para validar o deploy antes de liberar para todos. |
+
+> **Dica:** combine as três no deploy — `--render` garante a tela bonita, `--secret` deixa você
+> testar antes de subir, e `--retry` melhora o comportamento de cache/SEO.
 
 ---
 
