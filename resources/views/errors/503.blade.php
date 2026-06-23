@@ -35,11 +35,13 @@
             background: var(--azul-escuro);
             color: #f1f5f9;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px;
-            overflow: hidden;
+            gap: 24px;
+            padding: 32px 20px;
             position: relative;
             -webkit-font-smoothing: antialiased;
         }
@@ -117,9 +119,9 @@
             position: relative;
             z-index: 10;
             width: 100%;
-            max-width: 520px;
+            max-width: 480px;
             text-align: center;
-            padding: 40px 28px;
+            padding: 40px 32px;
             border-radius: 32px;
             background: rgba(255, 255, 255, .05);
             border: 1px solid rgba(255, 255, 255, .1);
@@ -263,15 +265,19 @@
         .footer {
             position: relative;
             z-index: 10;
-            margin-top: 24px;
+            text-align: center;
             font-size: 12px;
             font-weight: 500;
-            color: #64748b;
+            color: #94a3b8;
         }
 
         @media (max-width: 480px) {
+            body {
+                padding: 24px 16px;
+            }
+
             .card {
-                padding: 32px 20px;
+                padding: 32px 22px;
                 border-radius: 26px;
             }
 
