@@ -102,9 +102,24 @@ Schedule::command('queue:prune-failed', ['--hours' => 168])
     ->onOneServer();
 
 // Limpa sessões expiradas do banco (relevante quando SESSION_DRIVER=database).
-Schedule::command('session:gc')
+// Não existe comando nativo "session:gc" no Laravel — agendá-lo fazia o
+// scheduler falhar com exit code 1 toda madrugada. Apagamos as linhas vencidas
+// direto da tabela, respeitando o lifetime configurado.
+Schedule::call(function () {
+    if (config('session.driver') !== 'database') {
+        return;
+    }
+
+    $cutoff = now()->subMinutes((int) config('session.lifetime', 120))->getTimestamp();
+
+    \Illuminate\Support\Facades\DB::table(config('session.table', 'sessions'))
+        ->where('last_activity', '<', $cutoff)
+        ->delete();
+})
     ->timezone('America/Sao_Paulo')
     ->dailyAt('03:45')
+    ->name('session:prune-expired')
+    ->withoutOverlapping()
     ->onOneServer();
 
 // LGPD: anonimiza desbravadores desligados há mais de 5 anos (Art. 14).
