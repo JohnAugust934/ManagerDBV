@@ -359,6 +359,35 @@ class TelegramNotificationTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    public function test_falha_de_envio_ao_telegram_nao_recursa_nem_reenvia(): void
+    {
+        // Regressão: quando o Telegram respondia 400 ("chat not found"), o send()
+        // chamava report(), que reentrava no notifier via o handler global de
+        // exceções e duplicava cada erro no log. O envio deve falhar em silêncio,
+        // sem lançar e sem disparar requisições adicionais.
+        Http::fake([
+            'api.telegram.org/*' => Http::response(
+                ['ok' => false, 'error_code' => 400, 'description' => 'Bad Request: chat not found'],
+                400
+            ),
+        ]);
+
+        config([
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'bot-token',
+            'services.telegram.chat_id' => '999999',
+            'services.telegram.error_notifications' => true,
+            'services.telegram.error_dedup_seconds' => 0,
+            'services.telegram.suppress_transient_db_errors' => false,
+            'cache.default' => 'array',
+        ]);
+
+        app(TelegramNotifier::class)->notifyException(new \RuntimeException('Falha qualquer'));
+
+        // Apenas a tentativa original — nenhuma cascata de re-report.
+        Http::assertSentCount(1);
+    }
+
     public function test_notificador_suprime_erro_transitorio_de_banco_na_janela_configurada()
     {
         Http::fake();
