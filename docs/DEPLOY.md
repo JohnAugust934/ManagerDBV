@@ -62,6 +62,17 @@ chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache   # ajustar ao usuário do servidor
 ```
 
+> **Hospedagem compartilhada (ex.: Hostinger):** se `storage:link` falhar com
+> `Call to undefined function ...exec()`, o host desabilitou `exec()` em
+> `disable_functions`. Crie o link manualmente (uma única vez) — pelo gerenciador
+> de arquivos do painel ou via SSH:
+>
+> ```bash
+> ln -s "$(pwd)/storage/app/public" "$(pwd)/public/storage"
+> ```
+>
+> Se o link já existe, esse erro no deploy é inofensivo e pode ser ignorado.
+
 ### 5. Cachear configurações (obrigatório em produção)
 
 ```bash
