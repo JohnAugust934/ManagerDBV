@@ -4,12 +4,15 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\RegistraAutoria;
+use App\Observers\DesbravadorObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(DesbravadorObserver::class)]
 class Desbravador extends Model
 {
     use BelongsToTenant, HasFactory, RegistraAutoria;
@@ -45,17 +48,17 @@ class Desbravador extends Model
     ];
 
     protected $casts = [
-        'data_nascimento'        => 'date',
-        'ativo'                  => 'boolean',
-        'consentimento_lgpd'     => 'boolean',
-        'consentimento_lgpd_em'  => 'datetime',
-        'usa_imagem_autorizado'  => 'boolean',
+        'data_nascimento' => 'date',
+        'ativo' => 'boolean',
+        'consentimento_lgpd' => 'boolean',
+        'consentimento_lgpd_em' => 'datetime',
+        'usa_imagem_autorizado' => 'boolean',
         // CPF usa mutator/accessor manuais (precisa gerar cpf_hash antes de cifrar).
         // Os demais campos sensíveis usam o cast 'encrypted' do Laravel.
-        'rg'                     => 'encrypted',
-        'alergias'               => 'encrypted',
+        'rg' => 'encrypted',
+        'alergias' => 'encrypted',
         'medicamentos_continuos' => 'encrypted',
-        'plano_saude'            => 'encrypted',
+        'plano_saude' => 'encrypted',
     ];
 
     /**
