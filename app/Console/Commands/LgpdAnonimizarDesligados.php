@@ -37,6 +37,7 @@ class LgpdAnonimizarDesligados extends Command
 
         if ($candidatos->isEmpty()) {
             $this->info('Nenhum desbravador elegível para anonimização.');
+
             return self::SUCCESS;
         }
 
@@ -48,6 +49,7 @@ class LgpdAnonimizarDesligados extends Command
 
         if ($dryRun) {
             $this->warn("--dry-run: {$candidatos->count()} registro(s) seriam anonimizados.");
+
             return self::SUCCESS;
         }
 
@@ -56,6 +58,10 @@ class LgpdAnonimizarDesligados extends Command
         }
 
         $anonimizados = 0;
+
+        // A anonimização já grava um ROPA explícito ('anonimizacao'); suprime o
+        // registro automático de revogação de consentimento do Observer para não duplicar.
+        DesbravadorObserver::$suprimirConsentimento = true;
 
         foreach ($candidatos as $desbravador) {
             DB::transaction(function () use ($desbravador, &$anonimizados) {
@@ -94,7 +100,10 @@ class LgpdAnonimizarDesligados extends Command
             });
         }
 
+        DesbravadorObserver::$suprimirConsentimento = false;
+
         $this->info("✔ {$anonimizados} desbravador(es) anonimizados com sucesso.");
+
         return self::SUCCESS;
     }
 }

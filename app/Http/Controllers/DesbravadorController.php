@@ -73,9 +73,7 @@ class DesbravadorController extends Controller
             $desbravador->update(['foto' => $this->processarFoto($request->file('foto'))]);
         }
 
-        LgpdService::registrar('consentimento', 'desbravador', $desbravador->id, [
-            'responsavel' => $dados['consentimento_lgpd_responsavel'],
-        ], $request);
+        // O ROPA de consentimento é registrado automaticamente pelo DesbravadorObserver (evento created).
 
         return redirect()->route('desbravadores.index')->with('success', 'Desbravador cadastrado com sucesso!');
     }
@@ -132,14 +130,10 @@ class DesbravadorController extends Controller
 
     public function destroy(Desbravador $desbravador)
     {
-        $id = $desbravador->id;
-        $nome = $desbravador->nome;
-
         DB::transaction(function () use ($desbravador) {
+            // O ROPA de exclusão é registrado automaticamente pelo DesbravadorObserver (evento deleted).
             $desbravador->delete();
         });
-
-        LgpdService::registrar('exclusao', 'desbravador', $id, ['nome' => $nome]);
 
         return redirect()
             ->route('desbravadores.index')
