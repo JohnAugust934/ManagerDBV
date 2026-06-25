@@ -135,6 +135,7 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         ->name('platform.')
         ->group(function () {
             Route::get('/', [PlatformController::class, 'index'])->name('index');
+            Route::get('/observabilidade', [PlatformController::class, 'observabilidade'])->name('observabilidade');
             Route::get('/clubs/create', [PlatformController::class, 'createClub'])->name('clubs.create');
             Route::post('/clubs', [PlatformController::class, 'storeClub'])->name('clubs.store');
             Route::post('/clubs/{club}/enter', [PlatformController::class, 'enterClub'])->name('enter');

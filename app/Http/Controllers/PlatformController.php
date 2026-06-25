@@ -3,15 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Club;
+use App\Models\ClubBackupLog;
 use App\Models\Desbravador;
 use App\Models\Unidade;
 use App\Models\User;
 use App\Services\ClubContext;
 use App\Services\ClubExportService;
 use App\Services\ClubLifecycleService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -47,6 +50,30 @@ class PlatformController extends Controller
             'totalUsuarios' => User::whereNotNull('club_id')->count(),
             'operacional' => $operacional,
         ]);
+    }
+
+    /**
+     * Resumo operacional em JSON para o painel de observabilidade.
+     *
+     * Contrato (chaves e tipos):
+     *  - queueSize: int|null            jobs pendentes na fila (null se a tabela falhar)
+     *  - falhasRecentes: int|null       jobs falhos nas últimas 24h
+     *  - totalFalhas: int|null          total de jobs falhos
+     *  - versao: string                 versão da aplicação (sem shell_exec)
+     *  - relatoriosPendentes: int|null  relatórios batch pendentes/processando
+     *  - clubesAtivos: int
+     *  - clubesInativos: int
+     *  - ultimoBackupPorClube: array    lista de { club_id:int, clube:string,
+     *                                   filename:string|null, status:string|null,
+     *                                   size_bytes:int|null, created_at:string|null }
+     *  - queriesLentas: int|null        nº de queries lentas registradas hoje no log;
+     *                                   null quando LOG_SLOW_QUERIES está desabilitado
+     */
+    public function observabilidade(): JsonResponse
+    {
+        Gate::authorize('platform-admin');
+
+        return response()->json($this->coletarDadosOperacionais());
     }
 
     public function enterClub(Club $club): RedirectResponse
@@ -195,6 +222,12 @@ class PlatformController extends Controller
         $clubesAtivos = Club::where('is_active', true)->count();
         $clubesInativos = Club::where('is_active', false)->count();
 
+        // Último backup por clube
+        $ultimoBackupPorClube = $this->ultimoBackupPorClube();
+
+        // Queries lentas registradas hoje (só quando o log está habilitado)
+        $queriesLentas = $this->contarQueriesLentasHoje();
+
         return compact(
             'queueSize',
             'falhasRecentes',
@@ -203,7 +236,70 @@ class PlatformController extends Controller
             'relatoriosPendentes',
             'clubesAtivos',
             'clubesInativos',
+            'ultimoBackupPorClube',
+            'queriesLentas',
         );
+    }
+
+    /**
+     * Último backup de cada clube (a partir de club_backup_logs). Retorna uma
+     * lista com um item por clube que possua ao menos um registro de backup.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function ultimoBackupPorClube(): array
+    {
+        try {
+            // MAX(id) por club_id identifica o registro mais recente (id auto-incremento).
+            $ultimos = ClubBackupLog::query()
+                ->whereIn('id', function ($q) {
+                    $q->selectRaw('MAX(id)')
+                        ->from('club_backup_logs')
+                        ->groupBy('club_id');
+                })
+                ->with('club:id,nome')
+                ->get();
+
+            return $ultimos->map(fn (ClubBackupLog $log) => [
+                'club_id' => $log->club_id,
+                'clube' => $log->club?->nome,
+                'filename' => $log->filename,
+                'status' => $log->status,
+                'size_bytes' => $log->size_bytes,
+                'created_at' => $log->created_at?->toIso8601String(),
+            ])->values()->all();
+        } catch (\Exception) {
+            return [];
+        }
+    }
+
+    /**
+     * Conta as queries lentas registradas hoje nos logs da aplicação. O slow
+     * query log é opt-in (LOG_SLOW_QUERIES); quando desabilitado retorna null
+     * para sinalizar "não monitorado" em vez de "zero".
+     */
+    private function contarQueriesLentasHoje(): ?int
+    {
+        if (! env('LOG_SLOW_QUERIES', false)) {
+            return null;
+        }
+
+        try {
+            $hoje = now()->format('Y-m-d');
+            $total = 0;
+
+            foreach (File::glob(storage_path('logs').'/*.log') as $arquivo) {
+                foreach (preg_split('/\R/', (string) @file_get_contents($arquivo)) as $linha) {
+                    if (str_contains($linha, '['.$hoje) && str_contains($linha, 'Slow query')) {
+                        $total++;
+                    }
+                }
+            }
+
+            return $total;
+        } catch (\Exception) {
+            return null;
+        }
     }
 
     /**

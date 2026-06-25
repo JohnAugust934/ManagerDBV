@@ -76,4 +76,81 @@ class PlatformObservabilidadeTest extends TestCase
             ->get(route('platform.index'))
             ->assertForbidden();
     }
+
+    // -------------------------------------------------------------------------
+    // Endpoint JSON de observabilidade
+    // -------------------------------------------------------------------------
+
+    public function test_endpoint_observabilidade_nega_acesso_a_nao_platform_admin(): void
+    {
+        $clube = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'master']);
+
+        $this->actingAs($user)
+            ->getJson(route('platform.observabilidade'))
+            ->assertForbidden();
+    }
+
+    public function test_endpoint_observabilidade_retorna_contrato_de_dados(): void
+    {
+        $this->actingAs($this->platformAdmin())
+            ->getJson(route('platform.observabilidade'))
+            ->assertOk()
+            ->assertJsonStructure([
+                'queueSize',
+                'falhasRecentes',
+                'totalFalhas',
+                'versao',
+                'relatoriosPendentes',
+                'clubesAtivos',
+                'clubesInativos',
+                'ultimoBackupPorClube',
+                'queriesLentas',
+            ]);
+    }
+
+    public function test_endpoint_observabilidade_traz_ultimo_backup_por_clube(): void
+    {
+        $clube = Club::create(['nome' => 'Clube Backup', 'cidade' => 'SP']);
+
+        \App\Models\ClubBackupLog::create([
+            'club_id' => $clube->id,
+            'disk' => 'local',
+            'path' => 'backups/clubes/clube-backup/antigo.zip',
+            'filename' => 'antigo.zip',
+            'status' => 'success',
+            'size_bytes' => 100,
+            'has_uploads' => false,
+            'origin' => 'manual',
+        ]);
+        $recente = \App\Models\ClubBackupLog::create([
+            'club_id' => $clube->id,
+            'disk' => 'local',
+            'path' => 'backups/clubes/clube-backup/recente.zip',
+            'filename' => 'recente.zip',
+            'status' => 'success',
+            'size_bytes' => 200,
+            'has_uploads' => true,
+            'origin' => 'manual',
+        ]);
+
+        $dados = $this->actingAs($this->platformAdmin())
+            ->getJson(route('platform.observabilidade'))
+            ->assertOk()
+            ->json('ultimoBackupPorClube');
+
+        $this->assertCount(1, $dados);
+        $this->assertSame($clube->id, $dados[0]['club_id']);
+        $this->assertSame('recente.zip', $dados[0]['filename']);
+        $this->assertSame('Clube Backup', $dados[0]['clube']);
+    }
+
+    public function test_endpoint_observabilidade_queries_lentas_null_quando_desabilitado(): void
+    {
+        // LOG_SLOW_QUERIES não habilitado no ambiente de teste → null.
+        $this->actingAs($this->platformAdmin())
+            ->getJson(route('platform.observabilidade'))
+            ->assertOk()
+            ->assertJson(['queriesLentas' => null]);
+    }
 }
