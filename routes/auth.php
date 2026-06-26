@@ -5,6 +5,8 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasskeyAutenticacaoController;
+use App\Http\Controllers\Auth\PasskeyController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -24,6 +26,14 @@ Route::middleware('guest')->group(function () {
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    // Login por passkey (asserção WebAuthn) — alternativa SEM senha ao login do
+    // Breeze, que permanece intacto. Acessível ao visitante.
+    Route::post('passkeys/login/opcoes', [PasskeyAutenticacaoController::class, 'options'])
+        ->name('passkeys.login.options');
+    Route::post('passkeys/login', [PasskeyAutenticacaoController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('passkeys.login');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
@@ -56,6 +66,15 @@ Route::middleware('auth')->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+
+    // Gerência das passkeys do próprio usuário (registro aditivo, listagem,
+    // remoção). A senha continua válida — passkey é método alternativo.
+    Route::get('passkeys', [PasskeyController::class, 'index'])->name('passkeys.index');
+    Route::post('passkeys/opcoes', [PasskeyController::class, 'options'])->name('passkeys.options');
+    Route::post('passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
+    Route::delete('passkeys/{id}', [PasskeyController::class, 'destroy'])
+        ->whereNumber('id')
+        ->name('passkeys.destroy');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
