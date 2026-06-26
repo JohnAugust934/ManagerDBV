@@ -60,7 +60,16 @@ class ClubExportService
             'club' => $club->toArray(),
             // DB direto (não o model) para incluir o hash de senha — necessário para
             // reimportar usuários sem perder o login. O arquivo é restrito a admins.
-            'users' => $this->rows(DB::table('users')->where('club_id', $clubId)->get()),
+            // remember_token é removido: é um token de sessão ativo e não deve sair
+            // no export (sequestro de sessão se o arquivo vazar); o import o ignora.
+            'users' => $this->rows(
+                DB::table('users')->where('club_id', $clubId)->get()
+                    ->map(function ($u) {
+                        unset($u->remember_token);
+
+                        return $u;
+                    })
+            ),
             'attendance_columns' => AttendanceColumn::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
             'unidades' => Unidade::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),
             'desbravadores' => Desbravador::withoutGlobalScopes()->where('club_id', $clubId)->get()->toArray(),

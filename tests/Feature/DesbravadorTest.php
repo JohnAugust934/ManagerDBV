@@ -239,6 +239,37 @@ class DesbravadorTest extends TestCase
         $response->assertDontSee('Maria Santos');
     }
 
+    public function test_numero_sus_e_cifrado_em_repouso()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create(['numero_sus' => '700123456789012']);
+
+        // No banco o valor está cifrado (não é o texto puro); via model, decifra.
+        $bruto = \Illuminate\Support\Facades\DB::table('desbravadores')->where('id', $dbv->id)->value('numero_sus');
+        $this->assertNotSame('700123456789012', $bruto);
+        $this->assertSame('700123456789012', \Illuminate\Support\Facades\Crypt::decryptString($bruto));
+        $this->assertSame('700123456789012', $dbv->fresh()->numero_sus);
+    }
+
+    public function test_conselheiro_nao_ve_documentos_nem_sus_do_desbravador()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $conselheiro = User::factory()->create(['club_id' => $clube->id, 'role' => 'conselheiro']);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create([
+            'nome' => 'Membro Visivel',
+            'cpf' => '529.982.247-25',
+            'numero_sus' => '700123456789012',
+        ]);
+
+        $response = $this->actingAs($conselheiro)->get(route('desbravadores.show', $dbv));
+
+        $response->assertOk();
+        $response->assertSee('Membro Visivel');     // nome continua visível
+        $response->assertDontSee('Documentos');      // card de CPF/RG some
+        $response->assertDontSee('Cartão SUS');      // card de SUS/plano some
+        $response->assertDontSee('700123456789012'); // nº SUS (renderizado cru) ausente
+    }
+
     public function test_busca_por_cpf_usa_hash_com_cpf_cifrado()
     {
         $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);

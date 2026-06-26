@@ -41,6 +41,9 @@ return new class extends Migration
             // precisamos mudar o tipo. Usamos text() que é idempotente no SQLite.
             $table->text('cpf')->nullable()->change();
             $table->text('rg')->nullable()->change();
+            // numero_sus era VARCHAR(255): o ciphertext pode passar de 255 e
+            // truncar — alargamos para TEXT como os demais campos cifrados.
+            $table->text('numero_sus')->nullable()->change();
         });
 
         // 3. Backfill: computar hash e criptografar apenas linhas ainda em plaintext.
@@ -71,8 +74,8 @@ return new class extends Migration
                 }
             });
 
-        // 5. Criptografar campos médicos (já são TEXT — apenas encrypt).
-        foreach (['alergias', 'medicamentos_continuos', 'plano_saude'] as $field) {
+        // 5. Criptografar campos médicos + numero_sus (todos TEXT — apenas encrypt).
+        foreach (['numero_sus', 'alergias', 'medicamentos_continuos', 'plano_saude'] as $field) {
             DB::table('desbravadores')
                 ->whereNotNull($field)
                 ->chunkById(200, function ($rows) use ($field) {
@@ -135,7 +138,7 @@ return new class extends Migration
                 }
             });
 
-        foreach (['alergias', 'medicamentos_continuos', 'plano_saude'] as $field) {
+        foreach (['numero_sus', 'alergias', 'medicamentos_continuos', 'plano_saude'] as $field) {
             DB::table('desbravadores')
                 ->whereNotNull($field)
                 ->chunkById(200, function ($rows) use ($field) {
@@ -157,6 +160,7 @@ return new class extends Migration
             $table->dropColumn('cpf_hash');
             $table->string('cpf', 14)->nullable()->change();
             $table->string('rg', 20)->nullable()->change();
+            $table->string('numero_sus')->nullable()->change();
             $table->unique(['club_id', 'cpf'], 'desbravadores_club_cpf_unique');
         });
     }
