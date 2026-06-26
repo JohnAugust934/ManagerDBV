@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use LaravelWebauthn\Services\Webauthn;
+use ParagonIE\ConstantTime\Base64UrlSafe;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
@@ -35,10 +36,15 @@ class PasskeyAutenticacaoController extends Controller
     public function options(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'email' => ['required', 'string', 'email'],
+            'email' => ['nullable', 'string', 'email'],
         ]);
 
-        $user = $this->resolverUsuario($validated['email']);
+        // Com e-mail: restringe o desafio às credenciais da conta (allowCredentials).
+        // Sem e-mail: gera um desafio "usernameless" (allowCredentials vazio) e o
+        // navegador apresenta as passkeys discoverable do domínio diretamente.
+        $user = ! empty($validated['email'])
+            ? $this->resolverUsuario($validated['email'])
+            : null;
 
         $publicKey = Webauthn::prepareAssertion($user);
 
@@ -55,7 +61,7 @@ class PasskeyAutenticacaoController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'email' => ['required', 'string', 'email'],
+            'email' => ['nullable', 'string', 'email'],
             'id' => ['required', 'string'],
             'rawId' => ['required', 'string'],
             'response' => ['required', 'array'],
@@ -63,7 +69,11 @@ class PasskeyAutenticacaoController extends Controller
             'remember' => ['nullable', 'boolean'],
         ]);
 
-        $user = $this->resolverUsuario($validated['email']);
+        // Com e-mail: resolve o usuário pelo campo informado. Sem e-mail (fluxo
+        // usernameless): identifica o usuário pela própria credencial apresentada.
+        $user = ! empty($validated['email'])
+            ? $this->resolverUsuario($validated['email'])
+            : $this->resolverUsuarioPorCredencial($validated['rawId']);
 
         try {
             $valido = Webauthn::validateAssertion(
@@ -95,6 +105,37 @@ class PasskeyAutenticacaoController extends Controller
     private function resolverUsuario(string $email): User
     {
         $user = User::where(Webauthn::username(), $email)->first();
+
+        if ($user === null) {
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
+
+        return $user;
+    }
+
+    /**
+     * Resolve o usuário a partir da credencial apresentada (fluxo usernameless),
+     * localizando a passkey pelo seu credentialId e seguindo até o dono.
+     *
+     * O `rawId` chega em base64url; a tabela `webauthn_keys` armazena o
+     * credentialId codificado em Base64UrlSafe (com e sem padding, conforme a
+     * lib), então consultamos as duas formas — espelhando o lookup interno do
+     * CredentialAssertionValidator. Erro genérico quando não há correspondência.
+     */
+    private function resolverUsuarioPorCredencial(string $rawId): User
+    {
+        $binario = Base64UrlSafe::decode($rawId);
+
+        $webauthnKey = (Webauthn::model())::query()
+            ->where('credentialId', Base64UrlSafe::encode($binario))
+            ->orWhere('credentialId', Base64UrlSafe::encodeUnpadded($binario))
+            ->first();
+
+        $user = $webauthnKey
+            ? User::find($webauthnKey->user_id)
+            : null;
 
         if ($user === null) {
             throw ValidationException::withMessages([

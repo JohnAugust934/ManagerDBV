@@ -4,6 +4,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use LaravelWebauthn\Services\Webauthn\CredentialAssertionValidator;
 use LaravelWebauthn\Services\Webauthn\CredentialAttestationValidator;
+use ParagonIE\ConstantTime\Base64UrlSafe;
 use Symfony\Component\Uid\NilUuid;
 use Webauthn\CredentialRecord;
 use Webauthn\TrustPath\EmptyTrustPath;
@@ -179,6 +180,72 @@ test('login por passkey com e-mail inexistente devolve erro genérico', function
     $response = $this->postJson(route('passkeys.login.options'), ['email' => 'naoexiste@clube.com']);
 
     $response->assertStatus(422)->assertJsonValidationErrors('email');
+});
+
+// --- Login por passkey SEM e-mail (usernameless / discoverable credentials) ---
+
+/**
+ * Insere uma credencial cujo credentialId é um base64url real, para o lookup
+ * por rawId do fluxo usernameless. Retorna o rawId a enviar na asserção.
+ */
+function criarPasskeyDiscoverable(User $user): string
+{
+    $binario = 'cred-binario-'.$user->id;
+    $rawId = Base64UrlSafe::encodeUnpadded($binario);
+
+    DB::table('webauthn_keys')->insert([
+        'user_id' => $user->id,
+        'name' => 'Discoverable',
+        'credentialId' => $rawId,
+        'type' => 'public-key',
+        'transports' => '[]',
+        'attestationType' => 'none',
+        'trustPath' => '{}',
+        'aaguid' => '',
+        'credentialPublicKey' => 'pk',
+        'counter' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $rawId;
+}
+
+test('gera options de login sem e-mail (usernameless)', function () {
+    $response = $this->postJson(route('passkeys.login.options'), []);
+
+    $response->assertOk()->assertJsonStructure(['publicKey' => ['challenge']]);
+});
+
+test('asserção sem e-mail autentica o dono da credencial', function () {
+    $user = User::factory()->create();
+    $rawId = criarPasskeyDiscoverable($user);
+
+    $this->mock(CredentialAssertionValidator::class)
+        ->shouldReceive('__invoke')
+        ->andReturn(true);
+
+    $response = $this->postJson(route('passkeys.login'), [
+        'id' => $rawId,
+        'rawId' => $rawId,
+        'response' => ['clientDataJSON' => 'x', 'authenticatorData' => 'y', 'signature' => 'z'],
+        'type' => 'public-key',
+    ]);
+
+    $response->assertOk()->assertJsonPath('redirect', route('dashboard', absolute: false));
+    $this->assertAuthenticatedAs($user);
+});
+
+test('asserção sem e-mail com credencial desconhecida devolve erro genérico', function () {
+    $response = $this->postJson(route('passkeys.login'), [
+        'id' => Base64UrlSafe::encodeUnpadded('inexistente'),
+        'rawId' => Base64UrlSafe::encodeUnpadded('inexistente'),
+        'response' => ['clientDataJSON' => 'x', 'authenticatorData' => 'y', 'signature' => 'z'],
+        'type' => 'public-key',
+    ]);
+
+    $response->assertStatus(422)->assertJsonValidationErrors('email');
+    $this->assertGuest();
 });
 
 // --- Convivência com o login por senha do Breeze ---
