@@ -201,6 +201,11 @@ autenticado, para cargos como conselheiro. Registro só por convite (`/register-
   cria mais clube/master de exemplo. Clubes e seus usuários master passam a ser criados pelo painel
   da plataforma (`/platform`). O `DatabaseSeeder` tem um `SeederFallbackFaker` embutido para
   ambientes sem `fakerphp/faker` (`composer --no-dev`).
+- **Imports em arquivos de rota (sem namespace):** o auto-Pint (hook pós-edição) poda imports
+  considerados "não usados". Em arquivos sem `namespace` (ex.: `routes/*.php`), um `Controller::class`
+  sem o `use` correspondente resolve para o nome **global curto** e quebra o `route:list`/dispatch.
+  Ao adicionar uma rota, inclua o `use` e seu uso **na mesma edição** (ou adicione a rota antes do
+  import) — nunca adicione o `import` isolado primeiro, pois o Pint o removerá antes de ele ser usado.
 
 ## Deploy
 Guia completo em `docs/DEPLOY.md`; runbook de restauração em `docs/RESTORE.md`. Pontos-chave: `composer
