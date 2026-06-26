@@ -8,9 +8,9 @@
             <div>
                 <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
                     <svg class="w-8 h-8 text-[#002F6C] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5V10l-12-8L0 10v10h5m7-12h4m-4 4h4m-4 4h4M7 10h.01M7 14h.01M7 18h.01" /></svg>
-                    Equipe do Clube
+                    {{ ($isPlatformContext ?? false) ? 'Equipe da Plataforma' : 'Equipe do Clube' }}
                 </h1>
-                <p class="text-slate-500 font-medium mt-1">Gerencie os acessos, cargos e permissões dos membros da diretoria.</p>
+                <p class="text-slate-500 font-medium mt-1">{{ ($isPlatformContext ?? false) ? 'Gerencie os administradores que ajudam a operar a plataforma.' : 'Gerencie os acessos, cargos e permissões dos membros da diretoria.' }}</p>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -62,15 +62,17 @@
                                     <td class="px-6 py-5 text-center whitespace-nowrap">
                                         @php
                                             $roleColors = [
+                                                'platform_admin' => 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:text-indigo-400',
                                                 'master' => 'bg-red-50 border-red-200 text-red-600 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-400',
                                                 'diretor' => 'bg-purple-50 border-purple-200 text-purple-600 dark:bg-purple-500/10 dark:border-purple-500/30 dark:text-purple-400',
                                                 'secretario' => 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400',
                                                 'tesoureiro' => 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400',
                                             ];
-                                            $colorClass = $roleColors[$user->role] ?? 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400';
+                                            $colorKey = $user->is_platform_admin ? 'platform_admin' : $user->role;
+                                            $colorClass = $roleColors[$colorKey] ?? 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400';
                                         @endphp
                                         <span class="inline-block px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded border shadow-sm {{ $colorClass }}">
-                                            {{ $user->role }}
+                                            {{ $user->papelLabel() }}
                                         </span>
                                     </td>
 

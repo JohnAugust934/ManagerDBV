@@ -3,15 +3,17 @@
     darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
     sidebarOpen: false,
     mobileMenuOpen: false,
-    sidebarExpanded: localStorage.getItem('sidebarExpanded') === 'true' || !('sidebarExpanded' in localStorage)
+    sidebarPinned: localStorage.getItem('sidebarExpanded') === 'true' || !('sidebarExpanded' in localStorage),
+    sidebarHover: false,
+    get sidebarExpanded() { return this.sidebarPinned || this.sidebarHover; }
 }" x-init="
     $watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'));
-    $watch('sidebarExpanded', val => localStorage.setItem('sidebarExpanded', val));
+    $watch('sidebarPinned', val => localStorage.setItem('sidebarExpanded', val));
 " :class="{ 'dark': darkMode }">
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#002F6C">
 
@@ -50,6 +52,8 @@
 
         <!-- Sidebar Navigation -->
         <aside
+            @mouseenter="if (window.innerWidth >= 1024) sidebarHover = true"
+            @mouseleave="sidebarHover = false"
             class="fixed inset-y-0 left-0 z-50 m-4 md:m-6 ui-glass rounded-[32px] overflow-hidden flex flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-2xl shadow-blue-900/5 dark:shadow-black/50 lg:translate-x-0 lg:static lg:shrink-0"
             :class="[
                 sidebarOpen ? 'translate-x-0 w-[280px]' : '-translate-x-[150%] w-[280px]',
@@ -69,18 +73,18 @@
                 @endif
                 
                 <div class="flex flex-col overflow-hidden" x-show="sidebarExpanded" x-transition.opacity.duration.300ms>
-                    <h1 class="font-black text-[17px] text-slate-800 dark:text-white leading-tight uppercase tracking-wide text-gradient-dbv whitespace-nowrap">
+                    <p class="font-black text-[17px] text-slate-800 dark:text-white leading-tight uppercase tracking-wide text-gradient-dbv whitespace-nowrap">
                         {{ Str::limit(Auth::user()->club->nome ?? 'MANAGER', 15) }}
-                    </h1>
+                    </p>
                     <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 whitespace-nowrap">
                         {{ Auth::user()->role === 'master' ? 'Master Admin' : 'Sistema de Gestão' }}
                     </span>
                 </div>
 
                 <!-- Desktop Toggle (Recolher / Expandir Menu) -->
-                <button @click="sidebarExpanded = !sidebarExpanded"
+                <button @click="sidebarPinned = !sidebarPinned"
                     class="hidden lg:flex absolute top-2 right-2 p-1.5 rounded-lg text-slate-400 hover:text-[#002F6C] dark:hover:text-blue-400 hover:bg-slate-100/70 dark:hover:bg-white/5 focus:outline-none transition-colors z-10"
-                    title="Recolher Menu">
+                    :title="sidebarPinned ? 'Recolher Menu' : 'Fixar Menu'">
                     <svg class="w-5 h-5 transition-transform duration-300" :class="!sidebarExpanded && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h10M4 18h16" /></svg>
                 </button>
             </div>
@@ -93,8 +97,15 @@
                     $inactiveClass = 'text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/50';
                     $iconActive = 'text-[#D9222A] dark:text-red-400 drop-shadow-sm shrink-0';
                     $iconInactive = 'text-slate-400 group-hover:text-[#D9222A]/70 dark:text-slate-500 transition-colors shrink-0';
+
+                    // Admin de plataforma SEM clube ativo: as telas de clube ficam
+                    // ocultas (elas redirecionam ao painel da plataforma). Ao entrar
+                    // em modo suporte (clube ativo), os módulos do clube reaparecem.
+                    $platformSemClube = auth()->user()->isPlatformAdmin()
+                        && \App\Services\ClubContext::currentClubId() === null;
                 @endphp
 
+                @unless ($platformSemClube)
                 <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Visão Geral</p>
                 <div x-show="!sidebarExpanded" class="h-4 border-b border-black/5 dark:border-white/5 mb-2 mx-4 transition-opacity hidden lg:block"></div>
 
@@ -139,7 +150,7 @@
                     </button>
                     <!-- Submenu -->
                     <div x-show="docMenuOpen && sidebarExpanded" x-transition class="pl-12 pr-4 py-1 space-y-1 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl" x-cloak>
-                        <a href="{{ route('atas.index') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('atas*') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Atas Reunões</a>
+                        <a href="{{ route('atas.index') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('atas*') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Atas de Reuniões</a>
                         <a href="{{ route('atos.index') }}" class="block px-3 py-2 rounded-lg text-[13px] font-bold {{ request()->routeIs('atos*') ? 'text-[#002F6C] dark:text-blue-400 bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white' }}">Atos Administrativos</a>
                     </div>
                 </div>
@@ -221,8 +232,9 @@
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Patrimônio</span>
                 </a>
                 @endcan
+                @endunless
 
-                @if (auth()->user()->can('gestao-acessos') || auth()->user()->can('master') || auth()->user()->can('relatorios'))
+                @if (auth()->user()->can('gestao-acessos') || auth()->user()->can('master') || (auth()->user()->can('relatorios') && ! $platformSemClube))
                 <!-- ACORDEON ADMIN -->
                 <div class="pt-4 pb-1">
                     <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Avançado</p>
@@ -230,13 +242,13 @@
                 </div>
                 @endif
                 
-                @can('relatorios')
+                @if (auth()->user()->can('relatorios') && ! $platformSemClube)
                 <a href="{{ route('relatorios.index') }}" class="{{ $linkBase }} {{ request()->routeIs('relatorios*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('relatorios*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
                     <svg class="w-6 h-6 {{ request()->routeIs('relatorios*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Relatórios</span>
                 </a>
-                @endcan
+                @endif
 
                 @can('gestao-acessos')
                 <a href="{{ route('usuarios.index') }}" class="{{ $linkBase }} {{ request()->routeIs('usuarios*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
@@ -251,13 +263,26 @@
                 </a>
                 @endcan
                 
-                @can('master')
-                <a href="{{ route('backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('backups*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
-                     @if(request()->routeIs('backups*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
-                    <svg class="w-6 h-6 {{ request()->routeIs('backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                @can('platform-admin')
+                <a href="{{ route('platform.index') }}" class="{{ $linkBase }} {{ request()->routeIs('platform*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                     @if(request()->routeIs('platform*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('platform*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Plataforma</span>
+                </a>
+                <a href="{{ route('backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('backups*') && !request()->routeIs('club-backups*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                     @if(request()->routeIs('backups*') && !request()->routeIs('club-backups*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('backups*') && !request()->routeIs('club-backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Backups Cloud</span>
                 </a>
                 @endcan
+
+                @if (\Illuminate\Support\Facades\Gate::check('master') || \App\Services\ClubContext::isImpersonating())
+                <a href="{{ route('club-backups.index') }}" class="{{ $linkBase }} {{ request()->routeIs('club-backups*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                     @if(request()->routeIs('club-backups*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('club-backups*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Backup do Clube</span>
+                </a>
+                @endif
 
                 <div class="pt-4 pb-1">
                     <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Ajuda</p>
@@ -314,6 +339,22 @@
 
             <!-- Page Content -->
             <main id="app-content" class="flex-1 overflow-x-hidden overflow-y-auto px-4 sm:px-6 md:px-8 pb-32 sm:pb-12 pt-[max(1.5rem,env(safe-area-inset-top))] transition-all scroll-smooth relative z-20">
+                @if (\App\Services\ClubContext::isImpersonating())
+                    <div class="mb-6 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-sm">
+                        <span class="text-amber-800 dark:text-amber-300 font-bold">
+                            Modo suporte — {{ \App\Services\ClubContext::currentClub()?->nome }}
+                        </span>
+                        <form method="POST" action="{{ route('platform.exit') }}">
+                            @csrf
+                            <button type="submit" class="text-amber-700 dark:text-amber-300 font-bold underline hover:no-underline">
+                                Sair do clube
+                            </button>
+                        </form>
+                    </div>
+                @endif
+
+                @include('partials.passkey-banner')
+
                 <div class="mb-6 ui-animate-fade-up">
                     <x-flash-messages />
                 </div>
@@ -358,5 +399,7 @@
             </button>
         </div>
     </div>
+
+    @include('partials.session-timeout')
 </body>
 </html>

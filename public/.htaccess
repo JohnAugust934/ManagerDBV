@@ -1,3 +1,16 @@
+# Bloqueia acesso direto a dumps de banco e arquivos de backup.
+# storage/app/ fica fora do webroot por design do Laravel; esta regra
+# é uma camada adicional caso o servidor web esteja mal configurado.
+<FilesMatch "\.(sql|sqlite|zip|gz|bz2|tar|env|log|key|pem|p12)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

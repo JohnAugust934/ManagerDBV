@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Rules\UnidadePertenceAoClube;
+use App\Services\ClubContext;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class StoreDesbravadorRequest extends FormRequest
@@ -39,17 +41,38 @@ class StoreDesbravadorRequest extends FormRequest
             'alergias' => 'nullable|string',
             'medicamentos_continuos' => 'nullable|string',
             'plano_saude' => 'nullable|string',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'foto' => ['nullable', 'file', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
+            'consentimento_lgpd' => 'accepted',
+            'consentimento_lgpd_responsavel' => 'required|string|max:255',
         ];
     }
 
     /**
-     * Regra de unicidade do CPF. O update sobrescreve para ignorar o proprio registro.
+     * Regra de unicidade do CPF — POR CLUBE.
+     * O CPF é armazenado criptografado (não-determinístico), então a unique
+     * constraint usa cpf_hash (SHA-256 dos dígitos). A closure hasha o input
+     * antes de comparar com cpf_hash no banco.
      *
      * @return array<int, mixed>
      */
     protected function cpfRule(): array
     {
-        return ['required', 'string', 'max:14', Rule::unique('desbravadores', 'cpf')];
+        $clubId = ClubContext::currentClubId();
+
+        return [
+            'required',
+            'string',
+            'max:14',
+            function ($attribute, $value, $fail) use ($clubId) {
+                $hash = hash('sha256', preg_replace('/\D/', '', $value));
+                $exists = DB::table('desbravadores')
+                    ->where('cpf_hash', $hash)
+                    ->where('club_id', $clubId)
+                    ->exists();
+                if ($exists) {
+                    $fail('Este CPF já está cadastrado neste clube.');
+                }
+            },
+        ];
     }
 }

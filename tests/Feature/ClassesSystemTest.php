@@ -6,12 +6,28 @@ use App\Models\Classe;
 use App\Models\Club;
 use App\Models\Desbravador;
 use App\Models\User;
+use App\Services\ClubContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ClassesSystemTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * A edição do catálogo de requisitos é da plataforma (Fase 6): autentica um
+     * platform admin em modo suporte a um clube.
+     */
+    private function autenticarAdminEmSuporte(): User
+    {
+        $club = Club::create(['nome' => 'Clube Suporte', 'cidade' => 'SP']);
+        $admin = User::factory()->platformAdmin()->create(['club_id' => null]);
+
+        $this->actingAs($admin);
+        session([ClubContext::SESSION_KEY => $club->id]);
+
+        return $admin;
+    }
 
     public function test_desbravador_aparece_apenas_na_classe_que_esta_vinculado()
     {
@@ -97,11 +113,10 @@ class ClassesSystemTest extends TestCase
 
     public function test_pode_criar_requisito_em_classe()
     {
-        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $this->autenticarAdminEmSuporte();
         $classe = Classe::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('classes.requisitos.store', $classe), [
+        $response = $this->post(route('classes.requisitos.store', $classe), [
             'descricao' => 'Aprender nó quadrado',
             'codigo' => 'REQ-01',
             'categoria' => 'Habilidades',
@@ -116,8 +131,7 @@ class ClassesSystemTest extends TestCase
 
     public function test_pode_atualizar_requisito()
     {
-        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $this->autenticarAdminEmSuporte();
         $classe = Classe::factory()->create();
         $requisito = $classe->requisitos()->create([
             'descricao' => 'Descrição original',
@@ -125,7 +139,7 @@ class ClassesSystemTest extends TestCase
             'categoria' => 'Geral',
         ]);
 
-        $response = $this->actingAs($user)->put(route('classes.requisitos.update', [$classe, $requisito]), [
+        $response = $this->put(route('classes.requisitos.update', [$classe, $requisito]), [
             'descricao' => 'Descrição atualizada',
             'codigo' => 'R01',
             'categoria' => 'Geral',
@@ -140,8 +154,7 @@ class ClassesSystemTest extends TestCase
 
     public function test_pode_excluir_requisito()
     {
-        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
-        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'instrutor']);
+        $this->autenticarAdminEmSuporte();
         $classe = Classe::factory()->create();
         $requisito = $classe->requisitos()->create([
             'descricao' => 'Requisito a excluir',
@@ -149,7 +162,7 @@ class ClassesSystemTest extends TestCase
             'categoria' => 'Geral',
         ]);
 
-        $response = $this->actingAs($user)->delete(route('classes.requisitos.destroy', [$classe, $requisito]));
+        $response = $this->delete(route('classes.requisitos.destroy', [$classe, $requisito]));
 
         $response->assertSessionHasNoErrors();
         $this->assertDatabaseMissing('requisitos', ['id' => $requisito->id]);

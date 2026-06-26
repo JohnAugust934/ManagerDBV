@@ -46,7 +46,9 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Ver histórico de alterações
                     </a>
-                    <a href="{{ route('especialidades.edit', $especialidade) }}" class="ui-btn-primary px-5 py-2 rounded-xl">Editar Especialidade</a>
+                    @can('platform-admin')
+                        <a href="{{ route('especialidades.edit', $especialidade) }}" class="ui-btn-primary px-5 py-2 rounded-xl">Editar Especialidade</a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -85,6 +87,7 @@
                                 </div>
                             </form>
 
+                            @can('platform-admin')
                             <div class="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" x-show="editandoId !== {{ $req->id }}">
                                 <button type="button"
                                     @click="editandoId = {{ $req->id }}; novaDescricao = '{{ addslashes($req->descricao) }}'"
@@ -98,12 +101,14 @@
                                     </button>
                                 </form>
                             </div>
+                            @endcan
                         </li>
                     @endforeach
                 </ol>
             @endif
 
-            {{-- Adicionar novo requisito --}}
+            {{-- Adicionar novo requisito (catálogo global: só plataforma) --}}
+            @can('platform-admin')
             <div class="border-t border-slate-100 dark:border-slate-800 pt-5" x-data="{ aberto: false }">
                 <button type="button" @click="aberto = !aberto"
                     class="flex items-center gap-2 text-sm font-bold text-[#002F6C] dark:text-blue-400 hover:text-blue-700 transition-colors">
@@ -122,6 +127,7 @@
                     </div>
                 </form>
             </div>
+            @endcan
         </div>
     </div>
 </x-app-layout>

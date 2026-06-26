@@ -15,10 +15,9 @@ class InviteSystemTest extends TestCase
     use RefreshDatabase;
 
     // -------------------------------------------------------------------------
-    // CENÁRIO 1 — Fluxo feliz: master cria convite, e-mail é disparado
+    // CENÁRIO 1 — Fluxo feliz: master cria convite, e-mail é enfileirado
     // -------------------------------------------------------------------------
-    // ClubInvitation NÃO implementa mais ShouldQueue, portanto o envio é
-    // SÍNCRONO. A asserção correta é assertSent(), não assertQueued().
+    // Mail::queue() enfileira o e-mail → assertQueued() é a asserção correta.
     // -------------------------------------------------------------------------
     public function test_master_pode_criar_convite_e_envia_email(): void
     {
@@ -29,20 +28,19 @@ class InviteSystemTest extends TestCase
 
         $response = $this->actingAs($master)->post(route('invites.store'), [
             'email' => 'novo@clube.com',
-            'role'  => 'conselheiro',
+            'role' => 'conselheiro',
         ]);
 
         $response->assertRedirect(route('invites.index'));
         $response->assertSessionHas('success', 'Convite gerado e enviado com sucesso!');
 
         $this->assertDatabaseHas('invitations', [
-            'email'   => 'novo@clube.com',
-            'role'    => 'conselheiro',
+            'email' => 'novo@clube.com',
+            'role' => 'conselheiro',
             'club_id' => $club->id,
         ]);
 
-        // Envio síncrono → assertSent (não assertQueued)
-        Mail::assertSent(ClubInvitation::class, function ($mail) {
+        Mail::assertQueued(ClubInvitation::class, function ($mail) {
             return $mail->hasTo('novo@clube.com');
         });
     }
@@ -55,25 +53,25 @@ class InviteSystemTest extends TestCase
         $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'São Paulo', 'associacao' => 'APL']);
 
         Invitation::create([
-            'email'      => 'convidado@clube.com',
-            'token'      => 'token-falso-123',
-            'role'       => 'conselheiro',
-            'club_id'    => $club->id,
+            'email' => 'convidado@clube.com',
+            'token' => 'token-falso-123',
+            'role' => 'conselheiro',
+            'club_id' => $club->id,
             'expires_at' => now()->addDays(7),
         ]);
 
-        $response = $this->post(route('register.store_invite'), [
-            'token'                 => 'token-falso-123',
-            'name'                  => 'Usuário Convidado',
-            'password'              => 'password123',
+        $response = $this->post(route('register.store_invite'), array_merge([
+            'token' => 'token-falso-123',
+            'name' => 'Usuário Convidado',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
-        ]);
+        ], $this->aceiteTermos()));
 
         $response->assertRedirect(route('dashboard'));
 
         $this->assertDatabaseHas('users', [
-            'email'   => 'convidado@clube.com',
-            'role'    => 'conselheiro',
+            'email' => 'convidado@clube.com',
+            'role' => 'conselheiro',
             'club_id' => $club->id,
         ]);
 
@@ -92,16 +90,16 @@ class InviteSystemTest extends TestCase
         $master = User::factory()->create(['role' => 'master', 'club_id' => $club->id]);
 
         $conviteExistente = Invitation::create([
-            'email'      => 'pendente@clube.com',
-            'token'      => 'token-antigo',
-            'role'       => 'conselheiro',
-            'club_id'    => $club->id,
+            'email' => 'pendente@clube.com',
+            'token' => 'token-antigo',
+            'role' => 'conselheiro',
+            'club_id' => $club->id,
             'expires_at' => now()->addDay(),
         ]);
 
         $response = $this->actingAs($master)->post(route('invites.store'), [
             'email' => 'pendente@clube.com',
-            'role'  => 'tesoureiro',
+            'role' => 'tesoureiro',
         ]);
 
         $response->assertRedirect(route('invites.index'));
@@ -114,8 +112,7 @@ class InviteSystemTest extends TestCase
         $this->assertEquals('tesoureiro', $conviteAtualizado->role);
         $this->assertNotEquals('token-antigo', $conviteAtualizado->token);
 
-        // Envio síncrono → assertSent (não assertQueued)
-        Mail::assertSent(ClubInvitation::class, function ($mail) {
+        Mail::assertQueued(ClubInvitation::class, function ($mail) {
             return $mail->hasTo('pendente@clube.com');
         });
     }
@@ -131,11 +128,11 @@ class InviteSystemTest extends TestCase
         $master = User::factory()->create(['role' => 'master', 'club_id' => $club->id]);
 
         Invitation::create([
-            'email'         => 'usado@clube.com',
-            'token'         => 'token-usado',
-            'role'          => 'conselheiro',
-            'club_id'       => $club->id,
-            'expires_at'    => now()->addDay(),
+            'email' => 'usado@clube.com',
+            'token' => 'token-usado',
+            'role' => 'conselheiro',
+            'club_id' => $club->id,
+            'expires_at' => now()->addDay(),
             'registered_at' => now(),
         ]);
 
@@ -143,7 +140,7 @@ class InviteSystemTest extends TestCase
             ->from(route('invites.create'))
             ->post(route('invites.store'), [
                 'email' => 'usado@clube.com',
-                'role'  => 'conselheiro',
+                'role' => 'conselheiro',
             ]);
 
         $response->assertRedirect(route('invites.create'));
@@ -151,8 +148,7 @@ class InviteSystemTest extends TestCase
 
         $this->assertDatabaseCount('invitations', 1);
 
-        // Envio síncrono → assertNothingSent (não assertNothingQueued)
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     // -------------------------------------------------------------------------
@@ -168,8 +164,8 @@ class InviteSystemTest extends TestCase
 
         $club = Club::create(['nome' => 'Clube Orion', 'cidade' => 'Sao Paulo', 'associacao' => 'APL']);
         $diretor = User::factory()->create([
-            'role'              => 'diretor',
-            'club_id'           => $club->id,
+            'role' => 'diretor',
+            'club_id' => $club->id,
             'extra_permissions' => ['gestao_acessos'], // underscore: chave correta do Gate
         ]);
 
@@ -177,7 +173,7 @@ class InviteSystemTest extends TestCase
             ->from(route('invites.create'))
             ->post(route('invites.store'), [
                 'email' => 'master-convite@clube.com',
-                'role'  => 'master',
+                'role' => 'master',
             ]);
 
         // O role 'master' não está nos allowedInvitableRoles() do diretor →
@@ -186,7 +182,6 @@ class InviteSystemTest extends TestCase
         $response->assertSessionHasErrors('role');
         $this->assertDatabaseMissing('invitations', ['email' => 'master-convite@clube.com']);
 
-        // Envio síncrono → assertNothingSent (não assertNothingQueued)
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 }

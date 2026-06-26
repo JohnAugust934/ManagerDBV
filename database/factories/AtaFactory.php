@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Club;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AtaFactory extends Factory
@@ -13,7 +14,12 @@ class AtaFactory extends Factory
             'tipo' => $this->faker->randomElement(['Regular', 'Diretoria']),
             'secretario_responsavel' => $this->faker->name(),
             'conteudo' => $this->faker->paragraphs(3, true),
-            'club_id' => null,
+            'club_id' => Club::factory(),
         ];
+    }
+
+    public function forClube(int $clubId): static
+    {
+        return $this->state(fn () => ['club_id' => $clubId]);
     }
 }

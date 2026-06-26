@@ -18,12 +18,16 @@
                     </div>
 
                     <div class="pt-4 border-t border-slate-100 dark:border-slate-700">
-                        <h3 class="ui-title text-base mb-3">Cargo Padrao do Convite</h3>
+                        @php $rolesList = $roles ?? ['diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor']; @endphp
+                        <h3 class="ui-title text-base mb-3">{{ ($isPlatformContext ?? false) ? 'Tipo de Convite' : 'Cargo Padrao do Convite' }}</h3>
+                        @if ($isPlatformContext ?? false)
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">O convidado entrará como <strong>Admin da Plataforma</strong> (acesso cross-tenant, sem clube).</p>
+                        @endif
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            @foreach (['diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'] as $role)
+                            @foreach ($rolesList as $role)
                                 <label class="relative cursor-pointer">
-                                    <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" required {{ old('role') == $role? 'checked' : '' }}>
-                                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-3 text-center font-semibold uppercase text-xs bg-white dark:bg-slate-800 peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20">{{ $role }}</div>
+                                    <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" required {{ old('role', count($rolesList) === 1 ? $role : null) == $role ? 'checked' : '' }}>
+                                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-3 text-center font-semibold uppercase text-xs bg-white dark:bg-slate-800 peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20">{{ \App\Models\User::ROLES_LABEL[$role] ?? $role }}</div>
                                 </label>
                             @endforeach
                         </div>

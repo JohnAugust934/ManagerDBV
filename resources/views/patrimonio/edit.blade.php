@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">Editar Item de Patrimônio</x-slot>
-
     <div class="ui-page max-w-4xl mx-auto space-y-6 ui-animate-fade-up">
+
+        <x-page-title title="Editar Item de Patrimônio" />
 
         {{-- Header Navigation --}}
         <div class="flex items-center justify-between mb-6">

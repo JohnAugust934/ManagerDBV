@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Especialidade;
 use App\Models\EspecialidadeRequisito;
+use App\Services\ClubContext;
 use App\Support\EspecialidadesCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class EspecialidadeController extends Controller
@@ -25,8 +27,12 @@ class EspecialidadeController extends Controller
         $version = Cache::get('especialidades:index:version', 1);
         $page = max(1, (int) $request->input('page', 1));
 
-        $cacheKey = 'especialidades:index:' . sha1(json_encode([
+        // O catálogo de especialidades é global, mas withCount('desbravadores') é
+        // escopado por clube (DesbravadorClubScope). Sem o club_id na chave, um clube
+        // serviria contagens cacheadas de outro. Namespace por clube ativo resolve isso.
+        $cacheKey = 'especialidades:index:'.sha1(json_encode([
             'v' => $version,
+            'club' => ClubContext::currentClubId(),
             'p' => $page,
             'search' => $searchNormalized,
             'area' => $selectedArea,
@@ -91,11 +97,15 @@ class EspecialidadeController extends Controller
 
     public function create()
     {
+        Gate::authorize('platform-admin'); // catálogo global: só plataforma edita
+
         return view('especialidades.create');
     }
 
     public function store(Request $request)
     {
+        Gate::authorize('platform-admin');
+
         $validated = $request->validate([
             'nome' => [
                 'required',
@@ -129,11 +139,15 @@ class EspecialidadeController extends Controller
 
     public function edit(Especialidade $especialidade)
     {
+        Gate::authorize('platform-admin');
+
         return view('especialidades.edit', compact('especialidade'));
     }
 
     public function update(Request $request, Especialidade $especialidade)
     {
+        Gate::authorize('platform-admin');
+
         $validated = $request->validate([
             'nome' => [
                 'required',
@@ -161,6 +175,8 @@ class EspecialidadeController extends Controller
 
     public function destroy(Especialidade $especialidade)
     {
+        Gate::authorize('platform-admin');
+
         $especialidade->delete();
 
         return redirect()
@@ -170,6 +186,8 @@ class EspecialidadeController extends Controller
 
     public function storeRequisito(Request $request, Especialidade $especialidade)
     {
+        Gate::authorize('platform-admin');
+
         $request->validate(['descricao' => 'required|string|max:1000']);
 
         $proximaOrdem = $especialidade->requisitosOficiais()->max('ordem') + 1;
@@ -184,6 +202,7 @@ class EspecialidadeController extends Controller
 
     public function updateRequisito(Request $request, Especialidade $especialidade, EspecialidadeRequisito $requisito)
     {
+        Gate::authorize('platform-admin');
         abort_if($requisito->especialidade_id !== $especialidade->id, 404);
 
         $request->validate(['descricao' => 'required|string|max:1000']);
@@ -195,6 +214,7 @@ class EspecialidadeController extends Controller
 
     public function destroyRequisito(Especialidade $especialidade, EspecialidadeRequisito $requisito)
     {
+        Gate::authorize('platform-admin');
         abort_if($requisito->especialidade_id !== $especialidade->id, 404);
 
         $requisito->delete();

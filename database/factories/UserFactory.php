@@ -29,7 +29,22 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'is_platform_admin' => false,
+            // Usuário provisionado já aceitou os termos (LGPD). O caso retroativo
+            // de quem ainda não aceitou é representado pelo state semTermosAceitos().
+            'termos_aceitos_em' => now(),
         ];
+    }
+
+    /**
+     * Usuário criado antes da exigência de aceite dos termos (LGPD): precisa
+     * aceitar no próximo acesso.
+     */
+    public function semTermosAceitos(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'termos_aceitos_em' => null,
+        ]);
     }
 
     /**
@@ -39,6 +54,19 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Super admin de plataforma (cross-tenant), sem vínculo de clube.
+     */
+    public function platformAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_platform_admin' => true,
+            'is_master' => false,
+            'role' => 'platform_admin',
+            'club_id' => null,
         ]);
     }
 }

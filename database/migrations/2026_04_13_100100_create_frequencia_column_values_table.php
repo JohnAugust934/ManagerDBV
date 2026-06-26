@@ -25,4 +25,3 @@ return new class extends Migration
         Schema::dropIfExists('frequencia_column_values');
     }
 };
-

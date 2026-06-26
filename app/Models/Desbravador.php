@@ -2,17 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\RegistraAutoria;
-use App\Models\Scopes\DesbravadorClubScope;
+use App\Observers\DesbravadorObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(DesbravadorObserver::class)]
 class Desbravador extends Model
 {
-    use HasFactory, RegistraAutoria;
+    use BelongsToTenant, HasFactory, RegistraAutoria;
 
     protected $table = 'desbravadores';
 
@@ -22,8 +25,10 @@ class Desbravador extends Model
         'data_nascimento',
         'sexo',
         'cpf',
+        'cpf_hash',
         'rg',
         'unidade_id',
+        'club_id',
         'classe_atual',
         'email',
         'telefone',
@@ -36,21 +41,75 @@ class Desbravador extends Model
         'medicamentos_continuos',
         'plano_saude',
         'foto',
+        'consentimento_lgpd',
+        'consentimento_lgpd_em',
+        'consentimento_lgpd_responsavel',
+        'usa_imagem_autorizado',
     ];
 
     protected $casts = [
         'data_nascimento' => 'date',
         'ativo' => 'boolean',
+        'consentimento_lgpd' => 'boolean',
+        'consentimento_lgpd_em' => 'datetime',
+        'usa_imagem_autorizado' => 'boolean',
+        // CPF usa mutator/accessor manuais (precisa gerar cpf_hash antes de cifrar).
+        // Os demais campos sensíveis usam o cast 'encrypted' do Laravel.
+        'rg' => 'encrypted',
+        'numero_sus' => 'encrypted',
+        'alergias' => 'encrypted',
+        'medicamentos_continuos' => 'encrypted',
+        'plano_saude' => 'encrypted',
     ];
 
-    protected static function booted(): void
+    /**
+     * Grava o CPF criptografado e atualiza cpf_hash (SHA-256 dos dígitos).
+     * cpf_hash é a coluna usada pela unique constraint (club_id, cpf_hash),
+     * pois o cast 'encrypted' é não-determinístico.
+     */
+    public function setCpfAttribute(?string $value): void
     {
-        static::addGlobalScope(new DesbravadorClubScope);
+        if ($value !== null) {
+            $this->attributes['cpf_hash'] = hash('sha256', preg_replace('/\D/', '', $value));
+            $this->attributes['cpf'] = encrypt($value);
+        } else {
+            $this->attributes['cpf_hash'] = null;
+            $this->attributes['cpf'] = null;
+        }
+    }
+
+    /**
+     * Descriptografa o CPF ao ler. Retorna plaintext como fallback seguro para
+     * linhas inseridas diretamente via SQL (testes de migração, seeds legados).
+     */
+    public function getCpfAttribute(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        try {
+            return decrypt($value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            return $value;
+        }
     }
 
     public function unidade(): BelongsTo
     {
         return $this->belongsTo(Unidade::class);
+    }
+
+    /**
+     * Sem contexto de clube ativo (seeders/console), o clube do desbravador é
+     * definido pela sua unidade. Usado pelo trait BelongsToTenant ao criar.
+     */
+    public function resolveClubIdFromParent(): ?int
+    {
+        if (! $this->unidade_id) {
+            return null;
+        }
+
+        return Unidade::withoutGlobalScopes()->whereKey($this->unidade_id)->value('club_id');
     }
 
     public function classe(): BelongsTo

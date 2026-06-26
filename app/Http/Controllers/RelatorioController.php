@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GerarRelatorioPDF;
 use App\Models\Caixa;
 use App\Models\Desbravador;
+use App\Models\Evento;
 use App\Models\Mensalidade;
 use App\Models\Patrimonio;
+use App\Models\RelatorioGerado;
 use App\Models\Unidade;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class RelatorioController extends Controller
 {
@@ -28,6 +32,9 @@ class RelatorioController extends Controller
         'financeiro',
         'patrimonio',
         'caixa',
+        'especialidades',
+        'progresso_classe',
+        'eventos',
     ];
 
     public function index()
@@ -36,7 +43,61 @@ class RelatorioController extends Controller
             ->orderBy('nome')
             ->get(['id', 'nome']);
 
-        return view('relatorios.index', compact('unidades'));
+        $categoriasCaixa = Caixa::query()
+            ->whereNotNull('categoria')
+            ->where('categoria', '!=', '')
+            ->distinct()
+            ->orderBy('categoria')
+            ->pluck('categoria');
+
+        $membrosAtivos = Desbravador::query()
+            ->whereHas('unidade', fn (Builder $q) => $this->applyUnidadeScope($q))
+            ->where('ativo', true)
+            ->count();
+
+        $membrosInativos = Desbravador::query()
+            ->whereHas('unidade', fn (Builder $q) => $this->applyUnidadeScope($q))
+            ->where('ativo', false)
+            ->count();
+
+        $caixaTotais = Caixa::selectRaw("
+            SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) as total_entradas,
+            SUM(CASE WHEN tipo = 'saida'   THEN valor ELSE 0 END) as total_saidas
+        ")->first();
+        $saldoCaixa = (float) ($caixaTotais->total_entradas ?? 0)
+            - (float) ($caixaTotais->total_saidas ?? 0);
+
+        $inadimplentesCount = Mensalidade::inadimplentes()
+            ->whereHas('desbravador.unidade', fn (Builder $q) => $this->applyUnidadeScope($q))
+            ->count();
+
+        $inadimplentesValor = Mensalidade::inadimplentes()
+            ->whereHas('desbravador.unidade', fn (Builder $q) => $this->applyUnidadeScope($q))
+            ->sum('valor');
+
+        $aniversariantesMes = Desbravador::query()
+            ->whereHas('unidade', fn (Builder $q) => $this->applyUnidadeScope($q))
+            ->where('ativo', true)
+            ->whereMonth('data_nascimento', now()->month)
+            ->count();
+
+        $patrimonioTotal = (float) Patrimonio::selectRaw('SUM(valor_estimado * quantidade) as total')->value('total');
+
+        $patrimonioItens = Patrimonio::count();
+
+        $stats = [
+            'membros_ativos' => $membrosAtivos,
+            'membros_inativos' => $membrosInativos,
+            'saldo_caixa' => $saldoCaixa,
+            'inadimplentes_count' => $inadimplentesCount,
+            'inadimplentes_valor' => $inadimplentesValor,
+            'aniversariantes_mes' => $aniversariantesMes,
+            'patrimonio_total' => $patrimonioTotal,
+            'patrimonio_itens' => $patrimonioItens,
+            'mes_atual' => $this->monthName(now()->month),
+        ];
+
+        return view('relatorios.index', compact('unidades', 'categoriasCaixa', 'stats'));
     }
 
     public function gerarPersonalizado(Request $request)
@@ -48,15 +109,19 @@ class RelatorioController extends Controller
             'data_inicio' => 'nullable|date',
             'data_fim' => 'nullable|date|after_or_equal:data_inicio',
             'tipo_movimentacao' => 'nullable|in:todos,entrada,saida',
+            'categoria' => 'nullable|string|max:100',
             'mes' => 'nullable|integer|min:1|max:12',
             'ano' => 'nullable|integer|min:2020|max:2100',
             'mes_aniversario' => 'nullable|integer|min:1|max:12',
         ]);
 
+        // Tipos pesados são gerados de forma assíncrona para não travar a requisição.
+        if (in_array($validated['tipo'], ['fichas_completas', 'fichas_medicas', 'financeiro'])) {
+            return $this->despacharRelatorioBatch($validated['tipo'], $validated, $request);
+        }
+
         return match ($validated['tipo']) {
             'desbravadores' => $this->relatorioDesbravadores($request),
-            'fichas_completas' => $this->relatorioFichasCompletas($request),
-            'fichas_medicas' => $this->relatorioFichasMedicas($request),
             'contatos_emergencia' => $this->relatorioContatosEmergencia($request),
             'frequencia' => $this->relatorioFrequencia($request),
             'inadimplencia' => $this->relatorioInadimplencia($request),
@@ -64,8 +129,11 @@ class RelatorioController extends Controller
             'unidades' => $this->relatorioUnidades(),
             'ranking_unidades' => $this->relatorioRankingUnidades(),
             'ranking_desbravadores' => $this->relatorioRankingDesbravadores(),
-            'financeiro', 'caixa' => $this->relatorioFinanceiroPersonalizado($request),
+            'caixa' => $this->relatorioFinanceiroPersonalizado($request),
             'patrimonio' => $this->patrimonio(),
+            'especialidades' => $this->relatorioEspecialidades($request),
+            'progresso_classe' => $this->relatorioProgressoClasse($request),
+            'eventos' => $this->relatorioEventos($request),
             default => abort(422, 'Tipo de relatório inválido.'),
         };
     }
@@ -127,8 +195,10 @@ class RelatorioController extends Controller
 
     public function autorizacao(Desbravador $desbravador)
     {
-        return Pdf::loadView('relatorios.autorizacao', compact('desbravador'))
-            ->stream("autorizacao_{$desbravador->nome}.pdf");
+        return Pdf::loadView('relatorios.autorizacao', array_merge(
+            compact('desbravador'),
+            $this->reportContext()
+        ))->stream("autorizacao_{$desbravador->nome}.pdf");
     }
 
     public function carteirinha(Desbravador $desbravador)
@@ -385,10 +455,13 @@ class RelatorioController extends Controller
     private function relatorioUnidades()
     {
         $unidades = $this->baseUnidadeQuery()
-            ->with(['desbravadores.frequencias'])
+            ->with([
+                'desbravadores:id,nome,unidade_id,ativo',
+                'desbravadores.frequencias:id,desbravador_id,presente,pontual,biblia,uniforme',
+            ])
             ->withCount('desbravadores')
             ->orderBy('nome')
-            ->get();
+            ->get(['id', 'nome', 'conselheiro', 'club_id']);
 
         return $this->renderTablePdf(
             titulo: 'Relatório de Unidades',
@@ -416,8 +489,11 @@ class RelatorioController extends Controller
     {
         $ano = $this->rankingYear();
         $ranking = $this->baseUnidadeQuery()
-            ->with(['desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)])
-            ->get()
+            ->with([
+                'desbravadores:id,nome,unidade_id,ativo',
+                'desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)->select('id', 'desbravador_id', 'presente', 'pontual', 'biblia', 'uniforme'),
+            ])
+            ->get(['id', 'nome', 'club_id'])
             ->map(function (Unidade $unidade) {
                 $membros = $unidade->desbravadores->count();
                 $pontos = $unidade->desbravadores->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
@@ -459,9 +535,12 @@ class RelatorioController extends Controller
     {
         $ano = $this->rankingYear();
         $ranking = $this->baseDesbravadorQuery(new Request(['status' => 'ativos']))
-            ->with(['unidade:id,nome', 'frequencias' => fn ($query) => $query->whereYear('data', $ano)])
+            ->with([
+                'unidade:id,nome',
+                'frequencias' => fn ($query) => $query->whereYear('data', $ano)->select('id', 'desbravador_id', 'presente', 'pontual', 'biblia', 'uniforme'),
+            ])
             ->orderBy('nome')
-            ->get()
+            ->get(['id', 'nome', 'unidade_id'])
             ->map(function (Desbravador $desbravador) {
                 return [
                     'nome' => $desbravador->nome,
@@ -513,11 +592,15 @@ class RelatorioController extends Controller
             $query->where('tipo', $request->input('tipo_movimentacao'));
         }
 
+        if ($request->filled('categoria')) {
+            $query->where('categoria', $request->input('categoria'));
+        }
+
         $movimentacoes = $query->orderBy('data_movimentacao', 'desc')->get();
 
         return $this->renderTablePdf(
             titulo: 'Relatório Financeiro Personalizado',
-            subtitulo: 'Movimentações filtradas por período e tipo',
+            subtitulo: 'Movimentações filtradas por período, tipo e categoria',
             colunas: ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor'],
             linhas: $movimentacoes->map(fn (Caixa $item) => [
                 $item->data_movimentacao?->format('d/m/Y') ?? '-',
@@ -538,8 +621,151 @@ class RelatorioController extends Controller
                     'saida' => 'Somente saídas',
                     default => 'Entradas e saídas',
                 },
+                'Categoria' => $request->filled('categoria') ? $request->input('categoria') : 'Todas',
             ],
             arquivo: 'relatorio_financeiro_filtrado.pdf',
+            orientation: 'landscape',
+        );
+    }
+
+    private function relatorioEspecialidades(Request $request): mixed
+    {
+        $desbravadores = $this->baseDesbravadorQuery($request)
+            ->with(['especialidades:id,nome,area,is_oficial,is_avancada'])
+            ->get(['id', 'ativo']);
+
+        $totalDesbravadores = $desbravadores->count();
+
+        $especialidades = $desbravadores
+            ->flatMap(fn (Desbravador $d) => $d->especialidades)
+            ->groupBy('id')
+            ->map(function ($items) use ($totalDesbravadores) {
+                $first = $items->first();
+                $count = $items->count();
+
+                return [
+                    'nome' => $first->nome,
+                    'area' => $first->area ?: '-',
+                    'tipo' => $first->is_avancada ? 'Avançada' : ($first->is_oficial ? 'Oficial' : 'Personalizada'),
+                    'count' => $count,
+                    'pct' => $totalDesbravadores > 0 ? round($count / $totalDesbravadores * 100).'%' : '-',
+                ];
+            })
+            ->sortByDesc('count')
+            ->values();
+
+        return $this->renderTablePdf(
+            titulo: 'Relatório de Especialidades',
+            subtitulo: 'Especialidades conquistadas pelos membros do clube',
+            colunas: ['Especialidade', 'Área', 'Tipo', 'Conquistaram', '% do Clube'],
+            linhas: $especialidades->map(fn (array $e) => [
+                $e['nome'],
+                $e['area'],
+                $e['tipo'],
+                (string) $e['count'],
+                $e['pct'],
+            ])->all(),
+            metricas: [
+                ['label' => 'Especialidades distintas', 'value' => (string) $especialidades->count()],
+                ['label' => 'Participantes', 'value' => (string) $totalDesbravadores],
+                ['label' => 'Mais conquistada', 'value' => $especialidades->first()['nome'] ?? '-'],
+            ],
+            filtros: $this->buildMemberFilters($request),
+            arquivo: 'relatorio_especialidades.pdf',
+            orientation: 'landscape',
+        );
+    }
+
+    private function relatorioProgressoClasse(Request $request): mixed
+    {
+        $desbravadores = $this->baseDesbravadorQuery($request)
+            ->with([
+                'unidade:id,nome',
+                'classe:id,nome',
+                'classe.requisitos:id,classe_id',
+                'requisitosCumpridos:id,classe_id',
+            ])
+            ->orderBy('nome')
+            ->get();
+
+        $linhas = $desbravadores->map(function (Desbravador $desbravador) {
+            $total = $desbravador->classe?->requisitos?->count() ?? 0;
+            $cumpridos = $desbravador->requisitosCumpridos
+                ->where('classe_id', $desbravador->classe?->id)
+                ->count();
+            $pct = $total > 0 ? round($cumpridos / $total * 100).'%' : '-';
+
+            return [
+                $desbravador->nome,
+                $desbravador->unidade->nome ?? 'Sem unidade',
+                $desbravador->classe->nome ?? 'Não definida',
+                (string) $total,
+                (string) $cumpridos,
+                $pct,
+            ];
+        })->all();
+
+        $comClasse = $desbravadores->filter(fn ($d) => $d->classe !== null);
+        $mediaProgresso = $comClasse->count() > 0
+            ? round($comClasse->avg(function (Desbravador $d) {
+                $total = $d->classe?->requisitos?->count() ?? 0;
+
+                return $total > 0
+                    ? $d->requisitosCumpridos->where('classe_id', $d->classe->id)->count() / $total * 100
+                    : 0;
+            })).'%'
+            : '-';
+
+        return $this->renderTablePdf(
+            titulo: 'Progresso de Classe',
+            subtitulo: 'Avanço individual nos requisitos de cada classe',
+            colunas: ['Desbravador', 'Unidade', 'Classe', 'Requisitos', 'Concluídos', 'Progresso'],
+            linhas: $linhas,
+            metricas: [
+                ['label' => 'Desbravadores', 'value' => (string) $desbravadores->count()],
+                ['label' => 'Com classe definida', 'value' => (string) $comClasse->count()],
+                ['label' => 'Média de progresso', 'value' => $mediaProgresso],
+            ],
+            filtros: $this->buildMemberFilters($request),
+            arquivo: 'relatorio_progresso_classe.pdf',
+            orientation: 'landscape',
+        );
+    }
+
+    private function relatorioEventos(Request $request): mixed
+    {
+        $ano = (int) ($request->input('ano') ?: now()->year);
+
+        $eventos = Evento::with(['desbravadores'])
+            ->whereYear('data_inicio', $ano)
+            ->orderBy('data_inicio')
+            ->get();
+
+        $totalInscricoes = $eventos->sum(fn (Evento $e) => $e->desbravadores->count());
+        $totalPagos = $eventos->sum(fn (Evento $e) => $e->desbravadores->filter(fn ($d) => $d->pivot->pago)->count());
+        $totalAutorizacoes = $eventos->sum(fn (Evento $e) => $e->desbravadores->filter(fn ($d) => $d->pivot->autorizacao_entregue)->count());
+
+        return $this->renderTablePdf(
+            titulo: 'Relatório de Eventos',
+            subtitulo: 'Inscrições, pagamentos e autorizações por evento',
+            colunas: ['Evento', 'Data', 'Local', 'Inscritos', 'Pagos', 'Autorização OK', 'Pendentes'],
+            linhas: $eventos->map(fn (Evento $e) => [
+                $e->nome,
+                $e->data_inicio?->format('d/m/Y') ?? '-',
+                $e->local ?: '-',
+                (string) $e->desbravadores->count(),
+                (string) $e->desbravadores->filter(fn ($d) => $d->pivot->pago)->count(),
+                (string) $e->desbravadores->filter(fn ($d) => $d->pivot->autorizacao_entregue)->count(),
+                (string) $e->desbravadores->filter(fn ($d) => ! $d->pivot->autorizacao_entregue)->count(),
+            ])->all(),
+            metricas: [
+                ['label' => 'Ano', 'value' => (string) $ano],
+                ['label' => 'Eventos realizados', 'value' => (string) $eventos->count()],
+                ['label' => 'Total de inscrições', 'value' => (string) $totalInscricoes],
+                ['label' => 'Autorizações pendentes', 'value' => (string) ($totalInscricoes - $totalAutorizacoes)],
+            ],
+            filtros: ['Ano' => (string) $ano],
+            arquivo: 'relatorio_eventos_'.$ano.'.pdf',
             orientation: 'landscape',
         );
     }
@@ -576,11 +802,11 @@ class RelatorioController extends Controller
             : null;
 
         return array_filter([
-                'Status' => match ($status) {
-                    'inativos' => 'Somente inativos',
-                    'todos' => 'Todos os cadastrados',
-                    default => 'Somente ativos',
-                },
+            'Status' => match ($status) {
+                'inativos' => 'Somente inativos',
+                'todos' => 'Todos os cadastrados',
+                default => 'Somente ativos',
+            },
             'Unidade' => $unidade ?: 'Todas as unidades',
         ]);
     }
@@ -609,11 +835,41 @@ class RelatorioController extends Controller
 
     private function reportContext(): array
     {
+        $club = auth()->user()?->club;
+
         return [
-            'clubeNome' => auth()->user()?->club?->nome ?? 'Clube de Desbravadores',
+            'clubeNome' => $club?->nome ?? 'Clube de Desbravadores',
+            'clubeCidade' => $club?->cidade ?? '',
+            'clubeAssociacao' => $club?->associacao ?? '',
+            'clubeLogoBase64' => $this->clubeLogoBase64($club),
             'responsavelNome' => auth()->user()?->name ?? 'Sistema',
             'emitidoEm' => now()->format('d/m/Y H:i'),
         ];
+    }
+
+    private function clubeLogoBase64(?object $club): string
+    {
+        if ($club?->logo) {
+            $path = storage_path('app/public/'.$club->logo);
+            if (file_exists($path)) {
+                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                $mime = match ($ext) {
+                    'jpg', 'jpeg' => 'image/jpeg',
+                    'gif' => 'image/gif',
+                    'webp' => 'image/webp',
+                    default => 'image/png',
+                };
+
+                return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
+            }
+        }
+
+        $fallback = public_path('icons/icon-192.png');
+        if (file_exists($fallback)) {
+            return 'data:image/png;base64,'.base64_encode(file_get_contents($fallback));
+        }
+
+        return '';
     }
 
     private function mapFichaCompleta(Desbravador $desbravador): array
@@ -723,7 +979,7 @@ class RelatorioController extends Controller
 
     private function currentClubId(): ?int
     {
-        return auth()->user()?->club_id;
+        return \App\Services\ClubContext::currentClubId();
     }
 
     private function applyUnidadeScope(Builder $query): Builder
@@ -761,6 +1017,51 @@ class RelatorioController extends Controller
 
         return 'Período completo';
     }
+
+    // -------------------------------------------------------------------------
+    // Downloads (relatórios gerados de forma assíncrona)
+    // -------------------------------------------------------------------------
+
+    public function downloads()
+    {
+        $relatorios = RelatorioGerado::latest()
+            ->get();
+
+        return view('relatorios.downloads', compact('relatorios'));
+    }
+
+    public function download(RelatorioGerado $relatorio)
+    {
+        if (! $relatorio->isPronto()) {
+            return back()->with('error', 'Este relatório não está disponível para download.');
+        }
+
+        return Storage::disk('local')->download(
+            $relatorio->arquivo,
+            $relatorio->tipoLabel().'_'.now()->format('Y-m-d').'.pdf',
+        );
+    }
+
+    private function despacharRelatorioBatch(string $tipo, array $filtros, Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $clubId = $this->currentClubId();
+        $userId = auth()->id();
+
+        $relatorio = RelatorioGerado::create([
+            'club_id' => $clubId,
+            'user_id' => $userId,
+            'tipo' => $tipo,
+            'status' => 'pendente',
+            'filtros' => array_filter($filtros, fn ($v) => $v !== null && $v !== ''),
+        ]);
+
+        GerarRelatorioPDF::dispatch($relatorio->id, $clubId, $userId);
+
+        return redirect()->route('relatorios.downloads')
+            ->with('success', 'Seu relatório está sendo gerado. Ele aparecerá aqui quando estiver pronto.');
+    }
+
+    // -------------------------------------------------------------------------
 
     private function rankingYear(): int
     {

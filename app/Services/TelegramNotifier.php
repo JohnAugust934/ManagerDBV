@@ -12,6 +12,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Events\BackupWasSuccessful;
@@ -334,7 +335,11 @@ class TelegramNotifier
                 ])
                 ->throw();
         } catch (ConnectionException|RequestException $exception) {
-            report($exception);
+            // NÃO usar report() aqui: o handler global de exceções chama de volta
+            // este notifier (notifyException), e como a própria falha de envio é
+            // uma RequestException, isso recursava e duplicava cada erro no log
+            // (ex.: "chat not found" aparecendo em pares). Registramos apenas no log.
+            Log::warning('Falha ao enviar notificação ao Telegram: '.$exception->getMessage());
         } catch (Throwable) {
             // Silencia qualquer falha do Telegram para nunca derrubar o fluxo principal.
         }

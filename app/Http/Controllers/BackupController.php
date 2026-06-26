@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ClubContext;
 use App\Services\TelegramNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,7 +19,14 @@ class BackupController extends Controller
 {
     public function index(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
+
+        // Quando impersonando um clube, o admin deve operar somente os backups
+        // daquele clube — redireciona para não dar acesso acidental ao backup geral.
+        if (ClubContext::isImpersonating()) {
+            return redirect()->route('club-backups.index')
+                ->with('info', 'Você está em modo suporte. Mostrando backups do clube selecionado.');
+        }
 
         $disks = ['local', 'r2'];
         $backups = [];
@@ -72,7 +80,7 @@ class BackupController extends Controller
 
     public function store()
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
         set_time_limit(0);
         ini_set('memory_limit', '-1');
 
@@ -116,7 +124,7 @@ class BackupController extends Controller
 
     public function import(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
 
         if (empty($_FILES) && $request->server('CONTENT_LENGTH') > 0) {
             return back()->with('error', 'O arquivo é maior que o limite de upload configurado no seu servidor local (upload_max_filesize no php.ini).');
@@ -146,6 +154,7 @@ class BackupController extends Controller
 
             if ($zipCheck !== true) {
                 @unlink($temporaryValidationFile);
+
                 return back()->with('error', 'O arquivo enviado não é um ZIP válido ou está corrompido.');
             }
 
@@ -184,7 +193,7 @@ class BackupController extends Controller
 
     public function restore(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
 
         set_time_limit(0);
         ini_set('memory_limit', '-1');
@@ -337,7 +346,7 @@ class BackupController extends Controller
 
     public function download(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
 
         set_time_limit(0);
         ini_set('memory_limit', '-1');
@@ -362,7 +371,7 @@ class BackupController extends Controller
 
     public function destroy(Request $request)
     {
-        Gate::authorize('master');
+        Gate::authorize('platform-admin');
         [$disk, $path] = $this->normalizeBackupSelection(
             (string) $request->input('disk', ''),
             (string) $request->input('path', '')

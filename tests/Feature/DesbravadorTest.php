@@ -27,7 +27,7 @@ class DesbravadorTest extends TestCase
         $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $classe = Classe::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('desbravadores.store'), [
+        $response = $this->actingAs($user)->post(route('desbravadores.store'), array_merge([
             'nome' => 'João Desbravador',
             'data_nascimento' => '2010-01-01',
             'sexo' => 'M',
@@ -40,7 +40,7 @@ class DesbravadorTest extends TestCase
             'telefone_responsavel' => '11999999999',
             'numero_sus' => '12345678900',
             'endereco' => 'Rua Teste, 123',
-        ]);
+        ], $this->consentimentoLgpd()));
 
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('desbravadores.index'));
@@ -48,7 +48,7 @@ class DesbravadorTest extends TestCase
         $this->assertDatabaseHas('desbravadores', [
             'nome' => 'João Desbravador',
             'classe_atual' => $classe->id,
-            'cpf' => '123.456.789-00',
+            'cpf_hash' => hash('sha256', '12345678900'),
         ]);
     }
 
@@ -131,8 +131,9 @@ class DesbravadorTest extends TestCase
             'id' => $desbravador->id,
             'nome' => 'João Editado',
             'classe_atual' => $novaClasse->id,
-            'rg' => '99.999.999-X',
         ]);
+        // RG é armazenado criptografado — verificar via accessor
+        $this->assertSame('99.999.999-X', $desbravador->fresh()->rg);
     }
 
     public function test_pode_filtrar_desbravadores_por_status_ativo_inativo()
@@ -236,6 +237,56 @@ class DesbravadorTest extends TestCase
         $response->assertOk();
         $response->assertSee('Joao Alves');
         $response->assertDontSee('Maria Santos');
+    }
+
+    public function test_numero_sus_e_cifrado_em_repouso()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create(['numero_sus' => '700123456789012']);
+
+        // No banco o valor está cifrado (não é o texto puro); via model, decifra.
+        $bruto = \Illuminate\Support\Facades\DB::table('desbravadores')->where('id', $dbv->id)->value('numero_sus');
+        $this->assertNotSame('700123456789012', $bruto);
+        $this->assertSame('700123456789012', \Illuminate\Support\Facades\Crypt::decryptString($bruto));
+        $this->assertSame('700123456789012', $dbv->fresh()->numero_sus);
+    }
+
+    public function test_conselheiro_nao_ve_documentos_nem_sus_do_desbravador()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $conselheiro = User::factory()->create(['club_id' => $clube->id, 'role' => 'conselheiro']);
+        $dbv = Desbravador::factory()->forClube($clube->id)->create([
+            'nome' => 'Membro Visivel',
+            'cpf' => '529.982.247-25',
+            'numero_sus' => '700123456789012',
+        ]);
+
+        $response = $this->actingAs($conselheiro)->get(route('desbravadores.show', $dbv));
+
+        $response->assertOk();
+        $response->assertSee('Membro Visivel');     // nome continua visível
+        $response->assertDontSee('Documentos');      // card de CPF/RG some
+        $response->assertDontSee('Cartão SUS');      // card de SUS/plano some
+        $response->assertDontSee('700123456789012'); // nº SUS (renderizado cru) ausente
+    }
+
+    public function test_busca_por_cpf_usa_hash_com_cpf_cifrado()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        // CPF é cifrado em repouso: a busca tem de casar por cpf_hash, não por LIKE.
+        Desbravador::factory()->forClube($clube->id)->create(['nome' => 'Carlos CPF', 'cpf' => '529.982.247-25', 'ativo' => true]);
+        Desbravador::factory()->forClube($clube->id)->create(['nome' => 'Outro Membro', 'ativo' => true]);
+
+        $response = $this->actingAs($user)->get(route('desbravadores.index', [
+            'search' => '529.982.247-25',
+            'status' => 'todos',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Carlos CPF');
+        $response->assertDontSee('Outro Membro');
     }
 
     public function test_pode_remover_foto_do_desbravador()

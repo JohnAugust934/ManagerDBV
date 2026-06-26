@@ -40,9 +40,16 @@ php artisan test tests/Feature/RankingTest.php          # Teste único por camin
 
 ### Logins de dev (seeder)
 
-Após `--seed`: `admin@clube.com` (master), `diretor@clube.com`, `secretaria@clube.com`,
-`tesoureiro@clube.com`, `instrutor@clube.com`, além de conselheiros (`pedro@`, `joao@`, `lucas@`,
-`maria@clube.com`) — todos com a senha `password`.
+O `DatabaseSeeder` cria **5 clubes** (todos na cidade de São Paulo, um por Associação Paulista:
+`orion`, `aurora`, `vega`, `sirius`, `antares`). Após `--seed`:
+
+- **Platform admin (cross-tenant, sem clube):** `admin@plataforma.com`.
+- **Por clube**, no padrão `<cargo>.<slug>@clube.com`: `master.`, `diretor.`, `secretaria.`,
+  `tesoureiro.`, `instrutor.` e `conselheiro1.`–`conselheiro4.` (ex.: `diretor.orion@clube.com`).
+
+Todos com a senha `password`. Cada clube tem 4 unidades, ~30 desbravadores distribuídos por todas
+as classes, especialidades, 6 chamadas de frequência (ranking sem empates de pontuação), 5 eventos,
+financeiro, patrimônio e 6 documentos.
 
 ## Arquitetura
 
@@ -91,11 +98,13 @@ tudo configurado em `bootstrap/app.php`). As partes não óbvias e transversais:
     pedido.
 
 ### Ranking — lógica DUPLICADA, manter as duas em sincronia
-- `AppServiceProvider::snapshotRankingYear()` (comando agendado `ranking:snapshot`, contexto de
-  console, **sem** filtro de `club_id`/`no_ranking`) vs `RankingController` (telas ao vivo, filtra
-  `club_id` + `no_ranking`). Qualquer mudança na regra de pontuação precisa tocar **as duas**.
-- `Unidade::no_ranking` exclui a unidade do ranking ao vivo. Snapshots anuais são persistidos em
-  `ranking_snapshots` (model `RankingSnapshot`) para auditoria.
+- `AppServiceProvider::snapshotRankingYear(int $year, int $clubId)` (comando agendado
+  `ranking:snapshot`, contexto de console — itera **por clube**) vs `RankingController` (telas ao
+  vivo). Ambos agora filtram `club_id` + `no_ranking`. Qualquer mudança na regra de pontuação
+  precisa tocar **as duas**.
+- `Unidade::no_ranking` controla a participação no ranking (atenção: `no_ranking = true` significa
+  **participa** — a coluna é mal-nomeada; ver `UnidadeController::toggleRanking`). Snapshots anuais
+  são persistidos em `ranking_snapshots` (model `RankingSnapshot`, com `club_id`) para auditoria.
 
 ### Console & agendamento (padrão Laravel 11/12)
 - O agendamento fica em **`routes/console.php`**, não num Kernel. Comandos personalizados são
@@ -186,12 +195,56 @@ autenticado, para cargos como conselheiro. Registro só por convite (`/register-
   com classes bespoke — não usar componentes Breeze genéricos lá.
 - **Seeders:** `DatabaseSeeder` (dev, dados demo completos) redireciona automaticamente para
   `MasterOnlySeeder` quando `app()->isProduction()`. Em produção, rode apenas
-  `php artisan db:seed --class=MasterOnlySeeder`. O `DatabaseSeeder` tem um `SeederFallbackFaker`
-  embutido para ambientes sem `fakerphp/faker` (`composer --no-dev`).
+  `php artisan db:seed --class=MasterOnlySeeder`. No modelo multi-tenant, o `MasterOnlySeeder`
+  cria **somente** o catálogo global (classes/especialidades) e o **admin da plataforma**
+  (`admin@plataforma.com` / `password`, `is_platform_admin = true`, `club_id = null`) — **não**
+  cria mais clube/master de exemplo. Clubes e seus usuários master passam a ser criados pelo painel
+  da plataforma (`/platform`). O `DatabaseSeeder` tem um `SeederFallbackFaker` embutido para
+  ambientes sem `fakerphp/faker` (`composer --no-dev`).
+- **Imports em arquivos de rota (sem namespace):** o auto-Pint (hook pós-edição) poda imports
+  considerados "não usados". Em arquivos sem `namespace` (ex.: `routes/*.php`), um `Controller::class`
+  sem o `use` correspondente resolve para o nome **global curto** e quebra o `route:list`/dispatch.
+  Ao adicionar uma rota, inclua o `use` e seu uso **na mesma edição** (ou adicione a rota antes do
+  import) — nunca adicione o `import` isolado primeiro, pois o Pint o removerá antes de ele ser usado.
 
 ## Deploy
-Guia completo em `DEPLOY.md`; runbook de restauração em `RESTORE.md`. Pontos-chave: `composer
+Guia completo em `docs/DEPLOY.md`; runbook de restauração em `docs/RESTORE.md`. Pontos-chave: `composer
 install --no-dev --optimize-autoloader`, `npm ci && npm run build`, `migrate --force`,
 `storage:link`, `config:cache`/`route:cache`/`view:cache`, worker de fila via Supervisor
 (`queue:work database`), cron de 1 minuto rodando `schedule:run`. Sempre `backup:run` antes de
 deploy com migrations. Template de produção em `.env.production.example`.
+
+APM_RULES {
+
+## Validação ao concluir cada Task
+- Toda Task termina com a suíte **verde**: rodar `composer test` (ou `php artisan test`) e garantir
+  que não há falhas — incluindo os testes novos da Task. A baseline é 419 testes / 0 falhas; nenhuma
+  Task pode introduzir regressão.
+- Rodar `./vendor/bin/pint` **apenas nos arquivos criados/alterados pela Task** — nunca reformatar o
+  projeto inteiro (ver "Convenções" acima sobre o débito pré-existente de formatação).
+
+## Artefatos novos
+- Código, testes, nomes de classe/rota/coluna e textos de UI em **pt_BR** (ver "Visão Geral").
+- Testes em Pest sobre SQLite `:memory:`; não tocar o banco de dev. Reutilizar fixtures/factories e
+  padrões dos testes já existentes em `tests/` antes de criar novos do zero.
+- Views Blade novas seguem `docs/guia-visual-ui.md` (mobile-first, `x-app-layout`/`ui-page`, classes
+  `ui-btn-*`, botões fora do header, contraste WCAG 2.1 AA). Telas de auth usam o layout guest bespoke.
+
+## Invariantes a respeitar quando a Task tocar a área
+- **Ranking:** qualquer mudança em pontuação/frequência mantém sincronizadas as duas implementações
+  duplicadas (`AppServiceProvider::snapshotRankingYear` e `RankingController`) — ver "Ranking" acima.
+- **Multi-tenancy:** models com dados de clube usam o global scope apropriado; queries que cruzam
+  tenants ou usam `withoutGlobalScopes()` reaplicam filtro `club_id` explícito — ver "Multi-tenancy".
+- **Backup:** não reincluir `base_path()` em `source.files.include`; criptografia de arquivo opt-in;
+  ver "Sistema de backup" acima e a memória do agente antes de alterar o subsistema.
+- **Exclusão é definitiva** (sem soft deletes); a cascata é por design — ver "Convenções".
+
+## Versionamento (sessão APM)
+- Modelo **gitflow**. Base branch da sessão: `multi-tenant` (linha estável; merge para `main` é
+  decisão posterior do usuário). Cada unidade de trabalho usa uma branch `feature/<descrição-curta>`
+  em pt_BR, sem termos de framework no nome.
+- Commits em **Conventional Commits pt_BR com escopo**: `tipo(escopo): descrição` (tipos: feat, fix,
+  refactor, docs, test, chore), seguindo o padrão já presente no histórico.
+- Push para o `origin` (GitHub) é permitido nesta sessão.
+
+} //APM_RULES

@@ -7,6 +7,7 @@ use App\Models\Desbravador;
 use App\Models\Especialidade;
 use App\Models\EspecialidadeRequisito;
 use App\Models\User;
+use App\Services\ClubContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,11 +22,26 @@ class EspecialidadeTest extends TestCase
         return User::factory()->create(['club_id' => $club->id, 'role' => 'instrutor']);
     }
 
+    /**
+     * A edição do catálogo é da plataforma (Fase 6): autentica um platform admin
+     * em modo suporte a um clube.
+     */
+    private function autenticarAdminEmSuporte(): User
+    {
+        $club = Club::create(['nome' => 'Clube Suporte', 'cidade' => 'SP']);
+        $admin = User::factory()->platformAdmin()->create(['club_id' => null]);
+
+        $this->actingAs($admin);
+        session([ClubContext::SESSION_KEY => $club->id]);
+
+        return $admin;
+    }
+
     public function test_usuario_pode_criar_uma_especialidade_manual(): void
     {
-        $user = $this->autenticarInstrutor();
+        $admin = $this->autenticarAdminEmSuporte();
 
-        $response = $this->actingAs($user)->post(route('especialidades.store'), [
+        $response = $this->post(route('especialidades.store'), [
             'nome' => 'Felinos Urbanos',
             'area' => 'Estudos da Natureza',
         ]);
@@ -36,17 +52,17 @@ class EspecialidadeTest extends TestCase
             'nome' => 'Felinos Urbanos',
             'area' => 'Estudos da Natureza',
             'is_oficial' => false,
-            'created_by' => $user->id,
+            'created_by' => $admin->id,
         ]);
     }
 
     public function test_permte_nome_repetido_em_areas_diferentes(): void
     {
-        $user = $this->autenticarInstrutor();
+        $this->autenticarAdminEmSuporte();
 
         Especialidade::create(['nome' => 'Primeiros Socorros', 'area' => 'Ciência e Saúde']);
 
-        $response = $this->actingAs($user)->post(route('especialidades.store'), [
+        $response = $this->post(route('especialidades.store'), [
             'nome' => 'Primeiros Socorros',
             'area' => 'Atividades Recreativas',
         ]);
@@ -60,11 +76,11 @@ class EspecialidadeTest extends TestCase
 
     public function test_bloqueia_nome_repetido_na_mesma_area(): void
     {
-        $user = $this->autenticarInstrutor();
+        $this->autenticarAdminEmSuporte();
 
         Especialidade::create(['nome' => 'Cães', 'area' => 'Estudos da Natureza']);
 
-        $response = $this->actingAs($user)->post(route('especialidades.store'), [
+        $response = $this->post(route('especialidades.store'), [
             'nome' => 'Cães',
             'area' => 'Estudos da Natureza',
         ]);

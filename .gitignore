@@ -1,4 +1,10 @@
 *.log
+.apm/
+# Tooling do framework APM dentro de .claude/ (mantém os arquivos próprios do projeto versionados)
+.claude/apm-guides/
+.claude/commands/apm-*
+.claude/agents/apm-*
+.claude/skills/apm-communication/
 .DS_Store
 .env
 .env.*

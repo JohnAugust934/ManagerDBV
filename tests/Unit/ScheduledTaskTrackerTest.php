@@ -22,7 +22,7 @@ class ScheduledTaskTrackerTest extends TestCase
 
         $tracker->recordSuccess('backup_run', 'Geração de Backup', [
             'Backup' => 'meu-backup',
-            'Disco'  => 'local',
+            'Disco' => 'local',
         ]);
 
         $results = $tracker->getAll();

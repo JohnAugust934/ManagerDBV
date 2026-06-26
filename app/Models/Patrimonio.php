@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\ClubScope;
+use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\RegistraAutoria;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Patrimonio extends Model
 {
-    use HasFactory;
+    use BelongsToTenant, HasFactory, RegistraAutoria;
 
     protected $fillable = [
         'item',
@@ -26,11 +27,6 @@ class Patrimonio extends Model
         'data_aquisicao' => 'date',
         'valor_estimado' => 'decimal:2',
     ];
-
-    protected static function booted(): void
-    {
-        static::addGlobalScope(new ClubScope);
-    }
 
     public function manutencoes(): HasMany
     {

@@ -28,13 +28,11 @@
 </head>
 <body>
     <div class="header">
+        @include('relatorios._club_brand')
         <div class="eyebrow">Documento oficial do clube</div>
         <h1>Autorização para Participação em Evento</h1>
-        <div class="subtitulo">Termo de ciencia e autorização do responsável legal</div>
-        <div class="meta">
-            Clube: {{ auth()->user()?->club?->nome?? 'Clube de Desbravadores' }} |
-            Emitido em {{ now()->format('d/m/Y H:i') }}
-        </div>
+        <div class="subtitulo">Termo de ciência e autorização do responsável legal</div>
+        <div class="meta">Emitido em {{ $emitidoEm }}</div>
     </div>
 
     <div class="section">

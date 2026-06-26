@@ -10,11 +10,14 @@ use App\Services\TelegramNotifier;
 use Carbon\Carbon;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\QueueBusy;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -29,7 +32,13 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // O pacote de passkeys (asbiin/laravel-webauthn) é orientado a Fortify e
+        // registra automaticamente um conjunto próprio de rotas sob o prefixo
+        // "webauthn". Aqui usamos Breeze e expomos rotas/controllers próprios
+        // (ver routes/auth.php → "passkeys.*"), consumindo apenas os serviços de
+        // challenge/validação da lib. Desligamos o auto-registro para não expor
+        // uma segunda superfície de autenticação não usada.
+        \LaravelWebauthn\Services\Webauthn::ignoreRoutes();
     }
 
     public function boot(): void
@@ -43,8 +52,61 @@ class AppServiceProvider extends ServiceProvider
         $this->registerTelegramBackupListeners();
         $this->registerOperationalListeners();
 
+        if (app()->isLocal()) {
+            \Illuminate\Support\Facades\DB::listen(function ($query) {
+                if ($query->time > 500) {
+                    logger()->warning('Slow query detectada', [
+                        'sql' => $query->sql,
+                        'time_ms' => $query->time,
+                    ]);
+                }
+            });
+        }
+
+        // Slow query log em produção, opt-in via LOG_SLOW_QUERIES=true.
+        // Alternativa ao slow query log nativo do MySQL quando o plano não dá acesso ao my.cnf.
+        if (app()->isProduction() && env('LOG_SLOW_QUERIES', false)) {
+            \Illuminate\Support\Facades\DB::listen(function ($query) {
+                if ($query->time > 2000) {
+                    \Illuminate\Support\Facades\Log::warning('Slow query em produção', [
+                        'sql' => $query->sql,
+                        'time_ms' => $query->time,
+                    ]);
+                }
+            });
+        }
+
+        // Rate limiting por tenant: 10 gerações de relatório por minuto por clube.
+        // Evita que um único clube sobrecarregue o sistema com PDFs pesados em lote.
+        RateLimiter::for('relatorios', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->club_id ?? $request->ip());
+        });
+
+        // Macro para retry automático em deadlocks MySQL (SQLSTATE 40001).
+        // Uso: DB::retryOnDeadlock(fn() => Caixa::create([...]));
+        \Illuminate\Support\Facades\DB::macro('retryOnDeadlock', function (callable $callback, int $maxAttempts = 3) {
+            $attempt = 0;
+            while (true) {
+                try {
+                    return \Illuminate\Support\Facades\DB::transaction($callback);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if ($attempt++ >= $maxAttempts || $e->getCode() !== '40001') {
+                        throw $e;
+                    }
+                    usleep(100_000 * $attempt); // backoff linear: 100ms, 200ms, 300ms
+                }
+            }
+        });
+
+        // Super admin de plataforma (cross-tenant). Controla o painel /platform.
+        Gate::define('platform-admin', function (User $user) {
+            return $user->is_platform_admin === true;
+        });
+
+        // "master" = dono do clube. Distinto do platform admin (que opera cross-tenant
+        // pelo painel da plataforma, não pelas telas administrativas de um clube).
         Gate::define('master', function (User $user) {
-            return $user->role === 'master';
+            return $user->role === 'master' && ! $user->is_platform_admin;
         });
 
         Gate::define('gestao-acessos', fn (User $user) => $user->temPermissao('gestao_acessos'));
@@ -54,7 +116,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('pedagogico', fn (User $user) => $user->temPermissao('pedagogico'));
         Gate::define('eventos', fn (User $user) => $user->temPermissao('eventos'));
         Gate::define('relatorios', fn (User $user) => $user->temPermissao('relatorios'));
-        Gate::define('gerenciar-colunas-chamada', fn (User $user) => in_array($user->role, ['master', 'diretor', 'secretario'], true));
+        Gate::define('gerenciar-colunas-chamada', fn (User $user) => $user->is_platform_admin || in_array($user->role, ['master', 'diretor', 'secretario'], true));
 
         Gate::define('gerir-unidade', function (User $user, $unidade = null) {
             if ($user->temPermissao('unidades')) {
@@ -161,7 +223,7 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    public static function snapshotRankingYear(int $year, ?int $generatedBy = null): void
+    public static function snapshotRankingYear(int $year, int $clubId, ?int $generatedBy = null): void
     {
         $hasColumnValues = Schema::hasTable('frequencia_column_values');
         $frequenciasLoader = function ($query) use ($year, $hasColumnValues) {
@@ -171,60 +233,61 @@ class AppServiceProvider extends ServiceProvider
             }
         };
 
-        $unitEntries = Unidade::with(['desbravadores.frequencias' => $frequenciasLoader])
+        // Consistente com o ranking ao vivo (RankingController): só unidades que
+        // participam do ranking (no_ranking = true) entram no snapshot.
+        $unitEntries = Unidade::where('club_id', $clubId)
+            ->where('no_ranking', true)
+            ->with([
+                'desbravadores:id,nome,unidade_id,ativo',
+                'desbravadores.frequencias' => $frequenciasLoader,
+            ])
             ->orderBy('nome')
-            ->get()
+            ->get(['id', 'nome', 'club_id', 'no_ranking'])
             ->map(function (Unidade $unidade) {
-                $members = $unidade->desbravadores;
-                $points = $members->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
-                $memberCount = $members->count();
+                $points = $unidade->desbravadores
+                    ->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
 
+                // Chaves em pt_BR para casar com o snapshot ao vivo
+                // (RankingController::salvarSnapshot) e a view ranking/snapshot —
+                // as duas implementações DUPLICADAS precisam do mesmo schema.
                 return [
                     'id' => $unidade->id,
-                    'name' => $unidade->nome,
-                    'members' => $memberCount,
-                    'points' => $points,
-                    'average' => $memberCount > 0 ? round($points / $memberCount, 1) : 0.0,
+                    'nome' => $unidade->nome,
+                    'pontos' => $points,
                 ];
             })
-            ->sortByDesc('points')
+            ->sortByDesc('pontos')
             ->values()
-            ->map(function (array $entry, int $index) {
-                $entry['position'] = $index + 1;
-
-                return $entry;
-            })
             ->all();
 
-        $memberEntries = Desbravador::with(['unidade', 'frequencias' => $frequenciasLoader])
+        $memberEntries = Desbravador::with([
+            'unidade:id,nome,no_ranking',
+            'frequencias' => $frequenciasLoader,
+        ])
             ->where('ativo', true)
+            ->whereHas('unidade', fn ($q) => $q->where('club_id', $clubId)->where('no_ranking', true))
             ->orderBy('nome')
-            ->get()
+            ->get(['id', 'nome', 'unidade_id', 'ativo'])
             ->map(function (Desbravador $desbravador) {
+                // Mesmo schema pt_BR do snapshot ao vivo e da view (ver acima).
                 return [
                     'id' => $desbravador->id,
-                    'name' => $desbravador->nome,
-                    'unit' => $desbravador->unidade->nome ?? 'Sem unidade',
-                    'presences' => $desbravador->frequencias->where('presente', true)->count(),
-                    'points' => $desbravador->frequencias->sum('pontos'),
+                    'nome' => $desbravador->nome,
+                    'unidade' => $desbravador->unidade->nome ?? 'Sem unidade',
+                    'pontos' => $desbravador->frequencias->sum('pontos'),
                 ];
             })
-            ->sortByDesc('points')
+            ->sortByDesc('pontos')
             ->values()
-            ->map(function (array $entry, int $index) {
-                $entry['position'] = $index + 1;
-
-                return $entry;
-            })
             ->all();
 
         RankingSnapshot::updateOrCreate(
-            ['year' => $year, 'scope' => 'unidades'],
+            ['year' => $year, 'scope' => 'unidades', 'club_id' => $clubId],
             ['generated_by' => $generatedBy, 'entries' => $unitEntries, 'generated_at' => now()]
         );
 
         RankingSnapshot::updateOrCreate(
-            ['year' => $year, 'scope' => 'desbravadores'],
+            ['year' => $year, 'scope' => 'desbravadores', 'club_id' => $clubId],
             ['generated_by' => $generatedBy, 'entries' => $memberEntries, 'generated_at' => now()]
         );
     }

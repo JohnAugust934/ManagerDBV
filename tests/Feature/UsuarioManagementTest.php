@@ -13,6 +13,7 @@ class UsuarioManagementTest extends TestCase
     use RefreshDatabase;
 
     private Club $club;
+
     private User $master;
 
     protected function setUp(): void

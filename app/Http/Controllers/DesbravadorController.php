@@ -8,6 +8,8 @@ use App\Models\Classe;
 use App\Models\Desbravador;
 use App\Models\Especialidade;
 use App\Models\Unidade;
+use App\Services\ClubContext;
+use App\Services\LgpdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -25,10 +27,19 @@ class DesbravadorController extends Controller
             $normalizedSearch = mb_strtolower($search, 'UTF-8');
             $searchPattern = "%{$normalizedSearch}%";
 
-            $query->where(function ($q) use ($searchPattern) {
+            // CPF está cifrado em repouso: LIKE na coluna não casa nada. Busca por
+            // CPF é exata via cpf_hash (SHA-256 dos dígitos), quando o termo é um
+            // CPF completo (11 dígitos). Nome/e-mail seguem com LIKE.
+            $digitos = preg_replace('/\D/', '', $search);
+            $cpfHash = strlen($digitos) === 11 ? hash('sha256', $digitos) : null;
+
+            $query->where(function ($q) use ($searchPattern, $cpfHash) {
                 $q->whereRaw('LOWER(nome) LIKE ?', [$searchPattern])
-                    ->orWhereRaw('LOWER(email) LIKE ?', [$searchPattern])
-                    ->orWhereRaw('LOWER(cpf) LIKE ?', [$searchPattern]);
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$searchPattern]);
+
+                if ($cpfHash !== null) {
+                    $q->orWhere('cpf_hash', $cpfHash);
+                }
             });
         }
 
@@ -51,7 +62,7 @@ class DesbravadorController extends Controller
     public function create()
     {
         // Mostra apenas unidades do clube do usuário.
-        $unidades = Unidade::where('club_id', auth()->user()->club_id)->orderBy('nome')->get();
+        $unidades = Unidade::where('club_id', ClubContext::currentClubId())->orderBy('nome')->get();
         $classes = Classe::orderBy('ordem')->get();
 
         return view('desbravadores.create', compact('unidades', 'classes'));
@@ -62,6 +73,7 @@ class DesbravadorController extends Controller
         $dados = $request->validated();
 
         $dados['ativo'] = true;
+        $dados['consentimento_lgpd_em'] = now();
         unset($dados['foto']); // UploadedFile não pode ir para create(); tratado abaixo
 
         $desbravador = Desbravador::create($dados);
@@ -69,6 +81,8 @@ class DesbravadorController extends Controller
         if ($request->hasFile('foto')) {
             $desbravador->update(['foto' => $this->processarFoto($request->file('foto'))]);
         }
+
+        // O ROPA de consentimento é registrado automaticamente pelo DesbravadorObserver (evento created).
 
         return redirect()->route('desbravadores.index')->with('success', 'Desbravador cadastrado com sucesso!');
     }
@@ -98,7 +112,7 @@ class DesbravadorController extends Controller
 
     public function edit(Desbravador $desbravador)
     {
-        $unidades = Unidade::where('club_id', auth()->user()->club_id)->orderBy('nome')->get();
+        $unidades = Unidade::where('club_id', ClubContext::currentClubId())->orderBy('nome')->get();
         $classes = Classe::orderBy('ordem')->get();
 
         return view('desbravadores.edit', compact('desbravador', 'unidades', 'classes'));
@@ -126,6 +140,7 @@ class DesbravadorController extends Controller
     public function destroy(Desbravador $desbravador)
     {
         DB::transaction(function () use ($desbravador) {
+            // O ROPA de exclusão é registrado automaticamente pelo DesbravadorObserver (evento deleted).
             $desbravador->delete();
         });
 
@@ -153,6 +168,56 @@ class DesbravadorController extends Controller
         $desbravador->update(['classe_atual' => $proximaClasse->id]);
 
         return back()->with('success', "Classe avançada para {$proximaClasse->nome} com sucesso!");
+    }
+
+    public function exportarDadosLgpd(Desbravador $desbravador)
+    {
+        $desbravador->loadMissing(['unidade:id,nome', 'classe:id,nome', 'especialidades:id,nome,area', 'frequencias:id,desbravador_id,data,presente,pontos']);
+
+        $dados = [
+            'exportado_em' => now()->toIso8601String(),
+            'base_legal' => 'LGPD Art. 18 — Direito de acesso e portabilidade',
+            'titular' => [
+                'nome' => $desbravador->nome,
+                'data_nascimento' => $desbravador->data_nascimento?->format('d/m/Y'),
+                'sexo' => $desbravador->sexo,
+                'cpf' => $desbravador->cpf,
+                'rg' => $desbravador->rg,
+                'email' => $desbravador->email,
+                'telefone' => $desbravador->telefone,
+                'endereco' => $desbravador->endereco,
+                'ativo' => $desbravador->ativo,
+            ],
+            'responsavel_legal' => [
+                'nome' => $desbravador->nome_responsavel,
+                'telefone' => $desbravador->telefone_responsavel,
+                'consentimento_lgpd_em' => $desbravador->consentimento_lgpd_em?->toIso8601String(),
+                'consentimento_lgpd_responsavel' => $desbravador->consentimento_lgpd_responsavel,
+            ],
+            'saude' => [
+                'tipo_sanguineo' => $desbravador->tipo_sanguineo,
+                'numero_sus' => $desbravador->numero_sus,
+                'alergias' => $desbravador->alergias,
+                'medicamentos_continuos' => $desbravador->medicamentos_continuos,
+                'plano_saude' => $desbravador->plano_saude,
+            ],
+            'clube' => [
+                'unidade' => $desbravador->unidade?->nome,
+                'classe' => $desbravador->classe?->nome,
+                'especialidades' => $desbravador->especialidades->map(fn ($e) => $e->nome)->values(),
+            ],
+            'frequencias' => $desbravador->frequencias->map(fn ($f) => [
+                'data' => $f->data?->format('d/m/Y'),
+                'presente' => $f->presente,
+                'pontos' => $f->pontos,
+            ])->values(),
+        ];
+
+        LgpdService::registrar('exportacao', 'desbravador', $desbravador->id);
+
+        return response()->json($dados, 200, [
+            'Content-Disposition' => 'attachment; filename="dados_lgpd_'.$desbravador->id.'.json"',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
     public function removerFoto(Desbravador $desbravador)

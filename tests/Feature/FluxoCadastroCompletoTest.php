@@ -48,6 +48,7 @@ class FluxoCadastroCompletoTest extends TestCase
             'name' => 'João Diretor',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+                    'aceite_termos' => '1',
         ]);
 
         // 5. ONBOARDING: DIRETOR É "SEQUESTRADO" PARA A TELA DE CRIAR CLUBE
@@ -75,7 +76,8 @@ class FluxoCadastroCompletoTest extends TestCase
         Auth::logout();
 
         // 8. MASTER LOGA NOVAMENTE E AGORA CONSEGUE CONVIDAR CONSELHEIROS
-        $this->actingAs($master);
+        // (re-login traz o club_id recém-vinculado pelo onboarding do diretor)
+        $this->actingAs($master->fresh());
         $this->post(route('invites.store'), [
             'email' => 'conselheiro@teste.com',
             'role' => 'conselheiro',
@@ -90,6 +92,7 @@ class FluxoCadastroCompletoTest extends TestCase
             'name' => 'Pedro Conselheiro',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+                    'aceite_termos' => '1',
         ])->assertRedirect(route('dashboard'));
 
         $conselheiro = User::where('email', 'conselheiro@teste.com')->first();

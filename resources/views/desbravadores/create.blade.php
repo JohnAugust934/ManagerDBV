@@ -1,16 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('desbravadores.index') }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            </a>
-            <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">
-                Novo Desbravador
-            </h2>
-        </div>
-    </x-slot>
-
     <div class="ui-page max-w-5xl space-y-8 ui-animate-fade-up">
+
+        <x-page-title title="Novo Desbravador" :back="route('desbravadores.index')" />
 
         <div class="ui-card p-6 sm:p-8">
             
@@ -221,6 +212,50 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                {{-- CONSENTIMENTO LGPD (Art. 14) --}}
+                <div class="p-6 rounded-3xl border-2 border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-900/10">
+                    <h3 class="text-base font-black text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Consentimento LGPD — Obrigatório
+                    </h3>
+                    <p class="text-sm text-amber-700 dark:text-amber-300 mb-4">
+                        Por tratar-se de dado pessoal de menor de idade, a Lei Geral de Proteção de Dados
+                        (Art. 14, LGPD) exige o consentimento expresso do responsável legal.
+                    </p>
+
+                    <div class="mb-4">
+                        <label for="consentimento_lgpd_responsavel" class="block text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-widest mb-2">
+                            Nome do Responsável Legal que autoriza *
+                        </label>
+                        <input type="text" id="consentimento_lgpd_responsavel" name="consentimento_lgpd_responsavel"
+                            value="{{ old('consentimento_lgpd_responsavel') }}"
+                            placeholder="Nome completo do responsável que está autorizando"
+                            class="block w-full rounded-2xl border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all">
+                        @error('consentimento_lgpd_responsavel')
+                            <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <label class="flex items-start gap-3 cursor-pointer group">
+                        <div class="relative mt-0.5 shrink-0">
+                            <input type="checkbox" name="consentimento_lgpd" id="consentimento_lgpd" value="1"
+                                {{ old('consentimento_lgpd') ? 'checked' : '' }}
+                                class="w-5 h-5 rounded border-2 border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer">
+                        </div>
+                        <span class="text-sm text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
+                            Declaro que o responsável legal pelo menor leu e concordou com a
+                            <a href="{{ route('legal.privacidade') }}" target="_blank" class="font-black underline hover:text-amber-900 dark:hover:text-amber-100">
+                                Política de Privacidade
+                            </a>
+                            e autoriza expressamente o tratamento dos dados pessoais do menor para
+                            os fins descritos nesta política. *
+                        </span>
+                    </label>
+                    @error('consentimento_lgpd')
+                        <p class="mt-2 text-xs text-red-500 font-medium">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- SUBMIT --}}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Desbravador;
 use App\Models\RankingSnapshot;
 use App\Models\Unidade;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -14,7 +15,7 @@ class RankingController extends Controller
     {
         Gate::authorize('relatorios');
 
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
         $ano = now()->year;
 
         // Schema::hasTable removido — tabela frequencia_column_values existe desde a migration
@@ -25,8 +26,11 @@ class RankingController extends Controller
 
         $data = Unidade::where('club_id', $clubId)
             ->where('no_ranking', true)
-            ->with(['desbravadores.frequencias' => $frequenciasLoader])
-            ->get()
+            ->with([
+                'desbravadores:id,nome,unidade_id,ativo',
+                'desbravadores.frequencias' => $frequenciasLoader,
+            ])
+            ->get(['id', 'nome', 'club_id', 'no_ranking'])
             ->map(function ($unidade) {
                 $stats = $this->calcularPontos($unidade->desbravadores);
 
@@ -58,12 +62,12 @@ class RankingController extends Controller
 
         // GlobalScope DesbravadorClubScope aplica o filtro de clube automaticamente.
         $data = Desbravador::with([
-            'unidade',
+            'unidade:id,nome,no_ranking',
             'frequencias' => $frequenciasLoader,
         ])
             ->where('ativo', true)
             ->whereHas('unidade', fn ($q) => $q->where('no_ranking', true))
-            ->get()
+            ->get(['id', 'nome', 'unidade_id', 'ativo'])
             ->map(function ($dbv) {
                 $stats = $this->calcularPontos(collect([$dbv]));
 
@@ -94,7 +98,7 @@ class RankingController extends Controller
 
         $scope = $request->scope;
         $year = (int) $request->year;
-        $clubId = auth()->user()->club_id;
+        $clubId = ClubContext::currentClubId();
 
         $frequenciasLoader = fn ($q) => $q->whereYear('data', $year)->with('columnValues.column');
 
@@ -105,6 +109,7 @@ class RankingController extends Controller
                 ->get()
                 ->map(function ($unidade) {
                     $stats = $this->calcularPontos($unidade->desbravadores);
+
                     return ['id' => $unidade->id, 'nome' => $unidade->nome, 'pontos' => $stats['total'], 'detalhes' => $stats];
                 })
                 ->sortByDesc('pontos')
@@ -117,6 +122,7 @@ class RankingController extends Controller
                 ->get()
                 ->map(function ($dbv) {
                     $stats = $this->calcularPontos(collect([$dbv]));
+
                     return ['id' => $dbv->id, 'nome' => $dbv->nome, 'unidade' => $dbv->unidade->nome ?? '-', 'pontos' => $stats['total'], 'detalhes' => $stats];
                 })
                 ->sortByDesc('pontos')
@@ -125,8 +131,8 @@ class RankingController extends Controller
         }
 
         RankingSnapshot::updateOrCreate(
-            ['year' => $year, 'scope' => $scope, 'generated_by' => auth()->id()],
-            ['entries' => $entries, 'generated_at' => now()]
+            ['year' => $year, 'scope' => $scope, 'club_id' => $clubId],
+            ['generated_by' => auth()->id(), 'entries' => $entries, 'generated_at' => now()]
         );
 
         return back()->with('success', "Snapshot do ranking de {$year} ({$scope}) salvo com sucesso!");
@@ -137,12 +143,15 @@ class RankingController extends Controller
         Gate::authorize('relatorios');
 
         $year = (int) $request->input('year', now()->year - 1);
+        $clubId = ClubContext::currentClubId();
 
         $snapshot = RankingSnapshot::where('scope', $scope)
             ->where('year', $year)
+            ->where('club_id', $clubId)
             ->first();
 
         $anosDisponiveis = RankingSnapshot::where('scope', $scope)
+            ->where('club_id', $clubId)
             ->orderByDesc('year')
             ->pluck('year');
 
@@ -155,6 +164,7 @@ class RankingController extends Controller
         $demais = $data->skip(3);
 
         $snapshotsDisponiveis = RankingSnapshot::where('scope', $scope)
+            ->where('club_id', ClubContext::currentClubId())
             ->orderByDesc('year')
             ->pluck('year');
 

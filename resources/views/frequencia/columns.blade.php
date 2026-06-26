@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">Gerenciar Colunas da Chamada</x-slot>
-
     <div class="ui-page space-y-6">
+
+        <x-page-title title="Gerenciar Colunas da Chamada" :back="route('frequencia.index')" />
         @if (!empty($legacyMode) && $legacyMode)
             <div class="ui-card p-6 border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700">
                 <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">

@@ -1,4 +1,5 @@
 import "./bootstrap";
+import "./passkeys";
 import Alpine from "alpinejs";
 
 window.Alpine = Alpine;
@@ -61,17 +62,44 @@ window.addEventListener("pageshow", () => {
     mostrarPagina();
 });
 
-// 3. Ao clicar em links (Saída Suave)
-document.addEventListener("click", (e) => {
-    const link = e.target.closest("a");
+// --- PWA: registra o service worker (instalável + fallback offline) ---
+// SW só roda em contexto seguro (HTTPS ou localhost); em outros hosts de dev
+// o navegador simplesmente ignora, sem erro.
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {
+            /* registro do SW é best-effort; falha não deve quebrar a app */
+        });
+    });
+}
 
-    // Filtros de segurança: ignora se não for link, nova aba, ou ancora
+// 3. Ao clicar em links (Saída Suave)
+// Respeita prefers-reduced-motion (pula o fade) e protege contra href ausente,
+// esquemas externos e tela branca presa caso a navegação não conclua.
+const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+).matches;
+
+document.addEventListener("click", (e) => {
+    // Sem fade quando o usuário pede menos movimento: deixa o navegador navegar.
+    if (prefersReducedMotion) return;
+
+    const link = e.target.closest("a");
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+
+    // Filtros de segurança: ignora sem href, âncora, vazio, nova aba/frame alvo,
+    // download, esquemas externos (mailto:/tel:) ou host diferente.
     if (
-        !link ||
-        link.hostname !== window.location.hostname ||
-        link.target === "_blank" ||
-        link.getAttribute("href").startsWith("#") ||
-        link.getAttribute("href") === ""
+        !href ||
+        href === "" ||
+        href.startsWith("#") ||
+        href.startsWith("mailto:") ||
+        href.startsWith("tel:") ||
+        link.target ||
+        link.hasAttribute("download") ||
+        link.hostname !== window.location.hostname
     ) {
         return;
     }
@@ -86,6 +114,15 @@ document.addEventListener("click", (e) => {
 
     // Desaparece suavemente
     document.body.style.opacity = "0";
+
+    // Rede de segurança: se a navegação não concluir (link cancelado, 4xx, etc.),
+    // restaura a visibilidade para não deixar a tela branca presa.
+    const restaurar = setTimeout(() => {
+        document.body.style.opacity = "1";
+    }, 1200);
+    window.addEventListener("pagehide", () => clearTimeout(restaurar), {
+        once: true,
+    });
 
     // Aguarda a animação (300ms) e troca de página
     setTimeout(() => {

@@ -34,6 +34,29 @@ class MensalidadeTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
         $this->assertDatabaseCount('mensalidades', 3);
+
+        // Geração em massa (insert) preenche a autoria manualmente, já que o
+        // insert() não dispara o trait RegistraAutoria.
+        $this->assertSame(3, Mensalidade::where('created_by', $user->id)->where('updated_by', $user->id)->count());
+    }
+
+    public function test_gerar_mensalidades_bloqueado_sem_clube_ativo()
+    {
+        // Platform admin sem impersonação: club_id null → sem clube ativo. O
+        // insert espalharia mensalidades órfãs por todos os clubes; deve dar 403.
+        Club::create(['nome' => 'Clube Alheio', 'cidade' => 'SP']);
+        $admin = User::factory()->platformAdmin()->create();
+
+        $response = $this->actingAs($admin)->post(route('mensalidades.gerar'), [
+            'mes' => 10,
+            'ano' => 2026,
+            'valor' => 15.00,
+        ]);
+
+        // Sem clube ativo a geração é barrada — pelo middleware de contexto (302)
+        // ou pelo abort_unless do controller (403). O essencial: nada é criado.
+        $this->assertContains($response->status(), [403, 302]);
+        $this->assertDatabaseCount('mensalidades', 0);
     }
 
     public function test_pagar_mensalidade_muda_status_e_lanca_no_caixa()

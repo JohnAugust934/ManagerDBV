@@ -55,8 +55,7 @@ class BackupRestoreIntegrationTest extends TestCase
         Storage::fake('r2');
         Storage::fake('public');
 
-        $master = User::factory()->create([
-            'role' => 'master',
+        $master = User::factory()->platformAdmin()->create([
             'email' => 'master@teste.com',
         ]);
 

@@ -19,7 +19,7 @@
                     <svg class="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
                 </div>
                 <input id="email" type="email" name="email" value="{{ $invitation->email }}" readonly
-                    class="block w-full rounded-2xl border-0 bg-black/10 text-slate-400 ring-1 ring-inset ring-white/5 text-sm py-4 pl-12 pr-4 cursor-not-allowed">
+                    class="block w-full rounded-2xl border-0 bg-black/10 text-slate-400 ring-1 ring-inset ring-white/5 text-base py-4 pl-12 pr-4 cursor-not-allowed">
             </div>
         </div>
 
@@ -31,7 +31,7 @@
                     <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 </div>
                 <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus autocomplete="name"
-                    class="block w-full rounded-2xl border-0 bg-black/20 text-white placeholder-slate-400 ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-[#FCD116] focus:bg-white/5 transition-all text-sm py-4 pl-12 pr-4 shadow-inner"
+                    class="block w-full rounded-2xl border-0 bg-black/20 text-white placeholder-slate-400 ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-[#FCD116] focus:bg-white/5 transition-all text-base py-4 pl-12 pr-4 shadow-inner"
                     placeholder="Seu nome completo">
             </div>
             @error('name')<p class="mt-1.5 text-xs text-red-400 font-medium ml-1">{{ $message }}</p>@enderror
@@ -45,7 +45,7 @@
                     <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 </div>
                 <input id="password" type="password" name="password" required autocomplete="new-password"
-                    class="block w-full rounded-2xl border-0 bg-black/20 text-white placeholder-slate-400 ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-[#FCD116] focus:bg-white/5 transition-all text-sm py-4 pl-12 pr-4 shadow-inner"
+                    class="block w-full rounded-2xl border-0 bg-black/20 text-white placeholder-slate-400 ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-[#FCD116] focus:bg-white/5 transition-all text-base py-4 pl-12 pr-4 shadow-inner"
                     placeholder="Mínimo 8 caracteres">
             </div>
             @error('password')<p class="mt-1.5 text-xs text-red-400 font-medium ml-1">{{ $message }}</p>@enderror
@@ -59,14 +59,35 @@
                     <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                 </div>
                 <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password"
-                    class="block w-full rounded-2xl border-0 bg-black/20 text-white placeholder-slate-400 ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-[#FCD116] focus:bg-white/5 transition-all text-sm py-4 pl-12 pr-4 shadow-inner"
+                    class="block w-full rounded-2xl border-0 bg-black/20 text-white placeholder-slate-400 ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-[#FCD116] focus:bg-white/5 transition-all text-base py-4 pl-12 pr-4 shadow-inner"
                     placeholder="Repita a senha">
             </div>
             @error('password_confirmation')<p class="mt-1.5 text-xs text-red-400 font-medium ml-1">{{ $message }}</p>@enderror
         </div>
 
-        {{-- Botão Submit --}}
+        {{-- Aceite dos Termos (LGPD Art. 7 / Art. 8) --}}
         <div class="pt-2">
+            <label class="flex items-start gap-3 cursor-pointer group">
+                <div class="relative mt-0.5 shrink-0">
+                    <input type="checkbox" name="aceite_termos" id="aceite_termos" value="1"
+                        {{ old('aceite_termos') ? 'checked' : '' }}
+                        class="w-5 h-5 rounded border-2 border-white/30 bg-white/10 text-[#FCD116] focus:ring-[#FCD116] cursor-pointer">
+                </div>
+                <span class="text-sm text-slate-300 font-medium leading-relaxed">
+                    Li e concordo com os
+                    <a href="{{ route('legal.termos') }}" target="_blank" class="font-black text-[#FCD116] hover:underline">Termos de Uso</a>
+                    e a
+                    <a href="{{ route('legal.privacidade') }}" target="_blank" class="font-black text-[#FCD116] hover:underline">Política de Privacidade</a>.
+                    *
+                </span>
+            </label>
+            @error('aceite_termos')
+                <p class="mt-1.5 text-xs text-red-400 font-medium ml-1">{{ $message }}</p>
+            @enderror
+        </div>
+
+        {{-- Botão Submit --}}
+        <div class="pt-1">
             <button type="submit" class="w-full relative inline-flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-sm font-black text-white uppercase tracking-widest bg-gradient-to-r from-[#D9222A] to-red-600 hover:from-red-600 hover:to-[#D9222A] transition-all duration-300 shadow-xl shadow-red-900/30 overflow-hidden group active:scale-[0.98]">
                 <span class="relative z-10 transition-transform duration-300 group-hover:-translate-y-10">Acessar Sistema</span>
                 <span class="absolute inset-0 z-10 flex items-center justify-center translate-y-10 group-hover:translate-y-0 transition-transform duration-300">

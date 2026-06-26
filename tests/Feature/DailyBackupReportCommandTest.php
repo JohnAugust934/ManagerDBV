@@ -2,9 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Console\Commands\DailyBackupReport;
 use App\Services\ScheduledTaskTracker;
-use App\Services\TelegramNotifier;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -14,13 +12,13 @@ class DailyBackupReportCommandTest extends TestCase
     private function telegramConfig(): void
     {
         config([
-            'services.telegram.enabled'             => true,
-            'services.telegram.bot_token'           => 'test-token',
-            'services.telegram.chat_id'             => '123456',
+            'services.telegram.enabled' => true,
+            'services.telegram.bot_token' => 'test-token',
+            'services.telegram.chat_id' => '123456',
             'services.telegram.admin_notifications' => true,
             'services.telegram.error_notifications' => true,
             'services.telegram.error_dedup_seconds' => 0,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
         ]);
     }
 
@@ -107,9 +105,9 @@ class DailyBackupReportCommandTest extends TestCase
         Http::fake();
 
         config([
-            'services.telegram.enabled'             => false,
+            'services.telegram.enabled' => false,
             'services.telegram.admin_notifications' => false,
-            'cache.default'                         => 'array',
+            'cache.default' => 'array',
         ]);
 
         $tracker = app(ScheduledTaskTracker::class);

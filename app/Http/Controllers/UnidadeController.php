@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Unidade;
 use App\Models\User;
+use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +19,7 @@ class UnidadeController extends Controller
 
         // Busca as unidades pertencentes ao clube do usuário logado
         // (carrega os membros ativos de uma vez para a contagem dos cards, evitando N+1)
-        $unidades = Unidade::where('club_id', auth()->user()->club_id)
+        $unidades = Unidade::where('club_id', ClubContext::currentClubId())
             ->with('desbravadoresAtivos')
             ->get();
 
@@ -34,7 +35,7 @@ class UnidadeController extends Controller
         }
 
         // Segurança extra: Garante que o usuário só veja unidades do próprio clube
-        if ($unidade->club_id !== auth()->user()->club_id) {
+        if ($unidade->club_id !== ClubContext::currentClubId()) {
             abort(403, 'Acesso negado.');
         }
 
@@ -52,7 +53,7 @@ class UnidadeController extends Controller
         $validated = $request->validate($this->regras());
 
         // Força o vínculo com o clube do usuário logado
-        $validated['club_id'] = auth()->user()->club_id;
+        $validated['club_id'] = ClubContext::currentClubId();
 
         Unidade::create($validated);
 
@@ -97,15 +98,24 @@ class UnidadeController extends Controller
             ->with('success', 'Unidade excluída com sucesso!');
     }
 
-    public function toggleRanking(Unidade $unidade)
+    public function toggleRanking(Request $request, Unidade $unidade)
     {
         $this->authorizeAccess($unidade);
 
         $unidade->update(['no_ranking' => ! $unidade->no_ranking]);
 
         $status = $unidade->no_ranking ? 'incluída no' : 'excluída do';
+        $mensagem = "Unidade \"{$unidade->nome}\" {$status} ranking.";
 
-        return back()->with('success', "Unidade \"{$unidade->nome}\" {$status} ranking.");
+        // Requisição AJAX (toggle in-place, sem recarregar a tela de edição).
+        if ($request->expectsJson()) {
+            return response()->json([
+                'no_ranking' => $unidade->no_ranking,
+                'message' => $mensagem,
+            ]);
+        }
+
+        return back()->with('success', $mensagem);
     }
 
     /**
@@ -113,7 +123,7 @@ class UnidadeController extends Controller
      */
     private function authorizeAccess(Unidade $unidade)
     {
-        if ($unidade->club_id !== auth()->user()->club_id) {
+        if ($unidade->club_id !== ClubContext::currentClubId()) {
             abort(403, 'Acesso não autorizado a esta unidade.');
         }
     }
@@ -130,7 +140,7 @@ class UnidadeController extends Controller
             // Vínculo opcional a um usuário do próprio clube (para conceder a gestão da unidade).
             'conselheiro_user_id' => [
                 'nullable',
-                Rule::exists('users', 'id')->where('club_id', auth()->user()->club_id),
+                Rule::exists('users', 'id')->where('club_id', ClubContext::currentClubId()),
             ],
         ];
     }
@@ -140,7 +150,7 @@ class UnidadeController extends Controller
      */
     private function usuariosDoClube()
     {
-        return User::where('club_id', auth()->user()->club_id)
+        return User::where('club_id', ClubContext::currentClubId())
             ->orderBy('name')
             ->get(['id', 'name', 'role']);
     }

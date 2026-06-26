@@ -195,7 +195,8 @@
     }
 
     .ui-input {
-        @apply block w-full rounded-2xl border-2 px-4 py-3.5 text-[15px] font-medium transition-all duration-300 focus:outline-none;
+        /* text-base (16px): abaixo disso o iOS dá zoom automático ao focar o campo. */
+        @apply block w-full rounded-2xl border-2 px-4 py-3.5 text-base font-medium transition-all duration-300 focus:outline-none;
         border-color: rgb(var(--ui-border));
         background-color: rgb(var(--ui-surface));
         color: rgb(var(--ui-text));

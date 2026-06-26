@@ -2,16 +2,56 @@
     <x-slot name="header">Financeiro & Mensalidades</x-slot>
 
     <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up" x-data="{
+        visualizacao: localStorage.getItem('mensalidades_viz') ?? 'cards',
+        setViz(v) { this.visualizacao = v; localStorage.setItem('mensalidades_viz', v); },
         modalPagamentoOpen: false,
         modalGerarOpen: false,
         pagamentoUrl: '',
         nomeDesbravador: '',
         valorMensalidade: '',
+        processando: false,
         openPagamento(url, nome, valor) {
             this.pagamentoUrl = url;
             this.nomeDesbravador = nome;
             this.valorMensalidade = valor;
             this.modalPagamentoOpen = true;
+        },
+        async confirmarPagamento() {
+            if (this.processando) return;
+            this.processando = true;
+            try {
+                const res = await fetch(this.pagamentoUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    window.notify(data.message || 'Não foi possível registrar o pagamento.', 'error');
+                    return;
+                }
+                // Troca o elemento pelo HTML atualizado — usa row ou card conforme a visualização ativa.
+                const card = document.getElementById('mensalidade-card-' + data.id);
+                const html = (this.visualizacao === 'linhas' && data.row) ? data.row : data.card;
+                if (card && html) card.outerHTML = html;
+                // Reflete os totais recalculados no servidor.
+                if (data.resumo) {
+                    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+                    set('resumo-recebido', data.resumo.valorRecebido);
+                    set('resumo-pendente', data.resumo.valorPendente);
+                    set('resumo-total-pago', data.resumo.totalPago);
+                    set('resumo-total-pendente', data.resumo.totalPendente);
+                }
+                this.modalPagamentoOpen = false;
+                window.notify(data.message || 'Pagamento registrado!', 'success');
+            } catch (e) {
+                window.notify('Falha de conexão ao registrar o pagamento.', 'error');
+            } finally {
+                this.processando = false;
+            }
         }
     }">
 
@@ -67,9 +107,9 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                     </div>
                 </div>
-                <h3 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">R$ <span class="text-emerald-600 dark:text-emerald-400">{{ number_format($valorRecebido, 2, ',', '.') }}</span></h3>
+                <h3 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">R$ <span id="resumo-recebido" class="text-emerald-600 dark:text-emerald-400">{{ number_format($valorRecebido, 2, ',', '.') }}</span></h3>
                 <div class="mt-4 flex items-center gap-2">
-                    <span class="px-2 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 text-[10px] font-black rounded-lg">{{ $totalPago }}</span>
+                    <span id="resumo-total-pago" class="px-2 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 text-[10px] font-black rounded-lg">{{ $totalPago }}</span>
                     <span class="text-[11px] font-bold text-slate-400">membros em dia</span>
                 </div>
             </div>
@@ -83,9 +123,9 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
                 </div>
-                <h3 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">R$ <span class="text-amber-500 dark:text-amber-400">{{ number_format($valorPendente, 2, ',', '.') }}</span></h3>
+                <h3 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">R$ <span id="resumo-pendente" class="text-amber-500 dark:text-amber-400">{{ number_format($valorPendente, 2, ',', '.') }}</span></h3>
                 <div class="mt-4 flex items-center gap-2">
-                    <span class="px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400 text-[10px] font-black rounded-lg">{{ $totalPendente }}</span>
+                    <span id="resumo-total-pendente" class="px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400 text-[10px] font-black rounded-lg">{{ $totalPendente }}</span>
                     <span class="text-[11px] font-bold text-slate-400">mensalidades abertas</span>
                 </div>
             </div>
@@ -130,58 +170,56 @@
         </div>
         @endif
 
-        <!-- Área de Listagem (Grid) -->
-        <h3 class="text-[13px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-black/5 dark:border-white/5 pb-2">Status Individual</h3>
-        
-        @if ($mensalidades->count() > 0)
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            @foreach ($mensalidades as $m)
-                <div class="ui-card p-0 overflow-hidden border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col pt-4">
-                    
-                    <!-- dbv header info -->
-                    <div class="px-5 flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 rounded-full border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center bg-slate-50 dark:bg-slate-900 font-black text-lg text-slate-400 shrink-0">
-                            {{ mb_strtoupper(substr($m->desbravador->nome, 0, 1)) }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-black text-sm text-slate-800 dark:text-white truncate" title="{{ $m->desbravador->nome }}">{{ $m->desbravador->nome }}</p>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">{{ $m->desbravador->unidade->nome ?? 'Sem Unidade' }}</span>
-                        </div>
-                    </div>
+        <!-- Área de Listagem -->
+        <div class="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-2">
+            <h3 class="text-[13px] font-black text-slate-400 uppercase tracking-widest">Status Individual</h3>
 
-                    <!-- payment value and status core -->
-                    <div class="px-5 py-3 bg-slate-50 dark:bg-slate-900/50 mx-4 rounded-xl flex items-center justify-between border {{ $m->status === 'pago' ? 'border-emerald-100 dark:border-emerald-900/30' : 'border-amber-100 dark:border-amber-900/30' }}">
-                        <p class="font-black text-lg {{ $m->status === 'pago' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300' }}">
-                            R$ {{ number_format($m->valor, 2, ',', '.') }}
-                        </p>
-                        
-                        @if ($m->status === 'pago')
-                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 rounded uppercase font-black text-[9px] tracking-widest flex items-center gap-1">
-                                Pago <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                            </span>
-                        @else
-                            <span class="px-2.5 py-1 bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 rounded uppercase font-black text-[9px] tracking-widest flex items-center gap-1">
-                                Pendente
-                            </span>
-                        @endif
-                    </div>
-                    
-                    <!-- action area -->
-                    <div class="mt-auto pt-4 pb-4 px-4">
-                        @if ($m->status === 'pendente')
-                            <button @click="openPagamento('{{ route('mensalidades.pagar', $m->id) }}', '{{ $m->desbravador->nome }}', '{{ number_format($m->valor, 2, ',', '.') }}')" 
-                                    class="w-full h-11 bg-slate-800 hover:bg-slate-900 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-black text-[11px] uppercase tracking-widest rounded-xl transition-all shadow shadow-slate-900/10 flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Confirmar Recebimento
-                            </button>
-                        @else
-                            <div class="w-full h-11 border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50 dark:bg-emerald-900/10 flex items-center justify-center rounded-xl text-emerald-600 dark:text-emerald-500 font-bold text-[11px] tracking-wide">
-                                Quitada em {{ \Carbon\Carbon::parse($m->data_pagamento)->format('d/m/Y') }}
-                            </div>
-                        @endif
-                    </div>
-                </div>
+            {{-- Toggle cards / linhas (só desktop) --}}
+            <div class="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <button @click="setViz('cards')"
+                    :class="visualizacao === 'cards' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    Cards
+                </button>
+                <button @click="setViz('linhas')"
+                    :class="visualizacao === 'linhas' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    Linhas
+                </button>
+            </div>
+        </div>
+
+        @if ($mensalidades->count() > 0)
+
+        {{-- Cards (padrão e mobile) --}}
+        <div x-show="visualizacao === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            @foreach ($mensalidades as $m)
+                @include('financeiro.mensalidades._card', ['m' => $m])
             @endforeach
+        </div>
+
+        {{-- Linhas --}}
+        <div x-show="visualizacao === 'linhas'" style="display:none" class="ui-card overflow-hidden p-0">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+                            <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500">Membro</th>
+                            <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500 hidden md:table-cell">Unidade</th>
+                            <th class="px-5 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-slate-500">Valor</th>
+                            <th class="px-5 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-slate-500 hidden sm:table-cell">Status</th>
+                            <th class="px-5 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-slate-500">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        @foreach ($mensalidades as $m)
+                            @include('financeiro.mensalidades._row', ['m' => $m])
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
         @else
         <div class="ui-card p-12 flex flex-col items-center justify-center text-center border-dashed border-2 border-slate-200 dark:border-slate-800 bg-transparent shadow-none">
@@ -253,11 +291,11 @@
                         <button type="button" @click="modalPagamentoOpen = false" class="w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
                             Cancelar
                         </button>
-                        <form :action="pagamentoUrl" method="POST" class="w-full sm:w-auto">
+                        <form :action="pagamentoUrl" method="POST" class="w-full sm:w-auto" @submit.prevent="confirmarPagamento">
                             @csrf
-                            <button type="submit" class="w-full px-6 py-3 rounded-xl font-black text-sm bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-lg shadow-emerald-900/20 active:scale-95 flex justify-center items-center gap-2">
-                                Confirmar Recebimento
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <button type="submit" :disabled="processando" class="w-full px-6 py-3 rounded-xl font-black text-sm bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-lg shadow-emerald-900/20 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                                <span x-text="processando ? 'Processando...' : 'Confirmar Recebimento'"></span>
+                                <svg x-show="!processando" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </button>
                         </form>
                     </div>

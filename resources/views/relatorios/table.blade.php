@@ -7,7 +7,8 @@
     <style>
         @page { margin: 28px 24px 24px; }
         body { font-family: DejaVu Sans, sans-serif; color: #0f172a; font-size: 10.5px; line-height: 1.45; }
-        .header { border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; }
+        .header { border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 16px; }
+        .header .cb-divider { margin-bottom: 8px; }
         .eyebrow { color: #0f766e; text-transform: uppercase; font-weight: 700; font-size: 9px; letter-spacing: 0.12em; }
         .header h1 { margin: 6px 0 4px; font-size: 22px; line-height: 1.1; }
         .subtitulo { color: #475569; margin-bottom: 6px; }
@@ -30,13 +31,12 @@
 </head>
 <body>
     <div class="header">
+        @include('relatorios._club_brand')
         <div class="eyebrow">Desbravadores Manager</div>
         <h1>{{ $titulo }}</h1>
         <div class="subtitulo">{{ $subtitulo }}</div>
         <div class="meta">
-            Clube: {{ $clubeNome }} |
-            Emitido em {{ $emitidoEm }} |
-            Responsável: {{ $responsavelNome }}
+            Emitido em {{ $emitidoEm }} &nbsp;|&nbsp; Responsável: {{ $responsavelNome }}
         </div>
     </div>
 

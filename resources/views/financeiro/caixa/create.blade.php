@@ -1,7 +1,5 @@
 ﻿<x-app-layout>
-    <x-slot name="header">Nova Movimentação</x-slot>
-
-    {{-- 
+    {{--
         Alpine Data: 
         Gerencia o estado do formulário e as listas de categorias dinâmicas.
     --}}
@@ -45,6 +43,8 @@
         }
     }">
         <div class="max-w-3xl mx-auto">
+
+            <x-page-title title="Nova Movimentação" :back="route('caixa.index')" />
 
             <div
                 class="bg-white dark:bg-slate-800 shadow-lg rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
@@ -196,92 +196,85 @@
             </div>
         </div>
 
-        {{-- MODAL DE CONFIRMAÇÃO (ALPINE.JS) --}}
-        <div x-show="showModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto"
-            aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            {{-- Backdrop --}}
-            <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
-                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                class="fixed inset-0 bg-gray-900/75 dark:bg-black/80 backdrop-blur-sm transition-opacity"
-                x-on:click="showModal = false"></div>
+        {{-- MODAL DE CONFIRMAÇÃO --}}
+        <template x-teleport="body">
+            <div x-show="showModal"
+                 style="display:none"
+                 class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+                 role="dialog" aria-modal="true">
 
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                {{-- Card do Modal --}}
-                <div x-show="showModal" x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave="ease-in duration-200"
-                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="relative transform overflow-hidden rounded-3xl bg-white dark:bg-slate-800 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-gray-100 dark:border-slate-700">
-                    <div class="bg-white dark:bg-slate-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
+                {{-- Overlay --}}
+                <div x-show="showModal"
+                     x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                     x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm"
+                     @click="showModal = false" aria-hidden="true"></div>
 
-                            {{-- Ícone de Atenção --}}
-                            <div
-                                class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 sm:mx-0 sm:h-12 sm:w-12">
-                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="2.5" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                                </svg>
+                {{-- Painel --}}
+                <div x-show="showModal"
+                     x-transition:enter="ease-out duration-250" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                     class="relative ui-card w-full max-w-md p-0 shadow-2xl shadow-black/30 text-left z-10 overflow-hidden">
+
+                    <div class="p-6 sm:p-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-colors"
+                                 :class="tipo === 'entrada'
+                                     ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+                                     : 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/30'">
+                                <template x-if="tipo === 'entrada'">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                </template>
+                                <template x-if="tipo === 'saida'">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                                </template>
                             </div>
+                            <div>
+                                <h3 class="text-xl font-black text-slate-800 dark:text-white tracking-tight">Confirmar Lançamento</h3>
+                                <p class="text-[11px] font-bold tracking-widest uppercase text-slate-400 dark:text-slate-500"
+                                   x-text="tipo === 'entrada' ? 'Fluxo de Caixa Positivo' : 'Fluxo de Caixa Negativo'"></p>
+                            </div>
+                        </div>
 
-                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                                <h3 class="text-lg font-semibold leading-6 text-slate-900 dark:text-white"
-                                    id="modal-title">
-                                    Confirmar Lançamento?
-                                </h3>
-                                <div
-                                    class="mt-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 space-y-2 text-sm text-slate-600 dark:text-slate-300 text-left">
-
-                                    <div
-                                        class="flex justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
-                                        <span>Tipo:</span>
-                                        <span class="font-bold uppercase"
-                                            :class="tipo === 'entrada'? 'text-green-600' : 'text-red-600'"
-                                            x-text="tipo"></span>
-                                    </div>
-
-                                    <div
-                                        class="flex justify-between border-b border-slate-200 dark:border-slate-700 py-2">
-                                        <span>Categoria:</span>
-                                        <span class="font-medium text-slate-900 dark:text-white"
-                                            x-text="categoria"></span>
-                                    </div>
-
-                                    <div
-                                        class="flex justify-between border-b border-slate-200 dark:border-slate-700 py-2">
-                                        <span>Valor:</span>
-                                        <span class="font-bold text-slate-900 dark:text-white"
-                                            x-text="'R$ ' + parseFloat(valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})"></span>
-                                    </div>
-
-                                    <div class="pt-2">
-                                        <span class="block text-xs text-slate-500">Descrição:</span>
-                                        <span class="font-medium text-slate-800 dark:text-slate-200 break-all"
-                                            x-text="descricao"></span>
-                                    </div>
-                                </div>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 shadow-inner space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tipo</span>
+                                <span class="text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg"
+                                      :class="tipo === 'entrada' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'"
+                                      x-text="tipo === 'entrada' ? 'Entrada' : 'Saída'"></span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Categoria</span>
+                                <span class="font-bold text-slate-800 dark:text-white text-sm" x-text="categoria"></span>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-3">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Valor</span>
+                                <span class="text-3xl font-black"
+                                      :class="tipo === 'entrada' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'"
+                                      x-text="'R$ ' + parseFloat(valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})"></span>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Descrição</p>
+                                <p class="font-bold text-slate-800 dark:text-white text-sm break-words" x-text="descricao"></p>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Botões do Modal --}}
-                    <div class="px-4 pb-6 pt-2 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                        <button type="button" x-on:click="showModal = false"
-                            class="ui-btn-secondary px-6 w-full sm:w-auto text-sm">
+                    <div class="px-6 sm:px-8 py-5 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3 justify-end items-center">
+                        <button type="button" @click="showModal = false"
+                                class="w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
                             Corrigir
                         </button>
-                        <button type="button" x-on:click="submitForm()"
-                            class="ui-btn-primary px-6 w-full sm:w-auto text-sm">
-                            Confirmar e Salvar
+                        <button type="button" @click="submitForm()"
+                                class="w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm text-white transition-all shadow-lg active:scale-95 flex justify-center items-center gap-2"
+                                :class="tipo === 'entrada' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20' : 'bg-[#002F6C] hover:bg-[#001D42] dark:bg-blue-600 dark:hover:bg-blue-500 shadow-blue-900/20'">
+                            <span>Confirmar e Registrar</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </template>
 
     </div>
 </x-app-layout>

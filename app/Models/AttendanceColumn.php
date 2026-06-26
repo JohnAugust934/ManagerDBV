@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AttendanceColumn extends Model
 {
-    use HasFactory;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'club_id',
@@ -28,14 +28,8 @@ class AttendanceColumn extends Model
         'sort_order' => 'integer',
     ];
 
-    public function club(): BelongsTo
-    {
-        return $this->belongsTo(Club::class);
-    }
-
     public function values(): HasMany
     {
         return $this->hasMany(FrequenciaColumnValue::class);
     }
 }
-

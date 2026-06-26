@@ -28,20 +28,20 @@ class SyncEspecialidadesOficiais extends Command
         $this->info('Buscando catálogo oficial no MDA Wiki...');
         $catalog = $sync->fetchCatalogFromWeb();
 
-        $this->line('Itens oficiais encontrados: ' . count($catalog));
+        $this->line('Itens oficiais encontrados: '.count($catalog));
 
         [$toInsert, $toUpdate] = $this->diffCatalog($catalog);
 
-        $this->line('Novas especialidades: ' . count($toInsert));
-        $this->line('Especialidades a atualizar: ' . count($toUpdate));
+        $this->line('Novas especialidades: '.count($toInsert));
+        $this->line('Especialidades a atualizar: '.count($toUpdate));
 
         if ($isDryRun) {
             $this->warn('Modo dry-run ativo: nenhuma alteração foi gravada.');
             if (! empty($toInsert)) {
-                $this->line('Exemplo (insert): ' . $toInsert[0]['codigo'] . ' - ' . $toInsert[0]['nome']);
+                $this->line('Exemplo (insert): '.$toInsert[0]['codigo'].' - '.$toInsert[0]['nome']);
             }
             if (! empty($toUpdate)) {
-                $this->line('Exemplo (update): ' . $toUpdate[0]['codigo'] . ' - ' . $toUpdate[0]['nome']);
+                $this->line('Exemplo (update): '.$toUpdate[0]['codigo'].' - '.$toUpdate[0]['nome']);
             }
         } else {
             DB::transaction(function () use ($catalog) {
@@ -69,7 +69,7 @@ class SyncEspecialidadesOficiais extends Command
 
         $especialidades = $query->get();
 
-        $this->line('Sincronizando requisitos de ' . $especialidades->count() . ' especialidades...');
+        $this->line('Sincronizando requisitos de '.$especialidades->count().' especialidades...');
 
         $updatedRequirements = 0;
 
@@ -78,11 +78,13 @@ class SyncEspecialidadesOficiais extends Command
                 $requisitos = $sync->fetchRequirementsFromUrl($especialidade->url_oficial);
             } catch (\Throwable $e) {
                 $this->warn("Falha em {$especialidade->codigo}: {$e->getMessage()}");
+
                 continue;
             }
 
             if ($isDryRun) {
-                $this->line("[dry-run] {$especialidade->codigo}: " . count($requisitos) . ' requisitos');
+                $this->line("[dry-run] {$especialidade->codigo}: ".count($requisitos).' requisitos');
+
                 continue;
             }
 
@@ -101,7 +103,7 @@ class SyncEspecialidadesOficiais extends Command
             });
 
             $updatedRequirements++;
-            $this->line("{$especialidade->codigo}: " . count($requisitos) . ' requisitos sincronizados');
+            $this->line("{$especialidade->codigo}: ".count($requisitos).' requisitos sincronizados');
         }
 
         if ($isDryRun) {
@@ -114,7 +116,7 @@ class SyncEspecialidadesOficiais extends Command
     }
 
     /**
-     * @param array{area:string,codigo:string,nome:string,url_oficial:string,is_avancada:bool} $item
+     * @param  array{area:string,codigo:string,nome:string,url_oficial:string,is_avancada:bool}  $item
      */
     private function syncCatalogItem(array $item): void
     {
@@ -132,7 +134,7 @@ class SyncEspecialidadesOficiais extends Command
         } elseif ($byNameArea) {
             $target = $byNameArea;
         } else {
-            $target = new Especialidade();
+            $target = new Especialidade;
         }
 
         $target->fill([
@@ -222,7 +224,7 @@ class SyncEspecialidadesOficiais extends Command
     }
 
     /**
-     * @param array<int, array{area:string,codigo:string,nome:string,url_oficial:string,is_avancada:bool}> $catalog
+     * @param  array<int, array{area:string,codigo:string,nome:string,url_oficial:string,is_avancada:bool}>  $catalog
      * @return array{0: array<int, array{area:string,codigo:string,nome:string,url_oficial:string,is_avancada:bool}>, 1: array<int, array{area:string,codigo:string,nome:string,url_oficial:string,is_avancada:bool}>}
      */
     private function diffCatalog(array $catalog): array
@@ -240,6 +242,7 @@ class SyncEspecialidadesOficiais extends Command
 
             if (! $current) {
                 $toInsert[] = $item;
+
                 continue;
             }
 

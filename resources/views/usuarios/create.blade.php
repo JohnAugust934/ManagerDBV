@@ -1,17 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">Criar Usuário</x-slot>
-
     <div class="ui-page max-w-5xl mx-auto space-y-6 ui-animate-fade-up">
 
-        {{-- Header Navigation --}}
-        <div class="flex items-center justify-between mb-6">
-            <a href="{{ route('usuarios.index') }}" class="flex items-center gap-2 text-slate-500 hover:text-[#002F6C] dark:text-slate-400 dark:hover:text-blue-400 font-bold text-sm transition-colors group">
-                <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-[#002F6C]/10 dark:group-hover:bg-blue-500/20 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
-                </div>
-                Voltar à Equipe
-            </a>
-        </div>
+        <x-page-title title="Criar Usuário" :back="route('usuarios.index')" />
 
         <div class="ui-card p-0 overflow-hidden">
             <div class="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
@@ -78,11 +68,11 @@
                             Cargo Hierárquico base
                         </h4>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            @foreach (['diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor'] as $role)
+                            @foreach (($assignableRoles ?? ['diretor', 'secretario', 'tesoureiro', 'conselheiro', 'instrutor']) as $role)
                                 <label class="relative cursor-pointer group">
-                                    <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" {{ $role == 'conselheiro' ? 'checked' : '' }}>
+                                    <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" {{ old('role', 'conselheiro') == $role ? 'checked' : '' }}>
                                     <div class="px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-black uppercase tracking-widest text-[11px] text-slate-500 peer-checked:border-[#002F6C] peer-checked:bg-[#002F6C]/5 peer-checked:text-[#002F6C] dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500/10 dark:peer-checked:text-blue-400 transition-colors">
-                                        {{ $role }}
+                                        {{ \App\Models\User::ROLES_LABEL[$role] ?? $role }}
                                     </div>
                                 </label>
                             @endforeach

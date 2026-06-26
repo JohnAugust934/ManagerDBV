@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Club;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CaixaFactory extends Factory
@@ -14,7 +15,12 @@ class CaixaFactory extends Factory
             'tipo' => $this->faker->randomElement(['entrada', 'saida']),
             'data_movimentacao' => $this->faker->date(),
             'categoria' => $this->faker->word(),
-            'club_id' => null,
+            'club_id' => Club::factory(),
         ];
+    }
+
+    public function forClube(int $clubId): static
+    {
+        return $this->state(fn () => ['club_id' => $clubId]);
     }
 }

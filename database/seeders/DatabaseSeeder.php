@@ -17,9 +17,10 @@ use App\Models\Unidade;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
-if (! function_exists(__NAMESPACE__ . '\\fake')) {
+if (! function_exists(__NAMESPACE__.'\\fake')) {
     /**
      * Fallback para ambientes de produção sem fakerphp/faker (composer --no-dev).
      */
@@ -32,7 +33,7 @@ if (! function_exists(__NAMESPACE__ . '\\fake')) {
         }
 
         if ($faker === null) {
-            $faker = new SeederFallbackFaker();
+            $faker = new SeederFallbackFaker;
         }
 
         return $faker;
@@ -62,7 +63,7 @@ final class SeederFallbackFaker
             ? $this->randomElement($female)
             : ($gender === 'male' ? $this->randomElement($male) : $this->randomElement(array_merge($male, $female)));
 
-        return trim($first . ' ' . $this->randomElement($surnames));
+        return trim($first.' '.$this->randomElement($surnames));
     }
 
     public function dateTimeBetween(string $startDate = '-30 years', string $endDate = 'now'): \DateTime
@@ -74,7 +75,7 @@ final class SeederFallbackFaker
             [$start, $end] = [$end, $start];
         }
 
-        return (new \DateTime())->setTimestamp(random_int($start, $end));
+        return (new \DateTime)->setTimestamp(random_int($start, $end));
     }
 
     public function unique(): self
@@ -121,6 +122,7 @@ final class SeederFallbackFaker
         }
 
         $factor = 10 ** max(0, $maxDecimals);
+
         return round(random_int((int) round($min * $factor), (int) round($max * $factor)) / $factor, $maxDecimals);
     }
 
@@ -154,12 +156,39 @@ final class SeederFallbackFaker
             $parts[] = $this->randomElement($words);
         }
 
-        return ucfirst(implode(' ', $parts)) . '.';
+        return ucfirst(implode(' ', $parts)).'.';
     }
 }
 
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Quantas chamadas (datas de frequência) gerar por clube. Mínimo do pedido = 4;
+     * usamos 6 para dar folga ao ranking sem empates (mais resolução de pontos).
+     */
+    private const NUM_CHAMADAS = 6;
+
+    /**
+     * Definição dos 5 clubes — todos na cidade de São Paulo, um por Associação
+     * (campo administrativo). Todos os logins seguem o padrão <cargo>.<slug>@clube.com.
+     */
+    private const CLUBES = [
+        ['nome' => 'Clube Orion', 'slug' => 'orion', 'associacao' => 'Associação Paulistana'],
+        ['nome' => 'Clube Aurora', 'slug' => 'aurora', 'associacao' => 'Associação Paulista Central'],
+        ['nome' => 'Clube Vega', 'slug' => 'vega', 'associacao' => 'Associação Paulista Leste'],
+        ['nome' => 'Clube Sirius', 'slug' => 'sirius', 'associacao' => 'Associação Paulista Sul'],
+        ['nome' => 'Clube Antares', 'slug' => 'antares', 'associacao' => 'Associação Paulista Sudeste'],
+    ];
+
+    /** Pool de nomes de unidade — 4 por clube, sem repetir entre clubes (20 nomes). */
+    private const NOMES_UNIDADES = [
+        'Águias', 'Leões', 'Falcões', 'Tigres',
+        'Panteras', 'Lobos', 'Raposas', 'Corujas',
+        'Gaviões', 'Escorpiões', 'Cobras', 'Jaguares',
+        'Búfalos', 'Ursos', 'Andorinhas', 'Pumas',
+        'Linces', 'Tubarões', 'Golfinhos', 'Águias Reais',
+    ];
+
     public function run(): void
     {
         if (app()->isProduction()) {
@@ -168,113 +197,142 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        $this->command->info('🌱 Iniciando população do banco de dados...');
+        $this->command->info('🌱 Iniciando população do banco (multi-tenant: 5 clubes)...');
 
         // ---------------------------------------------------------
-        // 0. SEEDERS DE BASE (TABELAS DE APOIO)
+        // 0. CATÁLOGO GLOBAL (classes + especialidades) — compartilhado
         // ---------------------------------------------------------
         $this->call([
-            ClassesSeeder::class,        // Popula as Classes Regulares/Avançadas
-            EspecialidadesSeeder::class, // Popula as ~470 Especialidades
+            ClassesSeeder::class,
+            EspecialidadesSeeder::class,
         ]);
 
-        // Carrega dados em memória para otimizar os loops abaixo
-        $classesCache = Classe::all();
-        $especialidadesCache = Especialidade::all(); // Pega as especialidades criadas pelo seeder
+        $classes = Classe::orderBy('ordem')->get();
+        $especialidades = Especialidade::all();
 
         // ---------------------------------------------------------
-        // 1. CLUBE
+        // 1. SUPER ADMIN DE PLATAFORMA (cross-tenant, sem clube)
         // ---------------------------------------------------------
-        $clube = Club::firstOrCreate([
-            'nome' => 'Clube de Desbravadores Orion',
-        ], [
+        User::updateOrCreate(['email' => 'admin@plataforma.com'], [
+            'name' => 'Administrador da Plataforma',
+            'password' => Hash::make('password'),
+            'role' => 'platform_admin',
+            'is_master' => false,
+            'is_platform_admin' => true,
+            'club_id' => null,
+        ]);
+        $this->command->info('🛡️  Platform admin: admin@plataforma.com / password');
+
+        // ---------------------------------------------------------
+        // 2. CLUBES (5) — cada um isolado por club_id
+        // ---------------------------------------------------------
+        foreach (self::CLUBES as $indice => $def) {
+            $this->semearClube($indice, $def, $classes, $especialidades);
+        }
+
+        $this->command->info('---------------------------------------------------------');
+        $this->command->info('🚀 5 clubes prontos. Logins por clube: <cargo>.<slug>@clube.com');
+        $this->command->info('   Cargos: master / diretor / secretaria / tesoureiro / instrutor / conselheiro{1-4}');
+        $this->command->info('   Slugs: orion, aurora, vega, sirius, antares (ex.: diretor.orion@clube.com).');
+        $this->command->info('   Todas as senhas: password');
+        $this->command->info('---------------------------------------------------------');
+    }
+
+    /**
+     * Semeia um clube completo: equipe, 4 unidades, ~30 desbravadores distribuídos
+     * por todas as classes, especialidades, frequência (ranking sem empates),
+     * eventos, financeiro, patrimônio e documentos.
+     */
+    private function semearClube(int $indice, array $def, Collection $classes, Collection $especialidades): void
+    {
+        $slug = $def['slug'];
+
+        $clube = Club::firstOrCreate(['nome' => $def['nome']], [
             'cidade' => 'São Paulo',
-            'associacao' => 'Associação Paulista Leste',
+            'associacao' => $def['associacao'],
+            'is_active' => true,
             'logo' => null,
         ]);
 
-        $this->command->info("🏢 Clube '{$clube->nome}' verificado.");
+        $this->command->info("🏢 [{$clube->nome}] — {$def['associacao']}");
 
-        // ---------------------------------------------------------
-        // 2. USUÁRIOS DO SISTEMA (POR CARGO)
-        // ---------------------------------------------------------
+        // -- Equipe administrativa (logins padrão <cargo>.<slug>@clube.com) ----
         $cargos = [
-            ['name' => 'Administrador Master', 'email' => 'admin@clube.com', 'role' => 'master', 'club_id' => null, 'is_master' => true],
-            ['name' => 'Diretor Silva', 'email' => 'diretor@clube.com', 'role' => 'diretor', 'club_id' => $clube->id, 'is_master' => false],
-            ['name' => 'Secretária Ana', 'email' => 'secretaria@clube.com', 'role' => 'secretario', 'club_id' => $clube->id, 'is_master' => false],
-            ['name' => 'Tesoureiro Carlos', 'email' => 'tesoureiro@clube.com', 'role' => 'tesoureiro', 'club_id' => $clube->id, 'is_master' => false],
-            ['name' => 'Instrutor Marcos', 'email' => 'instrutor@clube.com', 'role' => 'instrutor', 'club_id' => $clube->id, 'is_master' => false],
+            ['cargo' => 'master', 'role' => 'master', 'is_master' => true, 'nome' => "Master {$slug}"],
+            ['cargo' => 'diretor', 'role' => 'diretor', 'is_master' => false, 'nome' => "Diretor {$slug}"],
+            ['cargo' => 'secretaria', 'role' => 'secretario', 'is_master' => false, 'nome' => "Secretária {$slug}"],
+            ['cargo' => 'tesoureiro', 'role' => 'tesoureiro', 'is_master' => false, 'nome' => "Tesoureiro {$slug}"],
+            ['cargo' => 'instrutor', 'role' => 'instrutor', 'is_master' => false, 'nome' => "Instrutor {$slug}"],
         ];
 
-        foreach ($cargos as $cargo) {
-            User::firstOrCreate(['email' => $cargo['email']], [
-                'name' => $cargo['name'],
+        $diretor = null;
+        foreach ($cargos as $c) {
+            $email = "{$c['cargo']}.{$slug}@clube.com";
+
+            $user = User::firstOrCreate(['email' => $email], [
+                'name' => $c['nome'],
                 'password' => Hash::make('password'),
-                'role' => $cargo['role'],
-                'club_id' => $cargo['club_id'],
-                'is_master' => $cargo['is_master'],
+                'role' => $c['role'],
+                'is_master' => $c['is_master'],
+                'is_platform_admin' => false,
+                'club_id' => $clube->id,
             ]);
+
+            if ($c['role'] === 'diretor') {
+                $diretor = $user;
+            }
         }
 
-        $this->command->info('👥 Equipe administrativa criada.');
+        // -- 4 unidades + conselheiros ----------------------------------------
+        $nomesUnidades = array_slice(self::NOMES_UNIDADES, $indice * 4, 4);
 
-        // ---------------------------------------------------------
-        // 3. UNIDADES & CONSELHEIROS
-        // ---------------------------------------------------------
+        $emailsConselheiros = array_map(fn (int $n) => "conselheiro{$n}.{$slug}@clube.com", [1, 2, 3, 4]);
+
         $unidades = collect();
-        $dadosUnidades = [
-            ['nome' => 'Águias', 'grito' => 'Voando alto, sempre avante!', 'conselheiro' => 'Conselheiro Pedro', 'email' => 'pedro@clube.com'],
-            ['nome' => 'Leões', 'grito' => 'Força e coragem, somos Leões!', 'conselheiro' => 'Conselheiro João', 'email' => 'joao@clube.com'],
-            ['nome' => 'Escorpiões', 'grito' => 'Pequenos no tamanho, gigantes na bravura!', 'conselheiro' => 'Conselheiro Lucas', 'email' => 'lucas@clube.com'],
-            ['nome' => 'Falcões', 'grito' => 'Velocidade e precisão, Falcões em ação!', 'conselheiro' => 'Conselheira Maria', 'email' => 'maria@clube.com'],
-        ];
-
-        foreach ($dadosUnidades as $dado) {
-            // Cria a Unidade
-            $unidade = Unidade::firstOrCreate(['nome' => $dado['nome']], [
-                'grito_guerra' => $dado['grito'],
-                'conselheiro' => $dado['conselheiro'],
-                'club_id' => $clube->id, // Garante vínculo com o clube
-            ]);
-            $unidades->push($unidade);
-
-            // Cria o Usuário Conselheiro
-            User::firstOrCreate(['email' => $dado['email']], [
-                'name' => $dado['conselheiro'],
+        foreach ($nomesUnidades as $pos => $nome) {
+            $conselheiroUser = User::firstOrCreate(['email' => $emailsConselheiros[$pos]], [
+                'name' => "Conselheiro {$nome}",
                 'password' => Hash::make('password'),
                 'role' => 'conselheiro',
                 'is_master' => false,
+                'is_platform_admin' => false,
                 'club_id' => $clube->id,
             ]);
-        }
-        $this->command->info('⛺ Unidades e Conselheiros criados.');
 
-        // ---------------------------------------------------------
-        // 4. DESBRAVADORES
-        // ---------------------------------------------------------
+            $unidade = Unidade::firstOrCreate(
+                ['nome' => $nome, 'club_id' => $clube->id],
+                [
+                    'grito_guerra' => "Avante, {$nome}!",
+                    'conselheiro' => "Conselheiro {$nome}",
+                    'conselheiro_user_id' => $conselheiroUser->id,
+                    'no_ranking' => true, // true = PARTICIPA do ranking
+                ]
+            );
+            $unidades->push($unidade);
+        }
+
+        // -- ~30 desbravadores, distribuídos por TODAS as classes -------------
         $desbravadores = collect();
-        $diretor = User::where('role', 'diretor')->first();
-
-        // Garante que temos especialidades para vincular
-        if ($especialidadesCache->isEmpty()) {
-            $this->command->warn('⚠️ Nenhuma especialidade encontrada. Rode o EspecialidadesSeeder primeiro.');
-        }
-
+        $classeIndex = 0;
         foreach ($unidades as $unidade) {
-            // Cria entre 6 a 8 desbravadores por unidade
-            for ($i = 0; $i < rand(6, 8); $i++) {
-                $sexo = fake()->randomElement(['M', 'F']);
+            $qtd = random_int(7, 8); // 4 unidades x 7-8 ≈ 28-32 ≈ 30
+            for ($i = 0; $i < $qtd; $i++) {
+                // Round-robin nas classes garante cobertura de todas elas.
+                $classe = $classes[$classeIndex % $classes->count()];
+                $classeIndex++;
 
-                // Sorteia uma classe e pega o objeto real do banco
-                $classeSorteada = $classesCache->where('nome', fake()->randomElement(['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro']))->first();
+                $sexo = fake()->randomElement(['M', 'F']);
+                // Idade coerente com a ordem da classe (Amigo≈10 ... Líder Máster Av.≈18+).
+                $idade = 9 + (int) $classe->ordem;
 
                 $dbv = Desbravador::create([
                     'ativo' => true,
-                    'nome' => fake()->name($sexo == 'M' ? 'male' : 'female'),
-                    'data_nascimento' => fake()->dateTimeBetween('-15 years', '-10 years'),
+                    'nome' => fake()->name($sexo === 'M' ? 'male' : 'female'),
+                    'data_nascimento' => fake()->dateTimeBetween("-{$idade} years", '-'.($idade - 1).' years'),
                     'sexo' => $sexo,
                     'unidade_id' => $unidade->id,
-                    'classe_atual' => $classeSorteada ? $classeSorteada->id : null, // ID correto
+                    'club_id' => $clube->id,
+                    'classe_atual' => $classe->id,
                     'email' => fake()->unique()->safeEmail(),
                     'telefone' => fake()->phoneNumber(),
                     'endereco' => fake()->address(),
@@ -287,41 +345,143 @@ class DatabaseSeeder extends Seeder
                     'plano_saude' => fake()->boolean(40) ? 'Unimed' : null,
                 ]);
 
-                // Vincula Especialidades Aleatórias (se houver)
-                if ($especialidadesCache->isNotEmpty()) {
+                // Especialidades distribuídas no cadastro (1 a 4 por desbravador).
+                if ($especialidades->isNotEmpty()) {
                     $dbv->especialidades()->attach(
-                        $especialidadesCache->random(rand(1, 3))->pluck('id'),
+                        $especialidades->random(random_int(1, 4))->pluck('id'),
                         ['data_conclusao' => fake()->dateTimeBetween('-2 years', 'now')]
                     );
                 }
 
-                // Simula Progresso na Classe (Requisitos Cumpridos)
-                if ($classeSorteada && $classeSorteada->requisitos->count() > 0) {
-                    $reqs = $classeSorteada->requisitos->random(min(3, $classeSorteada->requisitos->count()));
+                // Progresso de requisitos da classe atual.
+                if ($classe->requisitos->count() > 0) {
+                    $reqs = $classe->requisitos->random(min(4, $classe->requisitos->count()));
                     foreach ($reqs as $req) {
                         $dbv->requisitosCumpridos()->attach($req->id, [
-                            'user_id' => $diretor->id ?? 1, // Assinado pelo diretor
-                            'data_conclusao' => now()->subDays(rand(1, 60)),
+                            'user_id' => $diretor?->id,
+                            'data_conclusao' => now()->subDays(random_int(1, 90)),
                         ]);
                     }
                 }
+
                 $desbravadores->push($dbv);
             }
         }
-        $this->command->info("🧒 {$desbravadores->count()} Desbravadores criados com histórico.");
 
-        // ---------------------------------------------------------
-        // 5. EVENTOS
-        // ---------------------------------------------------------
-        $listaEventos = [
-            ['nome' => 'Acampamento de Instrução', 'local' => 'Chácara Oliveira', 'valor' => 120.00, 'inicio' => '-2 months', 'fim' => '-2 months + 2 days'],
+        // -- Frequência + ranking SEM EMPATES ---------------------------------
+        $this->semearFrequencia($clube->id, $desbravadores);
+
+        // -- 5 eventos --------------------------------------------------------
+        $this->semearEventos($clube->id, $def, $desbravadores);
+
+        // -- Financeiro: caixa + mensalidades ---------------------------------
+        $this->semearFinanceiro($clube->id, $desbravadores);
+
+        // -- Patrimônio -------------------------------------------------------
+        $this->semearPatrimonio($clube->id);
+
+        // -- Documentos: 3 atas + 3 atos --------------------------------------
+        $this->semearDocumentos($clube->id, $desbravadores);
+
+        $this->command->info("   ✅ {$desbravadores->count()} desbravadores, ".$unidades->count().' unidades, 5 eventos, financeiro, patrimônio e 6 documentos.');
+    }
+
+    /**
+     * Gera NUM_CHAMADAS datas de frequência e atribui a cada desbravador um total
+     * de pontos ÚNICO dentro do clube (escada de múltiplos de 5), eliminando
+     * empates no ranking. Os pontos são distribuídos de forma equilibrada pelas
+     * chamadas (em colunas legadas presente/pontual/biblia/uniforme).
+     */
+    private function semearFrequencia(int $clubId, Collection $desbravadores): void
+    {
+        $datas = collect(range(0, self::NUM_CHAMADAS - 1))
+            ->map(fn (int $semanasAtras) => Carbon::now()
+                ->subWeeks($semanasAtras)
+                ->startOfWeek(Carbon::SUNDAY)
+                ->format('Y-m-d'));
+
+        // Total máximo por desbravador = NUM_CHAMADAS * 30 pts = NUM_CHAMADAS * 6 "unidades de 5".
+        $maxUnidades = self::NUM_CHAMADAS * 6;
+
+        // Embaralha para que o topo do ranking não fique alinhado por unidade.
+        $ordenados = $desbravadores->shuffle()->values();
+
+        foreach ($ordenados as $posicao => $dbv) {
+            // Alvo único e decrescente: 36, 35, 34, ... (em unidades de 5 pts).
+            $unidadesAlvo = max(0, $maxUnidades - $posicao);
+
+            foreach ($this->distribuirUnidades($unidadesAlvo, self::NUM_CHAMADAS) as $i => $unidadesChamada) {
+                Frequencia::firstOrCreate(
+                    ['desbravador_id' => $dbv->id, 'data' => $datas[$i]],
+                    array_merge(['club_id' => $clubId], $this->unidadesParaColunas($unidadesChamada))
+                );
+            }
+        }
+    }
+
+    /**
+     * Distribui $total "unidades de 5 pontos" o mais uniformemente possível entre
+     * $chamadas (cada chamada cabe 0..6 unidades = 0..30 pts).
+     *
+     * @return int[]
+     */
+    private function distribuirUnidades(int $total, int $chamadas): array
+    {
+        $base = intdiv($total, $chamadas);
+        $resto = $total % $chamadas;
+
+        $resultado = [];
+        for ($i = 0; $i < $chamadas; $i++) {
+            $resultado[$i] = min(6, $base + ($i < $resto ? 1 : 0));
+        }
+
+        return $resultado;
+    }
+
+    /**
+     * Converte "unidades de 5 pts" (0..6) nas colunas booleanas legadas, priorizando
+     * presença (presente=10, uniforme=10, pontual=5, biblia=5).
+     *
+     * @return array{presente: bool, pontual: bool, biblia: bool, uniforme: bool}
+     */
+    private function unidadesParaColunas(int $unidades): array
+    {
+        $presente = $pontual = $biblia = $uniforme = false;
+        $r = $unidades;
+
+        if ($r >= 2) {
+            $presente = true;
+            $r -= 2;
+        }
+        if ($r >= 2) {
+            $uniforme = true;
+            $r -= 2;
+        }
+        if ($r >= 1) {
+            $pontual = true;
+            $r -= 1;
+        }
+        if ($r >= 1) {
+            $biblia = true;
+            $r -= 1;
+        }
+
+        return compact('presente', 'pontual', 'biblia', 'uniforme');
+    }
+
+    private function semearEventos(int $clubId, array $def, Collection $desbravadores): void
+    {
+        $assoc = $def['associacao'];
+
+        $lista = [
+            ['nome' => 'Acampamento de Instrução', 'local' => 'Chácara Oliveira', 'valor' => 120.00, 'inicio' => '-2 months', 'fim' => '-2 months +2 days'],
             ['nome' => 'Caminhada Noturna', 'local' => 'Trilha do Morro', 'valor' => 0.00, 'inicio' => '-1 month', 'fim' => '-1 month'],
-            ['nome' => 'IV Campori da APL', 'local' => 'Parque do Peão - Barretos', 'valor' => 280.00, 'inicio' => '+1 month', 'fim' => '+1 month + 4 days'],
+            ['nome' => "Campori da {$assoc}", 'local' => 'Parque de Acampamentos', 'valor' => 280.00, 'inicio' => '+1 month', 'fim' => '+1 month +4 days'],
             ['nome' => 'Investidura de Classes', 'local' => 'Igreja Central', 'valor' => 15.00, 'inicio' => '+2 months', 'fim' => '+2 months'],
             ['nome' => 'Dia Mundial dos Desbravadores', 'local' => 'Ginásio de Esportes', 'valor' => 0.00, 'inicio' => '+5 months', 'fim' => '+5 months'],
         ];
 
-        foreach ($listaEventos as $evt) {
+        foreach ($lista as $evt) {
             $evento = Evento::create([
                 'nome' => $evt['nome'],
                 'local' => $evt['local'],
@@ -329,45 +489,39 @@ class DatabaseSeeder extends Seeder
                 'data_inicio' => date('Y-m-d H:i:s', strtotime($evt['inicio'])),
                 'data_fim' => date('Y-m-d H:i:s', strtotime($evt['fim'])),
                 'descricao' => 'Evento oficial do calendário anual.',
-                'club_id' => $clube->id,
+                'club_id' => $clubId,
             ]);
 
-            // Inscreve alguns desbravadores aleatoriamente
+            $passado = strtotime($evt['inicio']) < time();
             foreach ($desbravadores as $dbv) {
-                // Eventos passados têm mais inscritos
-                $chance = (strtotime($evt['inicio']) < time()) ? 80 : 40;
-
-                if (fake()->boolean($chance)) {
-                    $pago = ($evento->valor == 0) || fake()->boolean(60);
+                if (fake()->boolean($passado ? 80 : 40)) {
                     $evento->desbravadores()->attach($dbv->id, [
-                        'pago' => $pago,
+                        'pago' => ($evento->valor == 0) || fake()->boolean(60),
                         'autorizacao_entregue' => fake()->boolean(70),
                     ]);
                 }
             }
         }
-        $this->command->info('📅 Calendário de Eventos populado.');
+    }
 
-        // ---------------------------------------------------------
-        // 6. FINANCEIRO (CAIXA E MENSALIDADES)
-        // ---------------------------------------------------------
-
-        // Caixa: Movimentações Avulsas
+    private function semearFinanceiro(int $clubId, Collection $desbravadores): void
+    {
+        // Movimentações avulsas de caixa.
         for ($i = 0; $i < 30; $i++) {
             $tipo = fake()->randomElement(['entrada', 'saida']);
             Caixa::create([
-                'descricao' => $tipo == 'entrada'
+                'descricao' => $tipo === 'entrada'
                     ? fake()->randomElement(['Doação', 'Venda de Pizza', 'Cantina', 'Oferta Especial'])
                     : fake()->randomElement(['Material de Secretaria', 'Gás', 'Manutenção Barracas', 'Lanche']),
                 'tipo' => $tipo,
-                'categoria' => $tipo == 'entrada' ? 'Receitas Diversas' : 'Despesas Operacionais',
+                'categoria' => $tipo === 'entrada' ? 'Receitas Diversas' : 'Despesas Operacionais',
                 'valor' => fake()->randomFloat(2, 20, 300),
                 'data_movimentacao' => fake()->dateTimeBetween('-6 months', 'now'),
-                'club_id' => $clube->id,
+                'club_id' => $clubId,
             ]);
         }
 
-        // Mensalidades: Gera para os últimos 3 meses
+        // Mensalidades dos últimos 3 meses.
         $meses = [
             now()->startOfMonth()->subMonths(2),
             now()->startOfMonth()->subMonth(),
@@ -377,22 +531,21 @@ class DatabaseSeeder extends Seeder
         foreach ($meses as $data) {
             foreach ($desbravadores as $dbv) {
                 $status = fake()->boolean(70) ? 'pago' : 'pendente';
-                Mensalidade::firstOrCreate([
-                    'desbravador_id' => $dbv->id,
-                    'mes' => $data->month,
-                    'ano' => $data->year,
-                ], [
-                    'valor' => 15.00,
-                    'status' => $status,
-                    'data_pagamento' => $status == 'pago' ? $data->copy()->addDays(rand(1, 10)) : null,
-                ]);
+                Mensalidade::firstOrCreate(
+                    ['desbravador_id' => $dbv->id, 'mes' => $data->month, 'ano' => $data->year],
+                    [
+                        'club_id' => $clubId,
+                        'valor' => 15.00,
+                        'status' => $status,
+                        'data_pagamento' => $status === 'pago' ? $data->copy()->addDays(random_int(1, 10)) : null,
+                    ]
+                );
             }
         }
-        $this->command->info('💰 Financeiro (Caixa e Mensalidades) atualizado.');
+    }
 
-        // ---------------------------------------------------------
-        // 7. PATRIMÔNIO
-        // ---------------------------------------------------------
+    private function semearPatrimonio(int $clubId): void
+    {
         $itens = [
             ['item' => 'Barraca Canadense', 'qtd' => 5, 'valor' => 450.00, 'estado' => 'Bom'],
             ['item' => 'Barraca Iglu 4 Pessoas', 'qtd' => 8, 'valor' => 300.00, 'estado' => 'Novo'],
@@ -410,16 +563,16 @@ class DatabaseSeeder extends Seeder
                 'estado_conservacao' => $item['estado'],
                 'data_aquisicao' => fake()->dateTimeBetween('-3 years', '-1 month'),
                 'local_armazenamento' => 'Almoxarifado Sede',
-                'observacoes' => 'Inventário Inicial 2026',
-                'club_id' => $clube->id,
+                'observacoes' => 'Inventário Inicial '.now()->year,
+                'club_id' => $clubId,
             ]);
         }
-        $this->command->info('📦 Inventário de Patrimônio criado.');
+    }
 
-        // ---------------------------------------------------------
-        // 8. SECRETARIA (ATAS E ATOS)
-        // ---------------------------------------------------------
-        for ($i = 0; $i < 5; $i++) {
+    private function semearDocumentos(int $clubId, Collection $desbravadores): void
+    {
+        // 3 atas
+        for ($i = 0; $i < 3; $i++) {
             Ata::create([
                 'titulo' => 'Reunião Administrativa nº '.($i + 1),
                 'tipo' => fake()->randomElement(['Regular', 'Diretoria', 'Planejamento']),
@@ -427,50 +580,23 @@ class DatabaseSeeder extends Seeder
                 'hora_inicio' => '09:00',
                 'hora_fim' => '11:00',
                 'local' => 'Sede do Clube',
-                'secretario_responsavel' => 'Secretária Ana',
+                'secretario_responsavel' => 'Secretaria do Clube',
                 'participantes' => 'Diretoria completa e Conselheiros.',
                 'conteudo' => fake()->paragraphs(3, true),
-                'club_id' => $clube->id,
+                'club_id' => $clubId,
             ]);
         }
 
+        // 3 atos
         for ($i = 0; $i < 3; $i++) {
             Ato::create([
-                'numero' => str_pad($i + 1, 3, '0', STR_PAD_LEFT).'/2026',
+                'numero' => str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT).'/'.now()->year,
                 'tipo' => fake()->randomElement(['Nomeação', 'Exoneração']),
                 'data' => fake()->dateTimeBetween('-6 months', 'now'),
                 'descricao' => fake()->sentence(10),
                 'desbravador_id' => $desbravadores->random()->id,
-                'club_id' => $clube->id,
+                'club_id' => $clubId,
             ]);
         }
-        $this->command->info('📂 Documentos de Secretaria gerados.');
-
-        // ---------------------------------------------------------
-        // 9. FREQUÊNCIA
-        // ---------------------------------------------------------
-        $datasChamada = [
-            Carbon::now()->startOfWeek(Carbon::SUNDAY),
-            Carbon::now()->subWeeks(1)->startOfWeek(Carbon::SUNDAY),
-        ];
-
-        foreach ($datasChamada as $data) {
-            foreach ($desbravadores as $dbv) {
-                Frequencia::firstOrCreate([
-                    'desbravador_id' => $dbv->id,
-                    'data' => $data->format('Y-m-d'),
-                ], [
-                    'presente' => $presente = fake()->boolean(80),
-                    'pontual' => $presente ? fake()->boolean(90) : false,
-                    'biblia' => $presente ? fake()->boolean(70) : false,
-                    'uniforme' => $presente ? fake()->boolean(95) : false,
-                ]);
-            }
-        }
-        $this->command->info('📋 Frequência das últimas reuniões registrada.');
-
-        $this->command->info('---------------------------------------------------------');
-        $this->command->info('🚀 SISTEMA COMPLETO PRONTO PARA USO!');
-        $this->command->info('---------------------------------------------------------');
     }
 }

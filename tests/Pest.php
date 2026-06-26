@@ -45,3 +45,27 @@ function something()
 {
     // ..
 }
+
+/**
+ * Cria um clube com um master e uma unidade vinculados, prontos para testes
+ * de isolamento multi-tenant.
+ *
+ * @return array{club: \App\Models\Club, master: \App\Models\User, unidade: \App\Models\Unidade}
+ */
+function criarClubeComDados(string $nome = 'Clube Teste'): array
+{
+    $club = \App\Models\Club::create([
+        'nome' => $nome,
+        'cidade' => 'Cidade',
+        'associacao' => 'APaC',
+    ]);
+
+    $master = \App\Models\User::factory()->create([
+        'role' => 'master',
+        'club_id' => $club->id,
+    ]);
+
+    $unidade = \App\Models\Unidade::factory()->create(['club_id' => $club->id]);
+
+    return compact('club', 'master', 'unidade');
+}

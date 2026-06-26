@@ -11,11 +11,11 @@ return new class extends Migration
         Schema::table('desbravadores', function (Blueprint $table) {
             // Verifica campo por campo antes de criar para evitar erro de duplicidade
 
-            if (!Schema::hasColumn('desbravadores', 'ativo')) {
+            if (! Schema::hasColumn('desbravadores', 'ativo')) {
                 $table->boolean('ativo')->default(true);
             }
 
-            if (!Schema::hasColumn('desbravadores', 'email')) {
+            if (! Schema::hasColumn('desbravadores', 'email')) {
                 $table->string('email')->nullable();
                 $table->string('telefone')->nullable();
                 $table->string('endereco')->nullable();
@@ -44,7 +44,7 @@ return new class extends Migration
                 'tipo_sanguineo',
                 'alergias',
                 'medicamentos_continuos',
-                'plano_saude'
+                'plano_saude',
             ];
 
             foreach ($columns as $column) {

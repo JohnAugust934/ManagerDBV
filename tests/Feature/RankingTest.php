@@ -102,7 +102,8 @@ class RankingTest extends TestCase
 
     public function test_snapshot_anual_do_ranking_pode_ser_gerado_para_auditoria()
     {
-        $unidade = Unidade::factory()->create();
+        $clube = Club::create(['nome' => 'Clube Snapshot', 'cidade' => 'SP']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $desbravador = Desbravador::factory()->create([
             'unidade_id' => $unidade->id,
             'ativo' => true,
@@ -130,7 +131,7 @@ class RankingTest extends TestCase
             ->firstOrFail();
 
         $this->assertNotEmpty($snapshot->entries);
-        $this->assertSame($desbravador->nome, $snapshot->entries[0]['name']);
+        $this->assertSame($desbravador->nome, $snapshot->entries[0]['nome']);
     }
 
     public function test_coluna_nova_nao_recalcula_pontuacao_antiga_no_ranking()
@@ -221,19 +222,43 @@ class RankingTest extends TestCase
 
         $entries = RankingSnapshot::where('year', $ano)->where('scope', 'unidades')->firstOrFail()->entries;
 
+        // A posição é o índice no array já ordenado por pontos (a view numera
+        // pelo índice do loop); o schema do snapshot guarda nome/pontos.
         $this->assertSame($unidadeForte->id, $entries[0]['id']);
-        $this->assertSame(30, $entries[0]['points']);
-        $this->assertSame(1, $entries[0]['position']);
+        $this->assertSame(30, $entries[0]['pontos']);
 
         $this->assertSame($unidadeFraca->id, $entries[1]['id']);
-        $this->assertSame(10, $entries[1]['points']);
-        $this->assertSame(2, $entries[1]['position']);
+        $this->assertSame(10, $entries[1]['pontos']);
+    }
+
+    public function test_snapshot_exclui_unidades_fora_do_ranking()
+    {
+        $ano = now()->subYear()->year;
+        $clube = Club::create(['nome' => 'Clube Exclui', 'cidade' => 'SP']);
+
+        $participante = Unidade::factory()->create(['nome' => 'Participa', 'club_id' => $clube->id, 'no_ranking' => true]);
+        $foraRanking = Unidade::factory()->create(['nome' => 'Fora', 'club_id' => $clube->id, 'no_ranking' => false]);
+
+        $dbvIn = Desbravador::factory()->create(['unidade_id' => $participante->id, 'ativo' => true, 'nome' => 'Dentro']);
+        $dbvOut = Desbravador::factory()->create(['unidade_id' => $foraRanking->id, 'ativo' => true, 'nome' => 'Fora DBV']);
+
+        Frequencia::create(['desbravador_id' => $dbvIn->id, 'data' => now()->subYear(), 'presente' => true, 'pontual' => true, 'biblia' => true, 'uniforme' => true]);
+        Frequencia::create(['desbravador_id' => $dbvOut->id, 'data' => now()->subYear(), 'presente' => true, 'pontual' => true, 'biblia' => true, 'uniforme' => true]);
+
+        $this->artisan('ranking:snapshot '.$ano)->assertExitCode(0);
+
+        $unidades = RankingSnapshot::where('year', $ano)->where('scope', 'unidades')->firstOrFail()->entries;
+        $this->assertSame(['Participa'], array_column($unidades, 'nome'));
+
+        $membros = RankingSnapshot::where('year', $ano)->where('scope', 'desbravadores')->firstOrFail()->entries;
+        $this->assertSame(['Dentro'], array_column($membros, 'nome'));
     }
 
     public function test_snapshot_anual_e_idempotente_por_ano_e_escopo()
     {
         $ano = now()->subYear()->year;
-        $unidade = Unidade::factory()->create();
+        $clube = Club::create(['nome' => 'Clube Idempotente', 'cidade' => 'SP']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
         Frequencia::create(['desbravador_id' => $dbv->id, 'data' => now()->subYear(), 'presente' => true, 'pontual' => true, 'biblia' => true, 'uniforme' => true]);
 

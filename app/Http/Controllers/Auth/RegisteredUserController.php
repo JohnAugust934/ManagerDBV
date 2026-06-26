@@ -51,6 +51,7 @@ class RegisteredUserController extends Controller
             'token' => ['required', 'exists:invitations,token'],
             'name' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'aceite_termos' => ['accepted'],
         ]);
 
         $resultado = DB::transaction(function () use ($request) {
@@ -70,17 +71,23 @@ class RegisteredUserController extends Controller
                 return ['erro' => 'Já existe um usuário cadastrado com este e-mail.'];
             }
 
-            // MÁGICA SINGLE-TENANT: Busca o único clube. Se for o primeiro acesso, será null.
-            $club = Club::first();
+            // Multi-tenant: o usuário herda o clube do CONVITE. No primeiro acesso
+            // (diretor convidado antes de o clube existir) o convite ainda não tem
+            // club_id e o onboarding o levará à criação do clube.
+            $club = $invitation->club_id ? Club::find($invitation->club_id) : null;
+
+            $isPlatformAdmin = $invitation->role === 'platform_admin';
 
             $user = User::create([
                 'name' => $request->name,
                 'email' => $invitation->email,
                 'password' => Hash::make($request->password),
                 'role' => $invitation->role,
-                'club_id' => $club?->id,
+                'club_id' => $isPlatformAdmin ? null : $invitation->club_id,
                 'extra_permissions' => $invitation->extra_permissions ?? null,
                 'is_master' => false,
+                'is_platform_admin' => $isPlatformAdmin,
+                'termos_aceitos_em' => now(),
             ]);
 
             $invitation->update(['registered_at' => now()]);

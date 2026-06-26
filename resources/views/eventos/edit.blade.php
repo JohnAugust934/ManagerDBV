@@ -1,8 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">Editar Evento</x-slot>
-
     <div class="ui-page min-h-full">
         <div class="max-w-4xl mx-auto">
+
+            <x-page-title title="Editar Evento" :back="route('eventos.index')" />
 
             <div
                 class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden">

@@ -141,11 +141,14 @@ class UnidadeTest extends TestCase
 
         $unidadeAlheia = Unidade::create(['nome' => 'Beta', 'conselheiro' => 'Maria', 'club_id' => $outroClube->id]);
 
-        $this->actingAs($diretor)->get(route('unidades.edit', $unidadeAlheia))->assertForbidden();
+        // Com o ClubScope em Unidade, o route-model binding nem resolve a unidade
+        // de outro clube → 404 (isolamento mais forte que o 403 anterior, que
+        // revelaria a existência do recurso).
+        $this->actingAs($diretor)->get(route('unidades.edit', $unidadeAlheia))->assertNotFound();
         $this->actingAs($diretor)->put(route('unidades.update', $unidadeAlheia), [
             'nome' => 'Hackeada',
             'conselheiro' => 'Intruso',
-        ])->assertForbidden();
+        ])->assertNotFound();
         $this->assertDatabaseHas('unidades', ['id' => $unidadeAlheia->id, 'nome' => 'Beta']);
     }
 }

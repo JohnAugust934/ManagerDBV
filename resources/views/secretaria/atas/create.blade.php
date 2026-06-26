@@ -1,8 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">Registrar Ata</x-slot>
-
     <div class="ui-page">
         <div class="max-w-4xl mx-auto">
+
+            <x-page-title title="Registrar Ata" :back="route('atas.index')" />
+
             <div class="ui-card p-6 md:p-8">
                 <form method="POST" action="{{ route('atas.store') }}" class="space-y-6">
                     @csrf

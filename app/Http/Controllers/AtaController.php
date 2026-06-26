@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ata;
+use App\Services\ClubContext;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -47,7 +48,7 @@ class AtaController extends Controller
             'participantes' => 'nullable|string', // Lista de nomes ou ids
         ]);
 
-        $dados['club_id'] = auth()->user()->club_id;
+        $dados['club_id'] = ClubContext::currentClubId();
         Ata::create($dados);
 
         return redirect()->route('atas.index')->with('success', 'Ata registrada com sucesso!');

@@ -1,17 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('unidades.index') }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            </a>
-            <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">
-                Editar Unidade
-            </h2>
-        </div>
-    </x-slot>
-
     <div class="ui-page">
         <div class="max-w-2xl mx-auto ui-animate-fade-up">
+
+            <x-page-title title="Editar Unidade" :back="route('unidades.index')" />
             
             <div class="ui-card overflow-hidden">
                 <div class="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
@@ -61,20 +52,47 @@
                             <textarea id="grito_guerra" name="grito_guerra" rows="4" class="ui-input" placeholder="Digite o grito de guerra aqui...">{{ old('grito_guerra', $unidade->grito_guerra) }}</textarea>
                         </div>
 
-                        {{-- Toggle ranking --}}
-                        <div class="pt-6 border-t border-slate-100 dark:border-slate-800 mt-8">
+                        {{-- Toggle ranking — atualização in-place (sem reload). Mantém
+                             type=submit + form oculto como fallback caso o JS falhe. --}}
+                        <div class="pt-6 border-t border-slate-100 dark:border-slate-800 mt-8" x-data="{
+                            noRanking: {{ $unidade->no_ranking ? 'true' : 'false' }},
+                            toggling: false,
+                            async toggle() {
+                                if (this.toggling) return;
+                                this.toggling = true;
+                                try {
+                                    const res = await fetch('{{ route('unidades.toggle-ranking', $unidade) }}', {
+                                        method: 'PATCH',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                            'Accept': 'application/json',
+                                            'X-Requested-With': 'XMLHttpRequest',
+                                        },
+                                    });
+                                    const data = await res.json().catch(() => ({}));
+                                    if (!res.ok) { window.notify(data.message || 'Não foi possível atualizar o ranking.', 'error'); return; }
+                                    this.noRanking = data.no_ranking;
+                                    window.notify(data.message, 'success');
+                                } catch (e) {
+                                    window.notify('Falha de conexão ao atualizar o ranking.', 'error');
+                                } finally {
+                                    this.toggling = false;
+                                }
+                            }
+                        }">
                             <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Participação no Ranking</p>
-                            <button type="submit" form="toggle-ranking-form" class="w-full text-[13px] font-black uppercase tracking-widest py-3 px-4 rounded-2xl border-2 transition-colors flex items-center justify-center gap-2
-                                    {{ $unidade->no_ranking
+                            <button type="submit" form="toggle-ranking-form" @click.prevent="toggle" :disabled="toggling"
+                                    class="w-full text-[13px] font-black uppercase tracking-widest py-3 px-4 rounded-2xl border-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    :class="noRanking
                                         ? 'border-emerald-200 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 hover:text-red-500'
-                                        : 'border-slate-200 dark:border-slate-700 text-slate-400 bg-slate-50 dark:bg-slate-900/30 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 hover:text-emerald-600' }}">
-                                    @if ($unidade->no_ranking)
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-400 bg-slate-50 dark:bg-slate-900/30 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 hover:text-emerald-600'">
+                                    <template x-if="noRanking">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
-                                        Participando do Ranking — Clique para excluir
-                                    @else
+                                    </template>
+                                    <template x-if="!noRanking">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                                        Fora do Ranking — Clique para incluir
-                                    @endif
+                                    </template>
+                                    <span x-text="noRanking ? 'Participando do Ranking — Clique para excluir' : 'Fora do Ranking — Clique para incluir'"></span>
                                 </button>
                         </div>
 

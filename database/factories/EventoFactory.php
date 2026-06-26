@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Club;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class EventoFactory extends Factory
@@ -17,7 +18,12 @@ class EventoFactory extends Factory
             'data_fim' => (clone $inicio)->modify('+2 days'),
             'valor' => $this->faker->randomFloat(2, 0, 200),
             'descricao' => $this->faker->paragraph,
-            'club_id' => null,
+            'club_id' => Club::factory(),
         ];
+    }
+
+    public function forClube(int $clubId): static
+    {
+        return $this->state(fn () => ['club_id' => $clubId]);
     }
 }
