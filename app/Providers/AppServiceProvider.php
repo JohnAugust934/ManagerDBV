@@ -10,10 +10,10 @@ use App\Services\TelegramNotifier;
 use Carbon\Carbon;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\QueueBusy;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -32,7 +32,13 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // O pacote de passkeys (asbiin/laravel-webauthn) é orientado a Fortify e
+        // registra automaticamente um conjunto próprio de rotas sob o prefixo
+        // "webauthn". Aqui usamos Breeze e expomos rotas/controllers próprios
+        // (ver routes/auth.php → "passkeys.*"), consumindo apenas os serviços de
+        // challenge/validação da lib. Desligamos o auto-registro para não expor
+        // uma segunda superfície de autenticação não usada.
+        \LaravelWebauthn\Services\Webauthn::ignoreRoutes();
     }
 
     public function boot(): void
