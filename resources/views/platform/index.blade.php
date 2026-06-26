@@ -84,72 +84,7 @@
         </div>
 
     {{-- Painel de Observabilidade --}}
-    <div class="mt-8">
-        <h2 class="text-lg font-black text-slate-800 dark:text-white mb-4">Observabilidade</h2>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            {{-- Clubes ativos --}}
-            <div class="ui-card p-4">
-                <p class="text-2xl font-black text-green-600 dark:text-green-400">{{ $operacional['clubesAtivos'] }}</p>
-                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mt-0.5">Clubes ativos</p>
-            </div>
-            {{-- Clubes inativos --}}
-            <div class="ui-card p-4">
-                <p class="text-2xl font-black {{ $operacional['clubesInativos'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400' }}">
-                    {{ $operacional['clubesInativos'] }}
-                </p>
-                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mt-0.5">Clubes inativos</p>
-            </div>
-            {{-- Jobs na fila --}}
-            <div class="ui-card p-4">
-                @if ($operacional['queueSize'] !== null)
-                    <p class="text-2xl font-black {{ $operacional['queueSize'] > 100 ? 'text-red-600 dark:text-red-400' : ($operacional['queueSize'] > 20 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-800 dark:text-white') }}">
-                        {{ $operacional['queueSize'] }}
-                    </p>
-                @else
-                    <p class="text-2xl font-black text-slate-400">—</p>
-                @endif
-                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mt-0.5">Jobs na fila</p>
-            </div>
-            {{-- Falhas recentes --}}
-            <div class="ui-card p-4">
-                @if ($operacional['falhasRecentes'] !== null)
-                    <p class="text-2xl font-black {{ $operacional['falhasRecentes'] > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-800 dark:text-white' }}">
-                        {{ $operacional['falhasRecentes'] }}
-                    </p>
-                @else
-                    <p class="text-2xl font-black text-slate-400">—</p>
-                @endif
-                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mt-0.5">Jobs falhos (24h)</p>
-            </div>
-        </div>
-
-        <div class="ui-card p-4 flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
-            <div class="flex items-center gap-2">
-                <span class="text-slate-500 dark:text-slate-400 font-medium">Versão:</span>
-                <code class="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded text-xs font-mono">
-                    {{ $operacional['versao'] }}
-                </code>
-            </div>
-            @if ($operacional['relatoriosPendentes'] !== null && $operacional['relatoriosPendentes'] > 0)
-                <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 px-2.5 py-0.5 text-xs font-medium">
-                        {{ $operacional['relatoriosPendentes'] }} relatório(s) em processamento
-                    </span>
-                </div>
-            @endif
-            @if ($operacional['totalFalhas'] > 0)
-                <div class="flex items-center gap-2">
-                    <span class="text-slate-500 dark:text-slate-400">Total de falhas acumuladas:</span>
-                    <span class="font-bold text-red-600 dark:text-red-400">{{ $operacional['totalFalhas'] }}</span>
-                </div>
-            @endif
-            <a href="{{ route('health') }}" target="_blank"
-               class="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium">
-                Ver /health →
-            </a>
-        </div>
-    </div>
+    @include('platform.partials.observabilidade')
     </div>
 
     {{-- Recebe o download de exportação sem navegar a página principal --}}

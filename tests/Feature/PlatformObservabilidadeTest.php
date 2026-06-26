@@ -34,6 +34,48 @@ class PlatformObservabilidadeTest extends TestCase
             ->assertSee('Jobs falhos (24h)');
     }
 
+    public function test_dashboard_plataforma_exibe_secoes_de_queries_lentas_e_backups(): void
+    {
+        // LOG_SLOW_QUERIES desabilitado no ambiente de teste → estado "não monitorado".
+        $this->actingAs($this->platformAdmin())
+            ->get(route('platform.index'))
+            ->assertOk()
+            ->assertSee('Queries lentas (hoje)')
+            ->assertSee('Não monitorado')
+            ->assertSee('Último backup por clube');
+    }
+
+    public function test_dashboard_plataforma_lista_ultimo_backup_por_clube(): void
+    {
+        $clube = Club::create(['nome' => 'Clube Backup', 'cidade' => 'SP', 'is_active' => true]);
+
+        \App\Models\ClubBackupLog::create([
+            'club_id' => $clube->id,
+            'disk' => 'local',
+            'path' => 'backups/clubes/clube-backup/recente.zip',
+            'filename' => 'recente.zip',
+            'status' => 'success',
+            'size_bytes' => 2048,
+            'has_uploads' => true,
+            'origin' => 'manual',
+        ]);
+
+        $this->actingAs($this->platformAdmin())
+            ->get(route('platform.index'))
+            ->assertOk()
+            ->assertSee('recente.zip')
+            ->assertSee('Clube Backup')
+            ->assertDontSee('Nenhum backup de clube registrado');
+    }
+
+    public function test_dashboard_plataforma_mostra_estado_vazio_de_backups(): void
+    {
+        $this->actingAs($this->platformAdmin())
+            ->get(route('platform.index'))
+            ->assertOk()
+            ->assertSee('Nenhum backup de clube registrado');
+    }
+
     public function test_dashboard_plataforma_exibe_versao_da_aplicacao(): void
     {
         $this->actingAs($this->platformAdmin())
