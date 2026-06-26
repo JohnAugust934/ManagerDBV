@@ -353,6 +353,8 @@
                     </div>
                 @endif
 
+                @include('partials.passkey-banner')
+
                 <div class="mb-6 ui-animate-fade-up">
                     <x-flash-messages />
                 </div>

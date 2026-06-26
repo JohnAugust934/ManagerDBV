@@ -37,6 +37,12 @@
                 </div>
             </div>
 
+            <div class="ui-card p-6 sm:p-8 hover:-translate-y-1 transition-transform shadow-sm hover:shadow-md border border-slate-100 dark:border-slate-800">
+                <div class="max-w-2xl">
+                    @include('profile.partials.passkeys-form')
+                </div>
+            </div>
+
             <div class="ui-card p-6 sm:p-8 bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 hover:-translate-y-1 transition-transform shadow-sm">
                 <div class="max-w-2xl">
                     @include('profile.partials.delete-user-form')

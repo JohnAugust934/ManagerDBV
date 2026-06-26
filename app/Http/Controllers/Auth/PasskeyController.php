@@ -97,4 +97,17 @@ class PasskeyController extends Controller
 
         return response()->json(['deleted' => true]);
     }
+
+    /**
+     * Marca o convite (banner) de cadastro de passkey como dispensado para o
+     * usuário autenticado, persistindo a escolha para que não reapareça.
+     */
+    public function dispensarBanner(Request $request): JsonResponse
+    {
+        $request->user()->forceFill([
+            'passkey_banner_dispensado_em' => now(),
+        ])->save();
+
+        return response()->json(['dismissed' => true]);
+    }
 }

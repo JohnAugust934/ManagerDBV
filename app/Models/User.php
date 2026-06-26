@@ -20,6 +20,7 @@ class User extends Authenticatable
         'is_master',         // mantido para compatibilidade, mas o foco agora e 'role'
         'is_platform_admin', // super admin de plataforma (cross-tenant)
         'termos_aceitos_em',
+        'passkey_banner_dispensado_em',
     ];
 
     protected $hidden = [
@@ -34,6 +35,7 @@ class User extends Authenticatable
         'is_platform_admin' => 'boolean',
         'extra_permissions' => 'array', // Converte JSON para Array automaticamente
         'termos_aceitos_em' => 'datetime',
+        'passkey_banner_dispensado_em' => 'datetime',
     ];
 
     // Rotulos amigaveis dos cargos hierarquicos (incl. o cargo de plataforma,
@@ -62,6 +64,26 @@ class User extends Authenticatable
     public function club()
     {
         return $this->belongsTo(Club::class);
+    }
+
+    // --- Passkeys (WebAuthn) ---
+
+    /**
+     * Indica se o usuário já possui ao menos uma passkey cadastrada.
+     */
+    public function temPasskey(): bool
+    {
+        return \LaravelWebauthn\Services\Webauthn::model()::where('user_id', $this->getAuthIdentifier())
+            ->exists();
+    }
+
+    /**
+     * Decide se o convite (banner) para cadastrar passkey deve aparecer: só para
+     * quem ainda não dispensou e ainda não tem nenhuma passkey.
+     */
+    public function deveVerBannerPasskey(): bool
+    {
+        return $this->passkey_banner_dispensado_em === null && ! $this->temPasskey();
     }
 
     // --- Logica de acesso ---

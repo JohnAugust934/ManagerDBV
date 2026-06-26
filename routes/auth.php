@@ -76,6 +76,10 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('id')
         ->name('passkeys.destroy');
 
+    // Dispensa o banner de convite para cadastrar passkey (persistido por usuário).
+    Route::post('passkeys/banner/dispensar', [PasskeyController::class, 'dispensarBanner'])
+        ->name('passkeys.banner.dismiss');
+
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });
