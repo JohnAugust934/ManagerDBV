@@ -82,4 +82,60 @@
             </button>
         </div>
     </form>
+
+    {{-- Login por passkey (sem senha) — alternativo, aditivo ao login acima. --}}
+    <div x-data="loginPasskey({
+            optionsUrl: '{{ route('passkeys.login.options') }}',
+            loginUrl: '{{ route('passkeys.login') }}',
+        })"
+        x-show="suportado" x-cloak class="mt-6">
+
+        <div class="relative flex items-center justify-center my-5">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+            <span class="relative px-3 text-xs font-bold uppercase tracking-widest text-slate-400 bg-transparent">ou</span>
+        </div>
+
+        <button type="button" @click="entrar()" :disabled="carregando"
+            class="w-full inline-flex items-center justify-center gap-3 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-widest text-white bg-black/20 ring-1 ring-inset ring-white/15 hover:bg-white/5 hover:ring-[#FCD116] transition-all duration-300 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+            <span x-show="!carregando">Entrar com passkey</span>
+            <span x-show="carregando" x-cloak>Verificando…</span>
+        </button>
+
+        <p x-show="erro" x-cloak x-text="erro" class="mt-2 text-xs text-red-400 font-medium ml-1 text-center"></p>
+    </div>
+
+    <script>
+        function loginPasskey(config) {
+            return {
+                suportado: window.Passkeys ? window.Passkeys.suportado() : false,
+                carregando: false,
+                erro: '',
+
+                async entrar() {
+                    this.erro = '';
+                    const email = document.getElementById('email')?.value?.trim();
+                    if (!email) {
+                        this.erro = 'Informe seu e-mail para entrar com passkey.';
+                        return;
+                    }
+                    this.carregando = true;
+                    try {
+                        const remember = document.getElementById('remember_me')?.checked ?? false;
+                        const redirect = await window.Passkeys.autenticar({
+                            optionsUrl: config.optionsUrl,
+                            loginUrl: config.loginUrl,
+                            email,
+                            remember,
+                        });
+                        window.location.href = redirect || '/dashboard';
+                    } catch (e) {
+                        this.erro = e.message;
+                    } finally {
+                        this.carregando = false;
+                    }
+                },
+            };
+        }
+    </script>
 </x-guest-layout>
