@@ -208,3 +208,38 @@ install --no-dev --optimize-autoloader`, `npm ci && npm run build`, `migrate --f
 `storage:link`, `config:cache`/`route:cache`/`view:cache`, worker de fila via Supervisor
 (`queue:work database`), cron de 1 minuto rodando `schedule:run`. Sempre `backup:run` antes de
 deploy com migrations. Template de produção em `.env.production.example`.
+
+APM_RULES {
+
+## Validação ao concluir cada Task
+- Toda Task termina com a suíte **verde**: rodar `composer test` (ou `php artisan test`) e garantir
+  que não há falhas — incluindo os testes novos da Task. A baseline é 419 testes / 0 falhas; nenhuma
+  Task pode introduzir regressão.
+- Rodar `./vendor/bin/pint` **apenas nos arquivos criados/alterados pela Task** — nunca reformatar o
+  projeto inteiro (ver "Convenções" acima sobre o débito pré-existente de formatação).
+
+## Artefatos novos
+- Código, testes, nomes de classe/rota/coluna e textos de UI em **pt_BR** (ver "Visão Geral").
+- Testes em Pest sobre SQLite `:memory:`; não tocar o banco de dev. Reutilizar fixtures/factories e
+  padrões dos testes já existentes em `tests/` antes de criar novos do zero.
+- Views Blade novas seguem `docs/guia-visual-ui.md` (mobile-first, `x-app-layout`/`ui-page`, classes
+  `ui-btn-*`, botões fora do header, contraste WCAG 2.1 AA). Telas de auth usam o layout guest bespoke.
+
+## Invariantes a respeitar quando a Task tocar a área
+- **Ranking:** qualquer mudança em pontuação/frequência mantém sincronizadas as duas implementações
+  duplicadas (`AppServiceProvider::snapshotRankingYear` e `RankingController`) — ver "Ranking" acima.
+- **Multi-tenancy:** models com dados de clube usam o global scope apropriado; queries que cruzam
+  tenants ou usam `withoutGlobalScopes()` reaplicam filtro `club_id` explícito — ver "Multi-tenancy".
+- **Backup:** não reincluir `base_path()` em `source.files.include`; criptografia de arquivo opt-in;
+  ver "Sistema de backup" acima e a memória do agente antes de alterar o subsistema.
+- **Exclusão é definitiva** (sem soft deletes); a cascata é por design — ver "Convenções".
+
+## Versionamento (sessão APM)
+- Modelo **gitflow**. Base branch da sessão: `multi-tenant` (linha estável; merge para `main` é
+  decisão posterior do usuário). Cada unidade de trabalho usa uma branch `feature/<descrição-curta>`
+  em pt_BR, sem termos de framework no nome.
+- Commits em **Conventional Commits pt_BR com escopo**: `tipo(escopo): descrição` (tipos: feat, fix,
+  refactor, docs, test, chore), seguindo o padrão já presente no histórico.
+- Push para o `origin` (GitHub) é permitido nesta sessão.
+
+} //APM_RULES
