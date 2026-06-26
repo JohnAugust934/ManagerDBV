@@ -169,7 +169,7 @@ const Passkeys = {
             throw new Error("Este navegador não suporta passkeys.");
         }
 
-        const respOpcoes = await postar(optionsUrl, { email });
+        const respOpcoes = await postar(optionsUrl, email ? { email } : {});
         if (!respOpcoes.ok) {
             throw new Error(
                 await mensagemDeErro(
@@ -209,13 +209,17 @@ const Passkeys = {
         }
 
         const payload = {
-            email,
             id: asercao.id,
             rawId: bufferParaBase64url(asercao.rawId),
             type: asercao.type,
             response: resposta,
             remember: Boolean(remember),
         };
+        // E-mail só vai quando informado: sem ele o servidor identifica o
+        // usuário pela própria credencial (fluxo usernameless).
+        if (email) {
+            payload.email = email;
+        }
 
         const respLogin = await postar(loginUrl, payload);
         if (!respLogin.ok) {

@@ -114,11 +114,9 @@
 
                 async entrar() {
                     this.erro = '';
-                    const email = document.getElementById('email')?.value?.trim();
-                    if (!email) {
-                        this.erro = 'Informe seu e-mail para entrar com passkey.';
-                        return;
-                    }
+                    // E-mail é opcional: se preenchido, restringe a busca à conta;
+                    // se vazio, o navegador lista as passkeys do domínio (usernameless).
+                    const email = document.getElementById('email')?.value?.trim() || undefined;
                     this.carregando = true;
                     try {
                         const remember = document.getElementById('remember_me')?.checked ?? false;
