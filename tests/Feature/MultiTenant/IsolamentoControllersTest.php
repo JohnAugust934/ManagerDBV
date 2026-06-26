@@ -153,7 +153,7 @@ class IsolamentoControllersTest extends TestCase
             'name' => 'Futuro Admin',
             'password' => 'SenhaForte123!',
             'password_confirmation' => 'SenhaForte123!',
-                    'aceite_termos' => '1',
+            'aceite_termos' => '1',
         ]);
 
         $this->assertDatabaseHas('users', [
@@ -175,6 +175,27 @@ class IsolamentoControllersTest extends TestCase
         ])->assertSessionHasErrors('role');
 
         $this->assertDatabaseMissing('invitations', ['email' => 'tentativa@plataforma.com']);
+    }
+
+    public function test_gestor_nao_reenvia_nem_cancela_convite_de_outro_clube(): void
+    {
+        ['master' => $masterA] = criarClubeComDados('Clube A');
+        ['club' => $clubB] = criarClubeComDados('Clube B');
+
+        $conviteB = \App\Models\Invitation::create([
+            'email' => 'convidado@b.com',
+            'token' => 'tok-do-b-123',
+            'role' => 'secretario',
+            'club_id' => $clubB->id,
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        // Invitation não tem global scope: o route model binding resolve o convite
+        // de B por ID. O guard de tenant deve barrar com 403 (IDOR).
+        $this->actingAs($masterA)->post(route('invites.resend', $conviteB))->assertForbidden();
+        $this->actingAs($masterA)->delete(route('invites.destroy', $conviteB))->assertForbidden();
+
+        $this->assertDatabaseHas('invitations', ['id' => $conviteB->id, 'token' => 'tok-do-b-123']);
     }
 
     public function test_platform_admin_em_modo_suporte_cria_dados_no_clube_impersonado(): void

@@ -77,6 +77,10 @@ class MensalidadeController extends Controller
 
         $clubId = ClubContext::currentClubId();
 
+        // Sem clube ativo (platform admin sem impersonação) o ClubScope não filtra
+        // e o insert espalharia mensalidades órfãs por todos os clubes. Fail-closed.
+        abort_unless($clubId, 403);
+
         // Obtém apenas IDs dos desbravadores ativos do clube — sem carregar objetos.
         $ids = Desbravador::ativos()
             ->pluck('id');
@@ -101,6 +105,9 @@ class MensalidadeController extends Controller
                 'ano' => (int) $request->ano,
                 'valor' => (float) $request->valor,
                 'status' => 'pendente',
+                // insert() também não dispara RegistraAutoria — preenchemos a autoria manualmente.
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ])

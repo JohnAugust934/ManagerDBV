@@ -143,7 +143,9 @@
             {{-- Coluna 1: Documentos, Contato e Responsável --}}
             <div class="lg:col-span-1 space-y-6 ui-animate-fade-up" style="animation-delay: 150ms;">
                 
-                {{-- Documentos Administrativos --}}
+                {{-- Documentos Administrativos — dados de identificação são restritos
+                     à secretaria (minimização LGPD; conselheiro/instrutor não precisam). --}}
+                @can('secretaria')
                 <div class="ui-card p-6 bg-slate-50/50 dark:bg-slate-900/30">
                     <h3 class="text-[15px] font-black uppercase tracking-widest text-[#002F6C] dark:text-blue-400 mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
                         Documentos
@@ -159,6 +161,7 @@
                         </div>
                     </div>
                 </div>
+                @endcan
 
                 {{-- Contato --}}
                 <div class="ui-card p-6 bg-slate-50/50 dark:bg-slate-900/30">
@@ -218,7 +221,10 @@
             {{-- Coluna 2: Dados de Saúde & Especialidades --}}
             <div class="lg:col-span-2 space-y-6 ui-animate-fade-up" style="animation-delay: 200ms;">
                 
-                {{-- Saúde --}}
+                {{-- Saúde — número do SUS e plano são restritos à secretaria
+                     (minimização LGPD). O alerta de alergias/medicamentos acima
+                     permanece visível a todos por ser informação de emergência. --}}
+                @can('secretaria')
                 <div class="ui-card p-6 bg-slate-50/50 dark:bg-slate-900/30 border-l-4 border-l-red-500">
                     <h3 class="text-[15px] font-black uppercase tracking-widest text-[#002F6C] dark:text-blue-400 mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
                         Dados Médicos Seguros
@@ -238,6 +244,7 @@
                         </div>
                     </div>
                 </div>
+                @endcan
 
                 {{-- Especialidades Re-estilizadas Premium --}}
                 <div class="ui-card p-6">

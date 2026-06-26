@@ -131,7 +131,7 @@ class RankingTest extends TestCase
             ->firstOrFail();
 
         $this->assertNotEmpty($snapshot->entries);
-        $this->assertSame($desbravador->nome, $snapshot->entries[0]['name']);
+        $this->assertSame($desbravador->nome, $snapshot->entries[0]['nome']);
     }
 
     public function test_coluna_nova_nao_recalcula_pontuacao_antiga_no_ranking()
@@ -222,13 +222,13 @@ class RankingTest extends TestCase
 
         $entries = RankingSnapshot::where('year', $ano)->where('scope', 'unidades')->firstOrFail()->entries;
 
+        // A posição é o índice no array já ordenado por pontos (a view numera
+        // pelo índice do loop); o schema do snapshot guarda nome/pontos.
         $this->assertSame($unidadeForte->id, $entries[0]['id']);
-        $this->assertSame(30, $entries[0]['points']);
-        $this->assertSame(1, $entries[0]['position']);
+        $this->assertSame(30, $entries[0]['pontos']);
 
         $this->assertSame($unidadeFraca->id, $entries[1]['id']);
-        $this->assertSame(10, $entries[1]['points']);
-        $this->assertSame(2, $entries[1]['position']);
+        $this->assertSame(10, $entries[1]['pontos']);
     }
 
     public function test_snapshot_exclui_unidades_fora_do_ranking()
@@ -248,10 +248,10 @@ class RankingTest extends TestCase
         $this->artisan('ranking:snapshot '.$ano)->assertExitCode(0);
 
         $unidades = RankingSnapshot::where('year', $ano)->where('scope', 'unidades')->firstOrFail()->entries;
-        $this->assertSame(['Participa'], array_column($unidades, 'name'));
+        $this->assertSame(['Participa'], array_column($unidades, 'nome'));
 
         $membros = RankingSnapshot::where('year', $ano)->where('scope', 'desbravadores')->firstOrFail()->entries;
-        $this->assertSame(['Dentro'], array_column($membros, 'name'));
+        $this->assertSame(['Dentro'], array_column($membros, 'nome'));
     }
 
     public function test_snapshot_anual_e_idempotente_por_ano_e_escopo()

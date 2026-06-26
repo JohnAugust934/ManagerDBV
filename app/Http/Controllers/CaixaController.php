@@ -54,9 +54,12 @@ class CaixaController extends Controller
 
         $validado['club_id'] = ClubContext::currentClubId();
 
-        $caixa = \Illuminate\Support\Facades\DB::retryOnDeadlock(fn () => Caixa::create($validado));
-
-        CaixaAuditLog::registrar('criado', $caixa, null, $this->dadosAuditaveis($caixa));
+        // Lançamento + trilha de auditoria numa única transação: se o log falhar,
+        // a movimentação financeira também é revertida (nunca fica sem auditoria).
+        \Illuminate\Support\Facades\DB::retryOnDeadlock(function () use ($validado) {
+            $caixa = Caixa::create($validado);
+            CaixaAuditLog::registrar('criado', $caixa, null, $this->dadosAuditaveis($caixa));
+        });
 
         return redirect()->route('caixa.index')
             ->with('success', 'Movimentação registrada com sucesso!');
@@ -83,9 +86,10 @@ class CaixaController extends Controller
 
         $antes = $this->dadosAuditaveis($caixa);
 
-        \Illuminate\Support\Facades\DB::retryOnDeadlock(fn () => $caixa->update($validado));
-
-        CaixaAuditLog::registrar('editado', $caixa, $antes, $this->dadosAuditaveis($caixa));
+        \Illuminate\Support\Facades\DB::retryOnDeadlock(function () use ($caixa, $validado, $antes) {
+            $caixa->update($validado);
+            CaixaAuditLog::registrar('editado', $caixa, $antes, $this->dadosAuditaveis($caixa));
+        });
 
         return redirect()->route('caixa.index')
             ->with('success', 'Lançamento atualizado com sucesso!');
@@ -101,18 +105,22 @@ class CaixaController extends Controller
         $clubId = $caixa->club_id;
         $caixaId = $caixa->id;
 
-        $caixa->delete();
+        // Exclusão + log na mesma transação: a exclusão de um lançamento nunca
+        // fica sem registro de quem deletou nem do valor anterior.
+        \Illuminate\Support\Facades\DB::retryOnDeadlock(function () use ($caixa, $caixaId, $clubId, $antes) {
+            $caixa->delete();
 
-        // Cria o log manualmente pois o model foi deletado.
-        CaixaAuditLog::create([
-            'caixa_id' => $caixaId,
-            'club_id' => $clubId,
-            'user_id' => auth()->id(),
-            'acao' => 'excluido',
-            'dados_antes' => $antes,
-            'dados_depois' => null,
-            'created_at' => now(),
-        ]);
+            // Cria o log manualmente pois o model foi deletado.
+            CaixaAuditLog::create([
+                'caixa_id' => $caixaId,
+                'club_id' => $clubId,
+                'user_id' => auth()->id(),
+                'acao' => 'excluido',
+                'dados_antes' => $antes,
+                'dados_depois' => null,
+                'created_at' => now(),
+            ]);
+        });
 
         return redirect()->route('caixa.index')
             ->with('success', 'Lançamento excluído com sucesso.');

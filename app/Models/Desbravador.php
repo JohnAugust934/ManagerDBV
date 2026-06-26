@@ -56,6 +56,7 @@ class Desbravador extends Model
         // CPF usa mutator/accessor manuais (precisa gerar cpf_hash antes de cifrar).
         // Os demais campos sensíveis usam o cast 'encrypted' do Laravel.
         'rg' => 'encrypted',
+        'numero_sus' => 'encrypted',
         'alergias' => 'encrypted',
         'medicamentos_continuos' => 'encrypted',
         'plano_saude' => 'encrypted',

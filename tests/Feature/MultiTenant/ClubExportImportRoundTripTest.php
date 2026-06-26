@@ -108,6 +108,27 @@ class ClubExportImportRoundTripTest extends TestCase
         $this->assertEmpty(array_filter($report['warnings'], fn ($w) => str_contains($w, 'não encontrada')));
     }
 
+    public function test_export_nao_inclui_remember_token_dos_usuarios(): void
+    {
+        $club = Club::create(['nome' => 'Clube Origem', 'cidade' => 'SP']);
+        User::factory()->create([
+            'club_id' => $club->id,
+            'role' => 'master',
+            'email' => 'master@clube.com',
+            'remember_token' => 'token-de-sessao-ativo',
+        ]);
+
+        $payload = (new ClubExportService)->export($club->fresh());
+
+        // remember_token é token de sessão ativo: não pode sair no export (risco
+        // de sequestro de sessão se o arquivo vazar). password (hash) é mantido.
+        $this->assertNotEmpty($payload['users']);
+        foreach ($payload['users'] as $user) {
+            $this->assertArrayNotHasKey('remember_token', $user);
+            $this->assertArrayHasKey('password', $user);
+        }
+    }
+
     public function test_usuario_existente_nao_e_duplicado_na_importacao(): void
     {
         $club = Club::create(['nome' => 'Clube Origem', 'cidade' => 'SP']);

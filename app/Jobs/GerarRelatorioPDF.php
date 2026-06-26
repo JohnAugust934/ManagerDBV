@@ -25,6 +25,7 @@ class GerarRelatorioPDF implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 2;
+
     public int $timeout = 180;
 
     public function __construct(
@@ -149,8 +150,10 @@ class GerarRelatorioPDF implements ShouldQueue
 
     private function gerarFinanceiro(Club $clube, array $filtros): \Barryvdh\DomPDF\PDF
     {
-        // GlobalScope ClubScope filtra por club_id automaticamente (auth foi configurado acima).
-        $query = Caixa::orderBy('data_movimentacao', 'desc');
+        // Filtro club_id EXPLÍCITO: na fila não há sessão, então o ClubScope não
+        // filtra para um platform admin (club_id null) e o PDF vazaria caixas de
+        // todos os clubes. Amarramos ao clube do relatório, como nas fichas.
+        $query = Caixa::where('club_id', $clube->id)->orderBy('data_movimentacao', 'desc');
 
         if (! empty($filtros['data_inicio'])) {
             $query->where('data_movimentacao', '>=', $filtros['data_inicio']);
@@ -274,7 +277,9 @@ class GerarRelatorioPDF implements ShouldQueue
             'status' => $desbravador->ativo ? 'Ativo' : 'Inativo',
             'data_nascimento' => $desbravador->data_nascimento?->format('d/m/Y') ?? '-',
             'idade' => $desbravador->data_nascimento ? $desbravador->data_nascimento->age.' anos' : '-',
-            'sexo' => match ($desbravador->sexo) { 'M' => 'Masculino', 'F' => 'Feminino', default => '-' },
+            'sexo' => match ($desbravador->sexo) {
+                'M' => 'Masculino', 'F' => 'Feminino', default => '-'
+            },
             'cpf' => $desbravador->cpf ?: '-',
             'rg' => $desbravador->rg ?: '-',
             'unidade' => $desbravador->unidade?->nome ?? 'Sem unidade',
@@ -334,7 +339,9 @@ class GerarRelatorioPDF implements ShouldQueue
             'unidade' => $desbravador->unidade?->nome ?? 'Sem unidade',
             'data_nascimento' => $desbravador->data_nascimento?->format('d/m/Y') ?? '-',
             'idade' => $desbravador->data_nascimento ? $desbravador->data_nascimento->age.' anos' : '-',
-            'sexo' => match ($desbravador->sexo) { 'M' => 'Masculino', 'F' => 'Feminino', default => '-' },
+            'sexo' => match ($desbravador->sexo) {
+                'M' => 'Masculino', 'F' => 'Feminino', default => '-'
+            },
             'classe' => $desbravador->classe?->nome ?? 'Não definida',
             'nome_responsavel' => $desbravador->nome_responsavel ?: '-',
             'telefone_responsavel' => $desbravador->telefone_responsavel ?: '-',
