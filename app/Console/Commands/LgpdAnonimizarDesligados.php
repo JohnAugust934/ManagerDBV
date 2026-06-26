@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Desbravador;
 use App\Models\LgpdRegistro;
+use App\Observers\DesbravadorObserver;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
