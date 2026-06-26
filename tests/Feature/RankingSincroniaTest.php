@@ -72,9 +72,9 @@ class RankingSincroniaTest extends TestCase
         $snapUnidades = RankingSnapshot::where('club_id', $clubA->id)->where('scope', 'unidades')->firstOrFail()->entries;
         $snapMembros = RankingSnapshot::where('club_id', $clubA->id)->where('scope', 'desbravadores')->firstOrFail()->entries;
 
-        $snapUnidadesPontos = collect($snapUnidades)->mapWithKeys(fn ($e) => [$e['id'] => $e['points']]);
+        $snapUnidadesPontos = collect($snapUnidades)->mapWithKeys(fn ($e) => [$e['id'] => $e['pontos']]);
         $snapUnidadesOrdem = array_column($snapUnidades, 'id');
-        $snapMembrosPontos = collect($snapMembros)->mapWithKeys(fn ($e) => [$e['id'] => $e['points']]);
+        $snapMembrosPontos = collect($snapMembros)->mapWithKeys(fn ($e) => [$e['id'] => $e['pontos']]);
         $snapMembrosOrdem = array_column($snapMembros, 'id');
 
         // --- Caminho ao vivo (controller) ---

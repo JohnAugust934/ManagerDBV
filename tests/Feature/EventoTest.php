@@ -122,6 +122,45 @@ class EventoTest extends TestCase
         $this->assertEquals(3, $evento->desbravadores()->count());
     }
 
+    public function test_nao_inscreve_desbravador_de_outro_clube()
+    {
+        $clubeA = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);
+        $clubeB = Club::create(['nome' => 'Clube B', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clubeA->id, 'role' => 'diretor']);
+
+        $dbvB = Desbravador::factory()->forClube($clubeB->id)->create();
+        $evento = Evento::factory()->create(['club_id' => $clubeA->id]);
+
+        // A regra exists escopada por club_id deve rejeitar o desbravador de B.
+        $this->actingAs($user)->post(route('eventos.inscrever', $evento->id), [
+            'desbravador_id' => $dbvB->id,
+        ])->assertSessionHasErrors('desbravador_id');
+
+        $this->assertDatabaseMissing('desbravador_evento', [
+            'evento_id' => $evento->id,
+            'desbravador_id' => $dbvB->id,
+        ]);
+    }
+
+    public function test_inscricao_em_lote_descarta_ids_de_outro_clube()
+    {
+        $clubeA = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);
+        $clubeB = Club::create(['nome' => 'Clube B', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clubeA->id, 'role' => 'diretor']);
+
+        $dbvA = Desbravador::factory()->forClube($clubeA->id)->create();
+        $dbvB = Desbravador::factory()->forClube($clubeB->id)->create();
+        $evento = Evento::factory()->create(['club_id' => $clubeA->id]);
+
+        $this->actingAs($user)->post(route('eventos.inscrever-lote', $evento->id), [
+            'desbravadores' => [$dbvA->id, $dbvB->id],
+        ])->assertRedirect();
+
+        // Só o desbravador do próprio clube é inscrito; o de B é filtrado.
+        $this->assertDatabaseHas('desbravador_evento', ['evento_id' => $evento->id, 'desbravador_id' => $dbvA->id]);
+        $this->assertDatabaseMissing('desbravador_evento', ['evento_id' => $evento->id, 'desbravador_id' => $dbvB->id]);
+    }
+
     public function test_pagamento_ajax_atualiza_status_e_lanca_no_caixa()
     {
         $clube = Club::create(['nome' => 'Teste', 'cidade' => 'SP']);

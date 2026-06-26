@@ -244,25 +244,20 @@ class AppServiceProvider extends ServiceProvider
             ->orderBy('nome')
             ->get(['id', 'nome', 'club_id', 'no_ranking'])
             ->map(function (Unidade $unidade) {
-                $members = $unidade->desbravadores;
-                $points = $members->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
-                $memberCount = $members->count();
+                $points = $unidade->desbravadores
+                    ->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
 
+                // Chaves em pt_BR para casar com o snapshot ao vivo
+                // (RankingController::salvarSnapshot) e a view ranking/snapshot —
+                // as duas implementações DUPLICADAS precisam do mesmo schema.
                 return [
                     'id' => $unidade->id,
-                    'name' => $unidade->nome,
-                    'members' => $memberCount,
-                    'points' => $points,
-                    'average' => $memberCount > 0 ? round($points / $memberCount, 1) : 0.0,
+                    'nome' => $unidade->nome,
+                    'pontos' => $points,
                 ];
             })
-            ->sortByDesc('points')
+            ->sortByDesc('pontos')
             ->values()
-            ->map(function (array $entry, int $index) {
-                $entry['position'] = $index + 1;
-
-                return $entry;
-            })
             ->all();
 
         $memberEntries = Desbravador::with([
@@ -274,21 +269,16 @@ class AppServiceProvider extends ServiceProvider
             ->orderBy('nome')
             ->get(['id', 'nome', 'unidade_id', 'ativo'])
             ->map(function (Desbravador $desbravador) {
+                // Mesmo schema pt_BR do snapshot ao vivo e da view (ver acima).
                 return [
                     'id' => $desbravador->id,
-                    'name' => $desbravador->nome,
-                    'unit' => $desbravador->unidade->nome ?? 'Sem unidade',
-                    'presences' => $desbravador->frequencias->where('presente', true)->count(),
-                    'points' => $desbravador->frequencias->sum('pontos'),
+                    'nome' => $desbravador->nome,
+                    'unidade' => $desbravador->unidade->nome ?? 'Sem unidade',
+                    'pontos' => $desbravador->frequencias->sum('pontos'),
                 ];
             })
-            ->sortByDesc('points')
+            ->sortByDesc('pontos')
             ->values()
-            ->map(function (array $entry, int $index) {
-                $entry['position'] = $index + 1;
-
-                return $entry;
-            })
             ->all();
 
         RankingSnapshot::updateOrCreate(

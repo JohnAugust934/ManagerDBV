@@ -25,7 +25,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // 1. Adicionar cpf_hash e alargar as colunas string para TEXT
+        // 1. Remover a unique (club_id, cpf) ANTES de mudar cpf para TEXT.
+        //    No MySQL, dar MODIFY numa coluna que ainda integra um índice para
+        //    TEXT lança ERROR 1170 (BLOB/TEXT em chave sem prefixo de tamanho).
+        //    Dropar o índice primeiro deixa a coluna livre para a mudança de tipo.
+        Schema::table('desbravadores', function (Blueprint $table) {
+            $table->dropUnique('desbravadores_club_cpf_unique');
+        });
+
+        // 2. Adicionar cpf_hash e alargar as colunas string para TEXT
         //    (valores criptografados têm ~200+ chars vs 14 do CPF bruto).
         Schema::table('desbravadores', function (Blueprint $table) {
             $table->char('cpf_hash', 64)->nullable()->after('cpf');
@@ -35,7 +43,7 @@ return new class extends Migration
             $table->text('rg')->nullable()->change();
         });
 
-        // 2. Backfill: computar hash e criptografar apenas linhas ainda em plaintext.
+        // 3. Backfill: computar hash e criptografar apenas linhas ainda em plaintext.
         //    Identificamos plaintext porque cpf_hash ainda é NULL.
         DB::table('desbravadores')
             ->whereNotNull('cpf')
@@ -44,13 +52,13 @@ return new class extends Migration
                 foreach ($rows as $row) {
                     $cpfNumerico = preg_replace('/\D/', '', $row->cpf);
                     DB::table('desbravadores')->where('id', $row->id)->update([
-                        'cpf_hash'  => hash('sha256', $cpfNumerico),
-                        'cpf'       => encrypt($row->cpf),
+                        'cpf_hash' => hash('sha256', $cpfNumerico),
+                        'cpf' => encrypt($row->cpf),
                     ]);
                 }
             });
 
-        // 3. Criptografar RG (sem unique — não precisa de hash separado).
+        // 4. Criptografar RG (sem unique — não precisa de hash separado).
         DB::table('desbravadores')
             ->whereNotNull('rg')
             ->chunkById(200, function ($rows) {
@@ -63,7 +71,7 @@ return new class extends Migration
                 }
             });
 
-        // 4. Criptografar campos médicos (já são TEXT — apenas encrypt).
+        // 5. Criptografar campos médicos (já são TEXT — apenas encrypt).
         foreach (['alergias', 'medicamentos_continuos', 'plano_saude'] as $field) {
             DB::table('desbravadores')
                 ->whereNotNull($field)
@@ -79,9 +87,9 @@ return new class extends Migration
                 });
         }
 
-        // 5. Substituir a unique constraint de CPF por uma baseada em cpf_hash.
+        // 6. Criar a unique baseada em cpf_hash (a antiga em cpf já foi removida
+        //    no passo 1). cpf_hash já está preenchido pelo backfill acima.
         Schema::table('desbravadores', function (Blueprint $table) {
-            $table->dropUnique('desbravadores_club_cpf_unique');
             $table->unique(['club_id', 'cpf_hash'], 'desbravadores_club_cpf_hash_unique');
         });
     }
@@ -115,8 +123,8 @@ return new class extends Migration
                 foreach ($rows as $row) {
                     try {
                         DB::table('desbravadores')->where('id', $row->id)->update([
-                            'cpf'      => decrypt($row->cpf),
-                            'rg'       => $row->rg ? decrypt($row->rg) : null,
+                            'cpf' => decrypt($row->cpf),
+                            'rg' => $row->rg ? decrypt($row->rg) : null,
                             'cpf_hash' => null,
                         ]);
                     } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {

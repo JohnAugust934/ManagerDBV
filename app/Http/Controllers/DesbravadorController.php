@@ -27,10 +27,19 @@ class DesbravadorController extends Controller
             $normalizedSearch = mb_strtolower($search, 'UTF-8');
             $searchPattern = "%{$normalizedSearch}%";
 
-            $query->where(function ($q) use ($searchPattern) {
+            // CPF está cifrado em repouso: LIKE na coluna não casa nada. Busca por
+            // CPF é exata via cpf_hash (SHA-256 dos dígitos), quando o termo é um
+            // CPF completo (11 dígitos). Nome/e-mail seguem com LIKE.
+            $digitos = preg_replace('/\D/', '', $search);
+            $cpfHash = strlen($digitos) === 11 ? hash('sha256', $digitos) : null;
+
+            $query->where(function ($q) use ($searchPattern, $cpfHash) {
                 $q->whereRaw('LOWER(nome) LIKE ?', [$searchPattern])
-                    ->orWhereRaw('LOWER(email) LIKE ?', [$searchPattern])
-                    ->orWhereRaw('LOWER(cpf) LIKE ?', [$searchPattern]);
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$searchPattern]);
+
+                if ($cpfHash !== null) {
+                    $q->orWhere('cpf_hash', $cpfHash);
+                }
             });
         }
 

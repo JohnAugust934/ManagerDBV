@@ -12,6 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class EventoController extends Controller
 {
@@ -94,7 +95,14 @@ class EventoController extends Controller
     {
         Gate::authorize('eventos');
 
-        $request->validate(['desbravador_id' => 'required|exists:desbravadores,id']);
+        // exists escopado por club_id: a regra exists pura ignora o global scope
+        // e aceitaria um desbravador de outro clube (vazamento cross-tenant).
+        $request->validate([
+            'desbravador_id' => [
+                'required',
+                Rule::exists('desbravadores', 'id')->where('club_id', ClubContext::currentClubId()),
+            ],
+        ]);
 
         if (! $evento->desbravadores()->where('desbravador_id', $request->desbravador_id)->exists()) {
             $evento->desbravadores()->attach($request->desbravador_id, ['pago' => false, 'autorizacao_entregue' => false]);
@@ -112,8 +120,12 @@ class EventoController extends Controller
 
         $request->validate(['desbravadores' => 'required|array']);
 
+        // Filtra os IDs recebidos pelo global scope do model (tenant ativo) antes
+        // de inscrever — descarta IDs de outros clubes sem confiar no input.
+        $idsDoClube = Desbravador::whereIn('id', $request->desbravadores)->pluck('id');
+
         $count = 0;
-        foreach ($request->desbravadores as $id) {
+        foreach ($idsDoClube as $id) {
             if (! $evento->desbravadores()->where('desbravador_id', $id)->exists()) {
                 $evento->desbravadores()->attach($id, ['pago' => false, 'autorizacao_entregue' => false]);
                 $count++;

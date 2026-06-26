@@ -215,6 +215,7 @@ class InvitationController extends Controller
     public function resend(Invitation $invite)
     {
         $this->authorizeAccessManagement();
+        $this->garantirConvitePertenceAoContexto($invite);
 
         if ($invite->registered_at) {
             return back()->with('error', 'Este convite já foi utilizado e não pode ser reenviado.');
@@ -239,6 +240,7 @@ class InvitationController extends Controller
     public function destroy(Invitation $invite)
     {
         $this->authorizeAccessManagement();
+        $this->garantirConvitePertenceAoContexto($invite);
 
         if ($invite->role === 'platform_admin' && ! auth()->user()->isPlatformAdmin()) {
             abort(403, 'Somente o admin da plataforma pode cancelar convites de plataforma.');
@@ -256,6 +258,20 @@ class InvitationController extends Controller
     private function authorizeAccessManagement(): void
     {
         Gate::authorize('gestao-acessos');
+    }
+
+    /**
+     * Garante que o convite pertence ao contexto ativo (multi-tenant). O model
+     * Invitation não tem global scope, então o route model binding resolve por
+     * ID qualquer convite — sem este guard, um gestor poderia reenviar/cancelar
+     * convites de outro clube (IDOR). No contexto da plataforma (sem clube), só
+     * são manipuláveis os convites sem clube (equipe da plataforma).
+     */
+    private function garantirConvitePertenceAoContexto(Invitation $invite): void
+    {
+        if ($invite->club_id !== ClubContext::currentClubId()) {
+            abort(403);
+        }
     }
 
     /** Sem clube ativo, o platform admin opera o contexto da plataforma. */

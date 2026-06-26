@@ -239,6 +239,25 @@ class DesbravadorTest extends TestCase
         $response->assertDontSee('Maria Santos');
     }
 
+    public function test_busca_por_cpf_usa_hash_com_cpf_cifrado()
+    {
+        $clube = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+
+        // CPF é cifrado em repouso: a busca tem de casar por cpf_hash, não por LIKE.
+        Desbravador::factory()->forClube($clube->id)->create(['nome' => 'Carlos CPF', 'cpf' => '529.982.247-25', 'ativo' => true]);
+        Desbravador::factory()->forClube($clube->id)->create(['nome' => 'Outro Membro', 'ativo' => true]);
+
+        $response = $this->actingAs($user)->get(route('desbravadores.index', [
+            'search' => '529.982.247-25',
+            'status' => 'todos',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Carlos CPF');
+        $response->assertDontSee('Outro Membro');
+    }
+
     public function test_pode_remover_foto_do_desbravador()
     {
         Storage::fake('public');
