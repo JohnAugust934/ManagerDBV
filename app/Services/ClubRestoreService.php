@@ -262,6 +262,8 @@ class ClubRestoreService
             throw new \RuntimeException('O arquivo de backup está corrompido ou não é um ZIP válido.');
         }
 
+        $ilegiveis = 0;
+
         try {
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $entry = str_replace('\\', '/', $zip->getNameIndex($i));
@@ -282,6 +284,11 @@ class ClubRestoreService
                 File::makeDirectory(dirname($dest), 0755, true, true);
                 $stream = $zip->getStream($entry);
                 if (! $stream) {
+                    // Entrada presente no indice mas ilegivel (corrompida). Pular em
+                    // silencio mascararia uma restauracao incompleta como bem-sucedida.
+                    Log::warning("ClubRestoreService: entrada ilegível no ZIP, ignorada: {$entry}");
+                    $ilegiveis++;
+
                     continue;
                 }
 
@@ -294,6 +301,10 @@ class ClubRestoreService
             }
         } finally {
             $zip->close();
+        }
+
+        if ($ilegiveis > 0) {
+            $this->warnings[] = "{$ilegiveis} entrada(s) do backup estavam ilegíveis e foram ignoradas na extração.";
         }
     }
 }

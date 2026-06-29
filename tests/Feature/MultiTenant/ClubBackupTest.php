@@ -168,6 +168,23 @@ class ClubBackupTest extends TestCase
         ]);
     }
 
+    public function test_restauracao_de_backup_integro_nao_gera_avisos(): void
+    {
+        $unidade = Unidade::factory()->create(['club_id' => $this->clubA->id]);
+        Desbravador::factory()->create(['unidade_id' => $unidade->id, 'club_id' => $this->clubA->id, 'nome' => 'Dbv Original']);
+        Storage::disk('public')->put('logos/clube.txt', 'conteudo-logo');
+
+        $backup = app(ClubBackupService::class)->backup($this->clubA);
+        $this->assertSame('success', $backup['status']);
+
+        $report = app(\App\Services\ClubRestoreService::class)
+            ->restore($this->clubA, 'local', $backup['path']);
+
+        // Backup integro: a extracao nao deve acumular avisos de entradas ilegiveis.
+        $this->assertSame([], $report['warnings']);
+        $this->assertDatabaseHas('desbravadores', ['club_id' => $this->clubA->id, 'nome' => 'Dbv Original']);
+    }
+
     public function test_exclusao_de_backup_de_clube_registra_auditoria(): void
     {
         $master = User::factory()->create(['role' => 'master', 'club_id' => $this->clubA->id]);
