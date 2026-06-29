@@ -210,6 +210,54 @@ class BackupSystemTest extends TestCase
         $method->invoke($controller, 'disco_invalido', 'Laravel/x.zip');
     }
 
+    public function test_selecao_rejeita_backups_de_clube()
+    {
+        $controller = new \App\Http\Controllers\BackupController;
+        $method = new \ReflectionMethod($controller, 'normalizeBackupSelection');
+        $method->setAccessible(true);
+
+        try {
+            $method->invoke($controller, 'local', 'backups/clubes/orion/2026-06-12-08-22-23.zip');
+            $this->fail('Backup de clube deveria ser rejeitado pela tela da plataforma.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('clube', $e->getMessage());
+        }
+    }
+
+    public function test_listagem_nao_exibe_backups_de_clube()
+    {
+        Storage::fake('local');
+        Storage::fake('r2');
+        $master = User::factory()->platformAdmin()->create();
+
+        Storage::disk('local')->put('backups/clubes/orion/2026-06-12-08-22-23.zip', 'conteudo-fake');
+        Storage::disk('local')->put('Laravel/2026-06-12-09-00-00.zip', 'conteudo-fake');
+
+        $response = $this->actingAs($master)->get(route('backups.index'));
+
+        $response->assertOk();
+        $response->assertSee('2026-06-12-09-00-00.zip');
+        $response->assertDontSee('2026-06-12-08-22-23.zip');
+    }
+
+    public function test_nao_exclui_backup_de_clube_pela_tela_da_plataforma()
+    {
+        Storage::fake('local');
+        Storage::fake('r2');
+        $master = User::factory()->platformAdmin()->create();
+
+        $caminho = 'backups/clubes/orion/backup_do_clube.zip';
+        Storage::disk('local')->put($caminho, 'conteudo_zip_fake');
+
+        $this->actingAs($master)->delete(route('backups.destroy'), [
+            'disk' => 'local',
+            'path' => $caminho,
+        ]);
+
+        // A protecao impede a exclusao: o arquivo do clube permanece intacto.
+        Storage::disk('local')->assertExists($caminho);
+    }
+
     public function test_rotinas_de_backup_estao_agendadas()
     {
         $schedule = app()->make(\Illuminate\Console\Scheduling\Schedule::class);
