@@ -114,6 +114,15 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Este rollback DECIFRA todo o PII (CPF/RG/SUS/campos médicos) para texto
+        // puro. Um migrate:rollback acidental em produção exporia tudo. Exige
+        // override explícito (ALLOW_PII_ROLLBACK=1) — defina apenas após backup.
+        if (app()->isProduction() && ! env('ALLOW_PII_ROLLBACK')) {
+            throw new \RuntimeException(
+                'Rollback bloqueado: decifra PII em repouso. Faça backup e defina ALLOW_PII_ROLLBACK=1 para prosseguir.'
+            );
+        }
+
         // Reverter a unique
         Schema::table('desbravadores', function (Blueprint $table) {
             $table->dropUnique('desbravadores_club_cpf_hash_unique');
