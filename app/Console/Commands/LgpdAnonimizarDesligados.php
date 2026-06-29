@@ -14,7 +14,8 @@ class LgpdAnonimizarDesligados extends Command
     protected $signature = 'lgpd:anonimizar-desligados
                             {--anos=5 : Anos de inatividade antes de anonimizar}
                             {--dry-run : Lista candidatos sem anonimizar}
-                            {--club-id= : Restringir a um clube específico}';
+                            {--club-id= : Restringir a um clube específico}
+                            {--force : Não pede confirmação (uso em agendamento/não-interativo)}';
 
     protected $description = 'Anonimiza dados pessoais de desbravadores inativos há N anos (LGPD Art. 16)';
 
@@ -54,7 +55,10 @@ class LgpdAnonimizarDesligados extends Command
             return self::SUCCESS;
         }
 
-        if (! $this->confirm("Anonimizar {$candidatos->count()} desbravador(es)? Esta operação é IRREVERSÍVEL.")) {
+        // Sob schedule:run não há TTY: confirm() retornaria o default (false) e a
+        // retenção (LGPD Art. 16) nunca seria aplicada. --force pula a confirmação.
+        if (! $this->option('force')
+            && ! $this->confirm("Anonimizar {$candidatos->count()} desbravador(es)? Esta operação é IRREVERSÍVEL.")) {
             return self::SUCCESS;
         }
 

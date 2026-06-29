@@ -123,7 +123,7 @@ Schedule::call(function () {
     ->onOneServer();
 
 // LGPD: anonimiza desbravadores desligados há mais de 5 anos (Art. 14).
-Schedule::command('lgpd:anonimizar-desligados')
+Schedule::command('lgpd:anonimizar-desligados --force')
     ->timezone('America/Sao_Paulo')
     ->monthly()
     ->onOneServer();
