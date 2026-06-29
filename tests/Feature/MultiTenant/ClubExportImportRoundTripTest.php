@@ -108,6 +108,81 @@ class ClubExportImportRoundTripTest extends TestCase
         $this->assertEmpty(array_filter($report['warnings'], fn ($w) => str_contains($w, 'não encontrada')));
     }
 
+    public function test_campos_sensiveis_sao_recriptografados_e_reexport_nao_quebra(): void
+    {
+        // Regressão: numero_sus (cast 'encrypted') não era recriptografado no import,
+        // ficava em plaintext e quebrava o re-export/backup com "The payload is invalid.".
+        $club = Club::create(['nome' => 'Clube Origem', 'cidade' => 'SP']);
+        $unidade = Unidade::factory()->create(['club_id' => $club->id]);
+
+        $dbv = Desbravador::create([
+            'nome' => 'Maria', 'ativo' => true, 'data_nascimento' => '2012-01-01', 'sexo' => 'F',
+            'unidade_id' => $unidade->id,
+            'cpf' => '12345678909',
+            'rg' => '11.222.333-4',
+            'numero_sus' => '700123456789012',
+            'alergias' => 'Amendoim',
+            'medicamentos_continuos' => 'Nenhum',
+            'plano_saude' => 'Unimed',
+        ]);
+
+        $payload = (new ClubExportService)->export($club->fresh());
+        $report = (new ClubImportService)->import($payload, 'Clube Importado');
+        $newClubId = $report['club_id'];
+
+        // Os valores cifrados no destino devem descriptografar para o plaintext original.
+        $novoDbv = Desbravador::withoutGlobalScopes()->where('club_id', $newClubId)->first();
+        $this->assertSame('11.222.333-4', $novoDbv->rg);
+        $this->assertSame('700123456789012', $novoDbv->numero_sus);
+        $this->assertSame('Amendoim', $novoDbv->alergias);
+        $this->assertSame('Unimed', $novoDbv->plano_saude);
+        $this->assertSame('12345678909', $novoDbv->cpf);
+
+        // Re-exportar o clube importado não pode lançar DecryptException.
+        $reexport = (new ClubExportService)->export(Club::find($newClubId));
+        $this->assertNotEmpty($reexport['desbravadores']);
+        $this->assertSame('700123456789012', $reexport['desbravadores'][0]['numero_sus']);
+    }
+
+    public function test_comando_reparar_cifrados_recripta_plaintext_e_e_idempotente(): void
+    {
+        $club = Club::create(['nome' => 'Clube', 'cidade' => 'SP']);
+        $unidade = Unidade::factory()->create(['club_id' => $club->id]);
+        $dbv = Desbravador::create([
+            'nome' => 'Ana', 'ativo' => true, 'data_nascimento' => '2012-01-01', 'sexo' => 'F',
+            'unidade_id' => $unidade->id, 'rg' => 'cifrado-ok',
+        ]);
+
+        // Simula os dois defeitos das importações antigas:
+        //  - numero_sus em PLAINTEXT direto na coluna;
+        //  - alergias cifrado com o helper encrypt() (serializa) → wrapper "s:N:..." ao ler.
+        DB::table('desbravadores')->where('id', $dbv->id)->update([
+            'numero_sus' => '700999888777666',
+            'alergias' => encrypt('Poeira'),
+        ]);
+
+        // Antes do reparo: plaintext quebra; wrapper retorna serializado.
+        try {
+            Desbravador::withoutGlobalScopes()->find($dbv->id)->numero_sus;
+            $this->fail('Esperava DecryptException no valor plaintext.');
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            // esperado
+        }
+        $this->assertSame('s:6:"Poeira";', Desbravador::withoutGlobalScopes()->find($dbv->id)->alergias);
+
+        $this->artisan('desbravadores:reparar-cifrados')->assertSuccessful();
+
+        $reparado = Desbravador::withoutGlobalScopes()->find($dbv->id);
+        $this->assertSame('700999888777666', $reparado->numero_sus);
+        $this->assertSame('Poeira', $reparado->alergias);
+        $this->assertSame('cifrado-ok', $reparado->rg);
+
+        // Idempotente: rodar de novo não altera nada (0 campos).
+        $this->artisan('desbravadores:reparar-cifrados --dry-run')
+            ->expectsOutputToContain('0 campo(s) normalizado(s)')
+            ->assertSuccessful();
+    }
+
     public function test_export_nao_inclui_remember_token_dos_usuarios(): void
     {
         $club = Club::create(['nome' => 'Clube Origem', 'cidade' => 'SP']);

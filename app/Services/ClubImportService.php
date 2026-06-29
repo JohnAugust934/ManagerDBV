@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
@@ -482,10 +483,13 @@ class ClubImportService
             $row['cpf'] = null;
         }
 
-        // Campos sem unique constraint — apenas criptografar
-        foreach (['rg', 'alergias', 'medicamentos_continuos', 'plano_saude'] as $field) {
+        // Campos com cast 'encrypted' (sem unique constraint). O cast do Eloquent usa
+        // Crypt::encryptString/decryptString (SEM serializar) — portanto recriptografamos
+        // com encryptString, e NÃO com o helper encrypt() (que serializa e produziria um
+        // wrapper "s:N:..." ao ser lido pelo cast, corrompendo o valor silenciosamente).
+        foreach (['rg', 'numero_sus', 'alergias', 'medicamentos_continuos', 'plano_saude'] as $field) {
             if (isset($row[$field]) && $row[$field] !== null) {
-                $row[$field] = encrypt((string) $row[$field]);
+                $row[$field] = Crypt::encryptString((string) $row[$field]);
             }
         }
 
