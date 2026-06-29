@@ -22,7 +22,7 @@ class ClassesController extends Controller
     {
         $classe->load('requisitos');
 
-        // GlobalScope DesbravadorClubScope filtra pelo clube automaticamente.
+        // O ClubScope (via trait BelongsToTenant) filtra pelo clube automaticamente.
         $desbravadores = Desbravador::where('ativo', true)
             ->where('classe_atual', $classe->id)
             ->with(['requisitosCumpridos' => function ($q) use ($classe) {

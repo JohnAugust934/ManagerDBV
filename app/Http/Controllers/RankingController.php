@@ -60,7 +60,7 @@ class RankingController extends Controller
             $query->whereYear('data', $ano)->with('columnValues.column');
         };
 
-        // GlobalScope DesbravadorClubScope aplica o filtro de clube automaticamente.
+        // O ClubScope (via trait BelongsToTenant) aplica o filtro de clube automaticamente.
         $data = Desbravador::with([
             'unidade:id,nome,no_ranking',
             'frequencias' => $frequenciasLoader,

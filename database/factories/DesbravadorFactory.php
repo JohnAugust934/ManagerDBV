@@ -37,7 +37,7 @@ class DesbravadorFactory extends Factory
 
     /**
      * Estado que vincula o desbravador a uma unidade do clube especificado.
-     * Necessário para que o GlobalScope DesbravadorClubScope encontre o registro.
+     * Necessário para que o ClubScope (via trait BelongsToTenant) encontre o registro.
      */
     public function forClube(int $clubId): static
     {

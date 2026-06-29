@@ -19,7 +19,7 @@ class DesbravadorController extends Controller
 {
     public function index(Request $request)
     {
-        // GlobalScope DesbravadorClubScope aplica o filtro de clube automaticamente.
+        // O ClubScope (via trait BelongsToTenant) aplica o filtro de clube automaticamente.
         $query = Desbravador::with(['unidade', 'classe'])->orderBy('nome');
 
         if ($request->filled('search')) {

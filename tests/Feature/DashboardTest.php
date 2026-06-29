@@ -26,7 +26,7 @@ class DashboardTest extends TestCase
         Caixa::factory()->create(['tipo' => 'entrada', 'valor' => 150.00, 'club_id' => $clube->id]);
         Caixa::factory()->create(['tipo' => 'saida', 'valor' => 50.00, 'club_id' => $clube->id]);
 
-        // Desbravadores devem pertencer ao clube (GlobalScope DesbravadorClubScope).
+        // Desbravadores devem pertencer ao clube (ClubScope via trait BelongsToTenant).
         $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
         $classe = Classe::factory()->create();
 
