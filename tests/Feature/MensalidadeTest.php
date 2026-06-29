@@ -40,6 +40,29 @@ class MensalidadeTest extends TestCase
         $this->assertSame(3, Mensalidade::where('created_by', $user->id)->where('updated_by', $user->id)->count());
     }
 
+    public function test_gerar_mensalidades_persiste_valor_com_precisao_decimal()
+    {
+        $clube = Club::create(['nome' => 'Clube Decimal', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'tesoureiro']);
+        $unidade = Unidade::create(['nome' => 'Unidade 1', 'club_id' => $clube->id]);
+        Desbravador::create(['nome' => 'João', 'unidade_id' => $unidade->id, 'ativo' => true, 'data_nascimento' => '2010-01-01', 'sexo' => 'M']);
+
+        // Valor que exporia imprecisao de float; o insert em massa nao passa pelo
+        // cast decimal:2, entao deve ser gravado como "19.99" exato.
+        $this->actingAs($user)->post(route('mensalidades.gerar'), [
+            'mes' => 11,
+            'ano' => 2026,
+            'valor' => 19.99,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('mensalidades', [
+            'club_id' => $clube->id,
+            'mes' => 11,
+            'ano' => 2026,
+            'valor' => '19.99',
+        ]);
+    }
+
     public function test_gerar_mensalidades_bloqueado_sem_clube_ativo()
     {
         // Platform admin sem impersonação: club_id null → sem clube ativo. O

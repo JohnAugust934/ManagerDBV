@@ -103,7 +103,10 @@ class MensalidadeController extends Controller
                 'club_id' => $clubId, // insert() em massa não dispara o auto-fill do BelongsToTenant
                 'mes' => (int) $request->mes,
                 'ano' => (int) $request->ano,
-                'valor' => (float) $request->valor,
+                // Grava como string decimal de 2 casas (coluna decimal(10,2)). O
+                // insert() em massa nao passa pelo cast decimal:2 do model, entao
+                // formatamos aqui para nao persistir um float impreciso.
+                'valor' => number_format((float) $request->valor, 2, '.', ''),
                 'status' => 'pendente',
                 // insert() também não dispara RegistraAutoria — preenchemos a autoria manualmente.
                 'created_by' => auth()->id(),
