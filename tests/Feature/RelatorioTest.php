@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\GerarRelatorioPDF;
 use App\Models\Caixa;
 use App\Models\Classe;
 use App\Models\Club;
 use App\Models\Desbravador;
 use App\Models\Evento;
-use App\Jobs\GerarRelatorioPDF;
 use App\Models\Frequencia;
 use App\Models\Mensalidade;
 use App\Models\RelatorioGerado;
@@ -115,6 +115,22 @@ class RelatorioTest extends TestCase
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         $this->unidade->update(['club_id' => null]);
+    }
+
+    public function test_unidade_de_outro_clube_e_rejeitada_na_validacao()
+    {
+        // Unidade pertencente a outro clube: deve falhar na validacao (escopada por
+        // club_id) em vez de gerar um relatorio silenciosamente vazio.
+        $clubeExterno = Club::create(['nome' => 'Clube Externo', 'cidade' => 'RJ']);
+        $unidadeExterna = Unidade::factory()->create(['club_id' => $clubeExterno->id, 'nome' => 'Falcao']);
+
+        $response = $this->actingAs($this->user)->post(route('relatorios.custom'), [
+            'tipo' => 'desbravadores',
+            'status' => 'ativos',
+            'unidade_id' => $unidadeExterna->id,
+        ]);
+
+        $response->assertSessionHasErrors('unidade_id');
     }
 
     public function test_pode_gerar_relatorio_personalizado_caixa()
