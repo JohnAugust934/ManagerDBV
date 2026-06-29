@@ -94,4 +94,68 @@ class CaixaTest extends TestCase
 
         $response->assertSessionHasErrors(['descricao', 'valor', 'tipo', 'data_movimentacao']);
     }
+
+    public function test_caixa_isolado_por_clube_nao_vaza_lancamentos_de_outro_clube()
+    {
+        $clubeA = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);
+        $clubeB = Club::create(['nome' => 'Clube B', 'cidade' => 'RJ']);
+        $userA = User::factory()->create(['club_id' => $clubeA->id, 'role' => 'tesoureiro']);
+
+        Caixa::create(['descricao' => 'Lancamento do Clube A', 'valor' => 100, 'tipo' => 'entrada', 'data_movimentacao' => now()->format('Y-m-d'), 'categoria' => 'Campanha', 'club_id' => $clubeA->id]);
+        Caixa::create(['descricao' => 'Lancamento do Clube B', 'valor' => 999, 'tipo' => 'entrada', 'data_movimentacao' => now()->format('Y-m-d'), 'categoria' => 'Campanha', 'club_id' => $clubeB->id]);
+
+        $response = $this->actingAs($userA)->get(route('caixa.index'));
+
+        $response->assertOk();
+        $response->assertSee('Lancamento do Clube A');
+        $response->assertDontSee('Lancamento do Clube B');
+    }
+
+    public function test_operacoes_de_caixa_geram_trilha_de_auditoria()
+    {
+        $clube = Club::create(['nome' => 'Clube Auditado', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'tesoureiro']);
+
+        // store → acao "criado"
+        $this->actingAs($user)->post(route('caixa.store'), [
+            'descricao' => 'Entrada Auditada',
+            'tipo' => 'entrada',
+            'valor' => 75.00,
+            'data_movimentacao' => now()->format('Y-m-d'),
+            'categoria' => 'Doações',
+        ])->assertRedirect(route('caixa.index'));
+
+        $caixa = Caixa::where('descricao', 'Entrada Auditada')->firstOrFail();
+        $this->assertDatabaseHas('caixa_audit_logs', [
+            'caixa_id' => $caixa->id,
+            'club_id' => $clube->id,
+            'user_id' => $user->id,
+            'acao' => 'criado',
+        ]);
+
+        // update → acao "editado"
+        $this->actingAs($user)->put(route('caixa.update', $caixa), [
+            'descricao' => 'Entrada Auditada Editada',
+            'tipo' => 'entrada',
+            'valor' => 80.00,
+            'data_movimentacao' => now()->format('Y-m-d'),
+            'categoria' => 'Doações',
+        ])->assertRedirect(route('caixa.index'));
+
+        $this->assertDatabaseHas('caixa_audit_logs', [
+            'caixa_id' => $caixa->id,
+            'user_id' => $user->id,
+            'acao' => 'editado',
+        ]);
+
+        // destroy → acao "excluido" (registrado mesmo apos a exclusao do registro)
+        $this->actingAs($user)->delete(route('caixa.destroy', $caixa))
+            ->assertRedirect(route('caixa.index'));
+
+        $this->assertDatabaseHas('caixa_audit_logs', [
+            'caixa_id' => $caixa->id,
+            'club_id' => $clube->id,
+            'acao' => 'excluido',
+        ]);
+    }
 }

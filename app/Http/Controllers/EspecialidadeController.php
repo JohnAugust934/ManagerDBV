@@ -28,7 +28,7 @@ class EspecialidadeController extends Controller
         $page = max(1, (int) $request->input('page', 1));
 
         // O catálogo de especialidades é global, mas withCount('desbravadores') é
-        // escopado por clube (DesbravadorClubScope). Sem o club_id na chave, um clube
+        // escopado por clube (ClubScope via BelongsToTenant). Sem o club_id na chave, um clube
         // serviria contagens cacheadas de outro. Namespace por clube ativo resolve isso.
         $cacheKey = 'especialidades:index:'.sha1(json_encode([
             'v' => $version,

@@ -44,6 +44,13 @@ class BackupController extends Controller
                         continue;
                     }
 
+                    // Backups por clube (backups/clubes/...) sao geridos pelo proprio
+                    // clube via ClubBackupController; nao aparecem nem podem ser
+                    // operados pela tela de backup da plataforma.
+                    if ($this->isClubBackupPath($item->path())) {
+                        continue;
+                    }
+
                     $backups[] = [
                         'disk' => $disk,
                         'path' => $item->path(),
@@ -722,7 +729,24 @@ class BackupController extends Controller
             throw new \RuntimeException('Arquivo fora do diretório de backups permitido.');
         }
 
+        // Backups por clube nao sao operaveis pela tela da plataforma (download/
+        // restore/exclusao); cada clube gere os seus via ClubBackupController.
+        if ($this->isClubBackupPath($normalizedPath)) {
+            throw new \RuntimeException('Backups de clube não podem ser operados pela tela da plataforma.');
+        }
+
         return [$disk, $normalizedPath];
+    }
+
+    /**
+     * Identifica backups por clube (prefixo backups/clubes/) em qualquer disco,
+     * independentemente de barras iniciais ou caixa.
+     */
+    private function isClubBackupPath(string $path): bool
+    {
+        $normalized = strtolower(ltrim(str_replace('\\', '/', $path), '/'));
+
+        return str_starts_with($normalized, 'backups/clubes/');
     }
 
     private function assertBackupFileExists(string $disk, string $path): void

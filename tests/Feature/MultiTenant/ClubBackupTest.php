@@ -92,7 +92,7 @@ class ClubBackupTest extends TestCase
             ->assertSessionHas('success');
 
         // Verifica que o ZIP foi criado no disco local
-        $files = Storage::disk('local')->allFiles("backups/clubes/clube-alpha");
+        $files = Storage::disk('local')->allFiles('backups/clubes/clube-alpha');
         $this->assertNotEmpty($files);
         $this->assertTrue(str_ends_with($files[0], '.zip'));
     }
@@ -165,6 +165,45 @@ class ClubBackupTest extends TestCase
             'status' => 'success',
             'origin' => 'manual',
             'disk' => 'local',
+        ]);
+    }
+
+    public function test_restauracao_de_backup_integro_nao_gera_avisos(): void
+    {
+        $unidade = Unidade::factory()->create(['club_id' => $this->clubA->id]);
+        Desbravador::factory()->create(['unidade_id' => $unidade->id, 'club_id' => $this->clubA->id, 'nome' => 'Dbv Original']);
+        Storage::disk('public')->put('logos/clube.txt', 'conteudo-logo');
+
+        $backup = app(ClubBackupService::class)->backup($this->clubA);
+        $this->assertSame('success', $backup['status']);
+
+        $report = app(\App\Services\ClubRestoreService::class)
+            ->restore($this->clubA, 'local', $backup['path']);
+
+        // Backup integro: a extracao nao deve acumular avisos de entradas ilegiveis.
+        $this->assertSame([], $report['warnings']);
+        $this->assertDatabaseHas('desbravadores', ['club_id' => $this->clubA->id, 'nome' => 'Dbv Original']);
+    }
+
+    public function test_exclusao_de_backup_de_clube_registra_auditoria(): void
+    {
+        $master = User::factory()->create(['role' => 'master', 'club_id' => $this->clubA->id]);
+
+        $path = 'backups/clubes/clube-alpha/club-clube-alpha-2026-01-01-00-00-00.zip';
+        Storage::disk('local')->put($path, 'fake');
+
+        $this->actingAs($master)
+            ->delete(route('club-backups.destroy', ['disk' => 'local', 'path' => $path]))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Storage::disk('local')->assertMissing($path);
+        $this->assertDatabaseHas('club_backup_logs', [
+            'club_id' => $this->clubA->id,
+            'status' => 'excluido',
+            'filename' => 'club-clube-alpha-2026-01-01-00-00-00.zip',
+            'created_by' => $master->id,
+            'origin' => 'manual',
         ]);
     }
 }

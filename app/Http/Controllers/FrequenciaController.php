@@ -43,7 +43,7 @@ class FrequenciaController extends Controller
             ->orderBy('data_reuniao')
             ->pluck('data_reuniao');
 
-        // GlobalScope DesbravadorClubScope aplica o filtro de clube automaticamente.
+        // O ClubScope (via trait BelongsToTenant) aplica o filtro de clube automaticamente.
         $desbravadores = Desbravador::with(['unidade', 'frequencias' => function ($query) use ($mes, $ano) {
             $query->whereYear('data', $ano)->whereMonth('data', $mes);
         }])

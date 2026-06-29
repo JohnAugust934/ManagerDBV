@@ -105,7 +105,13 @@ class RelatorioController extends Controller
         $validated = $request->validate([
             'tipo' => 'required|in:'.implode(',', self::REPORT_TYPES),
             'status' => 'nullable|in:ativos,inativos,todos',
-            'unidade_id' => 'nullable|exists:unidades,id',
+            'unidade_id' => [
+                'nullable',
+                // Escopado ao clube ativo: uma unidade de outro clube e rejeitada
+                // na validacao (em vez de gerar um relatorio silenciosamente vazio).
+                \Illuminate\Validation\Rule::exists('unidades', 'id')
+                    ->where('club_id', \App\Services\ClubContext::currentClubId()),
+            ],
             'data_inicio' => 'nullable|date',
             'data_fim' => 'nullable|date|after_or_equal:data_inicio',
             'tipo_movimentacao' => 'nullable|in:todos,entrada,saida',

@@ -118,6 +118,24 @@ class LgpdAnonimizacaoTest extends TestCase
         $this->assertSame('Ativo Antigo', $ativo->refresh()->nome);
     }
 
+    public function test_force_anonimiza_sem_confirmacao_interativa(): void
+    {
+        // Simula o contexto do schedule:run (sem TTY): com --force não deve haver
+        // pergunta de confirmação e a anonimização precisa ocorrer mesmo assim.
+        $dbv = $this->desligadoAntigo('Sob Agendamento');
+
+        $this->artisan('lgpd:anonimizar-desligados', ['--anos' => 5, '--force' => true])
+            ->doesntExpectOutputToContain('IRREVERSÍVEL')
+            ->assertExitCode(0);
+
+        $this->assertStringStartsWith('Membro #', $dbv->refresh()->nome);
+        $this->assertNull($dbv->cpf);
+        $this->assertDatabaseHas('lgpd_registros', [
+            'acao' => 'anonimizacao',
+            'entidade_id' => $dbv->id,
+        ]);
+    }
+
     public function test_anonimizacao_e_idempotente(): void
     {
         $dbv = $this->desligadoAntigo('Para Anonimizar');

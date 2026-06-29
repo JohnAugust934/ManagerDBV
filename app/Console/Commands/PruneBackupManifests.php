@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\BackupLog;
+use App\Models\ClubBackupLog;
+use App\Models\LgpdRegistro;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -35,8 +37,10 @@ class PruneBackupManifests extends Command
         }
 
         $prunedLogs = $this->pruneOldLogs();
+        $prunedClubLogs = $this->pruneOldClubLogs();
+        $prunedRopa = $this->pruneOldRopa();
 
-        $this->info("Manifests órfãos removidos: {$removedManifests}. Linhas de backup_logs podadas: {$prunedLogs}.");
+        $this->info("Manifests órfãos removidos: {$removedManifests}. Linhas podadas — backup_logs: {$prunedLogs}, club_backup_logs: {$prunedClubLogs}, lgpd_registros: {$prunedRopa}.");
 
         return self::SUCCESS;
     }
@@ -72,9 +76,32 @@ class PruneBackupManifests extends Command
      */
     private function pruneOldLogs(): int
     {
-        $days = max(1, (int) env('BACKUP_LOG_RETENTION_DAYS', 365));
-        $cutoff = Carbon::now()->subDays($days);
+        return BackupLog::where('created_at', '<', $this->logCutoff())->delete();
+    }
 
-        return BackupLog::where('created_at', '<', $cutoff)->delete();
+    /**
+     * Poda club_backup_logs (backup por clube) pela mesma janela de retenção.
+     * Cresce ~N linhas/dia por clube; o backup:clean do spatie não a toca.
+     */
+    private function pruneOldClubLogs(): int
+    {
+        return ClubBackupLog::where('created_at', '<', $this->logCutoff())->delete();
+    }
+
+    /**
+     * Poda o registro ROPA (lgpd_registros) acima da janela de retenção. O
+     * DesbravadorObserver grava metadados a cada evento; sem poda cresce sem fim.
+     * Reaproveita BACKUP_LOG_RETENTION_DAYS (histórico barato de auditoria).
+     */
+    private function pruneOldRopa(): int
+    {
+        return LgpdRegistro::where('created_at', '<', $this->logCutoff())->delete();
+    }
+
+    private function logCutoff(): Carbon
+    {
+        $days = max(1, (int) env('BACKUP_LOG_RETENTION_DAYS', 365));
+
+        return Carbon::now()->subDays($days);
     }
 }

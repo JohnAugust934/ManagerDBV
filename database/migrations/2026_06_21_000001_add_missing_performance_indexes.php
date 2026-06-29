@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // Consultas de chamada/frequência filtram unidade_id em desbravadores com frecuência;
-        // o índice composto (club_id, unidade_id) cobre o filtro mais comum do DesbravadorClubScope
+        // o índice composto (club_id, unidade_id) cobre o filtro mais comum do ClubScope (BelongsToTenant)
         // + filtro de unidade simultâneo.
         Schema::table('desbravadores', function (Blueprint $table) {
             $table->index(['club_id', 'unidade_id'], 'desbravadores_club_unidade_idx');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Club;
+use App\Models\ClubBackupLog;
 use App\Services\ClubBackupService;
 use App\Services\ClubContext;
 use App\Services\ClubRestoreService;
@@ -172,6 +173,19 @@ class ClubBackupController extends Controller
 
         if (\Illuminate\Support\Facades\Storage::disk($disk)->exists($path)) {
             \Illuminate\Support\Facades\Storage::disk($disk)->delete($path);
+
+            // Exclusao e definitiva (sem soft delete). Registra quem/quando para
+            // auditoria — o log sobrevive mesmo apos o arquivo sumir.
+            ClubBackupLog::create([
+                'club_id' => $club->id,
+                'disk' => $disk,
+                'path' => $path,
+                'filename' => basename($path),
+                'status' => 'excluido',
+                'created_by' => auth()->id(),
+                'origin' => 'manual',
+            ]);
+
             $this->notify("Backup do clube {$club->nome} excluído", [
                 'Responsável' => auth()->user()?->name,
                 'Clube' => $club->nome,
