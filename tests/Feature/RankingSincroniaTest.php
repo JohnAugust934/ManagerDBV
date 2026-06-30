@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\AttendanceColumn;
 use App\Models\Desbravador;
 use App\Models\Frequencia;
+use App\Models\FrequenciaColumnValue;
 use App\Models\RankingSnapshot;
 use App\Models\Unidade;
 use App\Providers\AppServiceProvider;
@@ -113,6 +115,39 @@ class RankingSincroniaTest extends TestCase
         $this->assertNotContains($fora->id, $ctrlUnidadesOrdem);
         $this->assertNotContains($foraDbv->id, $snapMembrosOrdem);
         $this->assertNotContains($foraDbv->id, $ctrlMembrosOrdem);
+    }
+
+    /**
+     * Regressão da divergência que motivou a unificação: o snapshot somava TODOS
+     * os column_values (via getPontosAttribute), enquanto a tela só contava os
+     * marcados (checked). Com um valor não-marcado mas com pontos residuais, as
+     * duas implementações precisam concordar e ignorar o não-marcado.
+     */
+    public function test_paridade_ignora_colunas_nao_marcadas(): void
+    {
+        ['club' => $clubA, 'master' => $masterA] = criarClubeComDados('Clube A');
+
+        $unidade = Unidade::factory()->create(['nome' => 'Solo', 'club_id' => $clubA->id, 'no_ranking' => true]);
+        $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'nome' => 'Único', 'ativo' => true]);
+
+        $colPresente = AttendanceColumn::create(['club_id' => $clubA->id, 'key' => 'presente', 'name' => 'Presente', 'points' => 10, 'is_fixed' => true, 'is_active' => true, 'sort_order' => 1]);
+        $colExtra = AttendanceColumn::create(['club_id' => $clubA->id, 'key' => 'extra', 'name' => 'Extra', 'points' => 7, 'is_fixed' => false, 'is_active' => true, 'sort_order' => 2]);
+
+        $freq = Frequencia::create(['desbravador_id' => $dbv->id, 'data' => now()]);
+
+        // Marcado: conta 10. Não-marcado com pontos residuais: deve ser ignorado.
+        FrequenciaColumnValue::create(['frequencia_id' => $freq->id, 'attendance_column_id' => $colPresente->id, 'checked' => true, 'points_awarded' => 10]);
+        FrequenciaColumnValue::create(['frequencia_id' => $freq->id, 'attendance_column_id' => $colExtra->id, 'checked' => false, 'points_awarded' => 7]);
+
+        AppServiceProvider::snapshotRankingYear(now()->year, $clubA->id);
+        $snap = RankingSnapshot::where('club_id', $clubA->id)->where('scope', 'desbravadores')->firstOrFail()->entries;
+
+        $this->actingAs($masterA);
+        $ctrl = $this->get(route('ranking.desbravadores'))->assertOk()->viewData('data');
+
+        // Ambos contam só o marcado: 10 (não 17).
+        $this->assertSame(10, (int) $snap[0]['pontos']);
+        $this->assertSame(10, (int) $ctrl->firstWhere('id', $dbv->id)->pontos);
     }
 
     public function test_paridade_respeita_isolamento_por_clube(): void

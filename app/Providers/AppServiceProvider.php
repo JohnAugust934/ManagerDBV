@@ -18,7 +18,6 @@ use Illuminate\Queue\Events\QueueBusy;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Backup\Events\BackupHasFailed;
@@ -225,58 +224,27 @@ class AppServiceProvider extends ServiceProvider
 
     public static function snapshotRankingYear(int $year, int $clubId, ?int $generatedBy = null): void
     {
-        $hasColumnValues = Schema::hasTable('frequencia_column_values');
-        $frequenciasLoader = function ($query) use ($year, $hasColumnValues) {
-            $query->whereYear('data', $year);
-            if ($hasColumnValues) {
-                $query->with('columnValues');
-            }
-        };
+        // Usa o mesmo RankingScorer das telas ao vivo (RankingController) — única
+        // fonte da pontuação, garantindo que snapshot e tela nunca divirjam.
+        $scorer = app(\App\Services\RankingScorer::class);
 
-        // Consistente com o ranking ao vivo (RankingController): só unidades que
-        // participam do ranking (no_ranking = true) entram no snapshot.
-        $unitEntries = Unidade::where('club_id', $clubId)
-            ->where('no_ranking', true)
-            ->with([
-                'desbravadores:id,nome,unidade_id,ativo',
-                'desbravadores.frequencias' => $frequenciasLoader,
+        $unitEntries = $scorer->unidades($clubId, $year)
+            ->map(fn (Unidade $unidade) => [
+                'id' => $unidade->id,
+                'nome' => $unidade->nome,
+                'pontos' => $scorer->stats($unidade->desbravadores)['total'],
             ])
-            ->orderBy('nome')
-            ->get(['id', 'nome', 'club_id', 'no_ranking'])
-            ->map(function (Unidade $unidade) {
-                $points = $unidade->desbravadores
-                    ->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
-
-                // Chaves em pt_BR para casar com o snapshot ao vivo
-                // (RankingController::salvarSnapshot) e a view ranking/snapshot —
-                // as duas implementações DUPLICADAS precisam do mesmo schema.
-                return [
-                    'id' => $unidade->id,
-                    'nome' => $unidade->nome,
-                    'pontos' => $points,
-                ];
-            })
             ->sortByDesc('pontos')
             ->values()
             ->all();
 
-        $memberEntries = Desbravador::with([
-            'unidade:id,nome,no_ranking',
-            'frequencias' => $frequenciasLoader,
-        ])
-            ->where('ativo', true)
-            ->whereHas('unidade', fn ($q) => $q->where('club_id', $clubId)->where('no_ranking', true))
-            ->orderBy('nome')
-            ->get(['id', 'nome', 'unidade_id', 'ativo'])
-            ->map(function (Desbravador $desbravador) {
-                // Mesmo schema pt_BR do snapshot ao vivo e da view (ver acima).
-                return [
-                    'id' => $desbravador->id,
-                    'nome' => $desbravador->nome,
-                    'unidade' => $desbravador->unidade->nome ?? 'Sem unidade',
-                    'pontos' => $desbravador->frequencias->sum('pontos'),
-                ];
-            })
+        $memberEntries = $scorer->desbravadores($clubId, $year)
+            ->map(fn (Desbravador $desbravador) => [
+                'id' => $desbravador->id,
+                'nome' => $desbravador->nome,
+                'unidade' => $desbravador->unidade->nome ?? 'Sem unidade',
+                'pontos' => $scorer->stats(collect([$desbravador]))['total'],
+            ])
             ->sortByDesc('pontos')
             ->values()
             ->all();

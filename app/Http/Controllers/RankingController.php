@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Desbravador;
 use App\Models\RankingSnapshot;
-use App\Models\Unidade;
 use App\Services\ClubContext;
+use App\Services\RankingScorer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class RankingController extends Controller
 {
+    public function __construct(private RankingScorer $scorer) {}
+
     public function unidades()
     {
         Gate::authorize('relatorios');
@@ -18,21 +19,9 @@ class RankingController extends Controller
         $clubId = ClubContext::currentClubId();
         $ano = now()->year;
 
-        // Schema::hasTable removido — tabela frequencia_column_values existe desde a migration
-        // 2026_04_13_100100 e está sempre presente em produção.
-        $frequenciasLoader = function ($query) use ($ano) {
-            $query->whereYear('data', $ano)->with('columnValues.column');
-        };
-
-        $data = Unidade::where('club_id', $clubId)
-            ->where('no_ranking', true)
-            ->with([
-                'desbravadores:id,nome,unidade_id,ativo',
-                'desbravadores.frequencias' => $frequenciasLoader,
-            ])
-            ->get(['id', 'nome', 'club_id', 'no_ranking'])
+        $data = $this->scorer->unidades($clubId, $ano)
             ->map(function ($unidade) {
-                $stats = $this->calcularPontos($unidade->desbravadores);
+                $stats = $this->scorer->stats($unidade->desbravadores);
 
                 return (object) [
                     'id' => $unidade->id,
@@ -54,22 +43,12 @@ class RankingController extends Controller
     {
         Gate::authorize('relatorios');
 
+        $clubId = ClubContext::currentClubId();
         $ano = now()->year;
 
-        $frequenciasLoader = function ($query) use ($ano) {
-            $query->whereYear('data', $ano)->with('columnValues.column');
-        };
-
-        // O ClubScope (via trait BelongsToTenant) aplica o filtro de clube automaticamente.
-        $data = Desbravador::with([
-            'unidade:id,nome,no_ranking',
-            'frequencias' => $frequenciasLoader,
-        ])
-            ->where('ativo', true)
-            ->whereHas('unidade', fn ($q) => $q->where('no_ranking', true))
-            ->get(['id', 'nome', 'unidade_id', 'ativo'])
+        $data = $this->scorer->desbravadores($clubId, $ano)
             ->map(function ($dbv) {
-                $stats = $this->calcularPontos(collect([$dbv]));
+                $stats = $this->scorer->stats(collect([$dbv]));
 
                 return (object) [
                     'id' => $dbv->id,
@@ -100,15 +79,10 @@ class RankingController extends Controller
         $year = (int) $request->year;
         $clubId = ClubContext::currentClubId();
 
-        $frequenciasLoader = fn ($q) => $q->whereYear('data', $year)->with('columnValues.column');
-
         if ($scope === 'unidades') {
-            $entries = Unidade::where('club_id', $clubId)
-                ->where('no_ranking', true)
-                ->with(['desbravadores.frequencias' => $frequenciasLoader])
-                ->get()
+            $entries = $this->scorer->unidades($clubId, $year)
                 ->map(function ($unidade) {
-                    $stats = $this->calcularPontos($unidade->desbravadores);
+                    $stats = $this->scorer->stats($unidade->desbravadores);
 
                     return ['id' => $unidade->id, 'nome' => $unidade->nome, 'pontos' => $stats['total'], 'detalhes' => $stats];
                 })
@@ -116,12 +90,9 @@ class RankingController extends Controller
                 ->values()
                 ->toArray();
         } else {
-            $entries = Desbravador::with(['unidade', 'frequencias' => $frequenciasLoader])
-                ->where('ativo', true)
-                ->whereHas('unidade', fn ($q) => $q->where('no_ranking', true))
-                ->get()
+            $entries = $this->scorer->desbravadores($clubId, $year)
                 ->map(function ($dbv) {
-                    $stats = $this->calcularPontos(collect([$dbv]));
+                    $stats = $this->scorer->stats(collect([$dbv]));
 
                     return ['id' => $dbv->id, 'nome' => $dbv->nome, 'unidade' => $dbv->unidade->nome ?? '-', 'pontos' => $stats['total'], 'detalhes' => $stats];
                 })
@@ -169,59 +140,6 @@ class RankingController extends Controller
             ->pluck('year');
 
         return view('ranking.index', compact('data', 'top3', 'demais', 'titulo', 'ano', 'scope', 'snapshotsDisponiveis'));
-    }
-
-    private function calcularPontos($desbravadores): array
-    {
-        $stats = [
-            'presente' => 0,
-            'pontual' => 0,
-            'biblia' => 0,
-            'uniforme' => 0,
-            'total' => 0,
-        ];
-
-        foreach ($desbravadores as $dbv) {
-            foreach ($dbv->frequencias as $freq) {
-                if ($freq->columnValues->isNotEmpty()) {
-                    foreach ($freq->columnValues as $columnValue) {
-                        if (! $columnValue->checked) {
-                            continue;
-                        }
-
-                        $points = (int) $columnValue->points_awarded;
-                        $stats['total'] += $points;
-
-                        $columnKey = $columnValue->column?->key;
-                        if (in_array($columnKey, ['presente', 'pontual', 'biblia', 'uniforme'], true)) {
-                            $stats[$columnKey] += $points;
-                        }
-                    }
-
-                    continue;
-                }
-
-                // Fallback para registros legados sem column_values.
-                if ($freq->presente) {
-                    $stats['presente'] += 10;
-                    $stats['total'] += 10;
-                }
-                if ($freq->pontual) {
-                    $stats['pontual'] += 5;
-                    $stats['total'] += 5;
-                }
-                if ($freq->biblia) {
-                    $stats['biblia'] += 5;
-                    $stats['total'] += 5;
-                }
-                if ($freq->uniforme) {
-                    $stats['uniforme'] += 10;
-                    $stats['total'] += 10;
-                }
-            }
-        }
-
-        return $stats;
     }
 
     private function getCorUnidade($id): string
