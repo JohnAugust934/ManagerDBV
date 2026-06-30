@@ -15,6 +15,7 @@ use App\Http\Controllers\DesbravadorController;
 use App\Http\Controllers\EspecialidadeController;
 use App\Http\Controllers\EventoController;
 use App\Http\Controllers\FrequenciaController;
+use App\Http\Controllers\ImportacaoDesbravadorController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MensalidadeController;
@@ -190,6 +191,14 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::get('atas/{ata}/imprimir', [AtaController::class, 'print'])->name('atas.print');
         Route::resource('atas', AtaController::class);
         Route::resource('atos', AtoController::class);
+
+        // Importação via CSV — registrada ANTES do resource para que
+        // /desbravadores/importar não case com o wildcard {desbravador} do show.
+        Route::prefix('desbravadores/importar')->name('desbravadores.importar.')->group(function () {
+            Route::get('/', [ImportacaoDesbravadorController::class, 'index'])->name('index');
+            Route::post('/preview', [ImportacaoDesbravadorController::class, 'preview'])->name('preview');
+            Route::post('/confirmar', [ImportacaoDesbravadorController::class, 'confirmar'])->name('confirmar');
+        });
 
         // Gestao de pessoas
         Route::resource('desbravadores', DesbravadorController::class)->parameters(['desbravadores' => 'desbravador']);
