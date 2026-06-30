@@ -239,8 +239,10 @@ php artisan up
 > Nunca execute `php artisan db:seed` sem `--class=MasterOnlySeeder` em produção.
 
 ### Modelo multi-tenant (resumo)
-- Banco único compartilhado; isolamento por `club_id` via Global Scopes (`ClubScope`,
-  `DesbravadorClubScope`, `MensalidadeClubScope`), resolvidos por `App\Services\ClubContext`.
+- Banco único compartilhado; isolamento por `club_id` via o trait `BelongsToTenant`
+  (global scope `ClubScope`), resolvido por `App\Services\ClubContext`. Models sem
+  `club_id` direto (`Desbravador`, `Mensalidade`) resolvem o clube por relação
+  (`unidade` / `desbravador`) através do mesmo trait.
 - `is_platform_admin` (cross-tenant) é distinto de `role = master` (dono de um clube).
 - Sem contexto de clube, usuário comum **não vê nada** (fail-closed); platform admin vê tudo.
 - Especialidades e Classes permanecem **catálogo global** (sem `club_id`).
