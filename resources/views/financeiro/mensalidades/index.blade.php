@@ -334,7 +334,7 @@
                      x-transition:leave-end="opacity-0 scale-95 translate-y-4"
                      class="relative ui-card w-full max-w-[480px] p-0 shadow-2xl shadow-black/30 text-left z-10 overflow-hidden">
 
-                    <form action="{{ route('mensalidades.gerar') }}" method="POST">
+                    <form action="{{ route('mensalidades.gerar') }}" method="POST" x-data="gerarLoteMensal()">
                         @csrf
                         <div class="p-6 sm:p-8">
                             <div class="flex items-center gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
@@ -347,12 +347,12 @@
                                 </div>
                             </div>
 
-                            <div class="space-y-5">
+                            <div class="space-y-5" x-show="step === 'form'">
                                 <div>
                                     <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Competência (Mês/Ano)</label>
                                     <div class="flex gap-2">
                                         <div class="relative flex-1">
-                                            <select name="mes" class="ui-input w-full appearance-none font-bold pr-8 cursor-pointer">
+                                            <select name="mes" x-model.number="mes" class="ui-input w-full appearance-none font-bold pr-8 cursor-pointer">
                                                 @foreach (range(1, 12) as $m)
                                                     <option value="{{ $m }}" {{ date('m') == $m ? 'selected' : '' }}>{{ $m }} - {{ \Carbon\Carbon::create()->month($m)->locale('pt_BR')->monthName }}</option>
                                                 @endforeach
@@ -360,7 +360,7 @@
                                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></div>
                                         </div>
                                         <div class="relative w-1/3">
-                                            <select name="ano" class="ui-input w-full appearance-none font-bold pr-8 cursor-pointer text-center">
+                                            <select name="ano" x-model.number="ano" class="ui-input w-full appearance-none font-bold pr-8 cursor-pointer text-center">
                                                 <option value="{{ date('Y') }}">{{ date('Y') }}</option>
                                                 <option value="{{ date('Y') + 1 }}">{{ date('Y') + 1 }}</option>
                                             </select>
@@ -375,9 +375,33 @@
                                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <span class="text-slate-400 dark:text-slate-500 font-black text-lg">R$</span>
                                         </div>
-                                        <input type="number" name="valor" step="0.01" value="15.00" required class="ui-input w-full pl-12 h-14 font-black text-2xl text-slate-800 dark:text-white transition-all group-hover:border-[#002F6C] focus:border-[#002F6C]">
+                                        <input type="number" name="valor" x-model="valor" step="0.01" value="15.00" required class="ui-input w-full pl-12 h-14 font-black text-2xl text-slate-800 dark:text-white transition-all group-hover:border-[#002F6C] focus:border-[#002F6C]">
                                     </div>
                                 </div>
+                            </div>
+
+                            {{-- Etapa de carregamento --}}
+                            <div x-show="step === 'loading'" x-cloak class="py-10 text-center">
+                                <svg class="w-8 h-8 mx-auto animate-spin text-[#002F6C] dark:text-blue-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"/></svg>
+                                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-3">Verificando...</p>
+                            </div>
+
+                            {{-- Etapa de confirmação (preview) --}}
+                            <div x-show="step === 'confirm'" x-cloak>
+                                <template x-if="preview">
+                                    <div class="space-y-4">
+                                        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 space-y-2">
+                                            <div class="flex justify-between text-sm"><span class="text-slate-500">Competência</span><span class="font-black text-slate-800 dark:text-white" x-text="preview.competencia"></span></div>
+                                            <div class="flex justify-between text-sm"><span class="text-slate-500">Valor unitário</span><span class="font-black text-slate-800 dark:text-white" x-text="preview.valor_formatado"></span></div>
+                                            <div class="flex justify-between text-sm"><span class="text-slate-500">Total de membros ativos</span><span class="font-black text-slate-800 dark:text-white" x-text="preview.total_ativos"></span></div>
+                                            <div class="flex justify-between text-sm border-t border-slate-200 dark:border-slate-700 pt-2 mt-2"><span class="text-slate-500">Já existem (serão puladas)</span><span class="font-black text-amber-600 dark:text-amber-400" x-text="preview.ja_existem"></span></div>
+                                            <div class="flex justify-between text-base font-black"><span class="text-emerald-600 dark:text-emerald-400">Serão criadas agora</span><span class="text-emerald-600 dark:text-emerald-400" x-text="preview.serao_criadas"></span></div>
+                                        </div>
+                                        <p x-show="preview.serao_criadas === 0" class="text-xs text-amber-600 dark:text-amber-400 font-bold text-center">
+                                            Todas as mensalidades desta competência já foram geradas.
+                                        </p>
+                                    </div>
+                                </template>
                             </div>
                         </div>
 
@@ -385,12 +409,51 @@
                             <button type="button" @click="modalGerarOpen = false" class="w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
                                 Cancelar
                             </button>
-                            <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm bg-[#002F6C] hover:bg-[#001D42] dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-900/20 active:scale-95 flex justify-center items-center gap-2">
-                                Disparar Cobranças
+
+                            {{-- Etapa 1: verificar (não submete o form ainda) --}}
+                            <button type="button" x-show="step === 'form'" @click="buscarPreview()" class="w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm bg-[#002F6C] hover:bg-[#001D42] dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-900/20 active:scale-95 flex justify-center items-center gap-2">
+                                Verificar e prosseguir
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                            </button>
+
+                            {{-- Etapa 2: voltar / confirmar geração (submete) --}}
+                            <button type="button" x-show="step === 'confirm'" x-cloak @click="step = 'form'" class="w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
+                                Voltar
+                            </button>
+                            <button type="submit" x-show="step === 'confirm'" x-cloak :disabled="!preview || preview.serao_criadas === 0" class="w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm bg-[#002F6C] hover:bg-[#001D42] dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                                Confirmar geração
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                             </button>
                         </div>
                     </form>
+
+                    <script>
+                        function gerarLoteMensal() {
+                            return {
+                                step: 'form',
+                                preview: null,
+                                mes: {{ (int) date('m') }},
+                                ano: {{ (int) date('Y') }},
+                                valor: '15.00',
+                                async buscarPreview() {
+                                    this.step = 'loading';
+                                    try {
+                                        const res = await fetch('{{ route('mensalidades.preview') }}', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                            body: JSON.stringify({ mes: this.mes, ano: this.ano, valor: this.valor })
+                                        });
+                                        if (!res.ok) throw new Error('falha');
+                                        this.preview = await res.json();
+                                        this.step = 'confirm';
+                                    } catch (e) {
+                                        this.step = 'form';
+                                        if (window.notify) window.notify('Erro ao verificar dados. Tente novamente.', 'error');
+                                    }
+                                }
+                            };
+                        }
+                    </script>
                 </div>
             </div>
         </template>
