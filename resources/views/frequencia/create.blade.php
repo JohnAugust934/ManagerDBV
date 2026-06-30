@@ -3,6 +3,20 @@
 
     <div class="ui-page space-y-0 max-w-4xl mx-auto pb-32 ui-animate-fade-up" x-data="chamadaApp()">
 
+        {{-- INDICADOR DE STATUS DE CONEXÃO (PWA) --}}
+        <div x-data="{ online: navigator.onLine }" @online.window="online = true" @offline.window="online = false">
+            <div x-show="!online" x-cloak
+                 class="mb-4 px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 flex items-center gap-3">
+                <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M12 12h.01M9.172 14.828a4 4 0 010-5.656"/>
+                </svg>
+                <div>
+                    <p class="text-sm font-black text-amber-700 dark:text-amber-400">Modo offline</p>
+                    <p class="text-xs text-amber-600 dark:text-amber-500">Reconecte-se para salvar a chamada com segurança.</p>
+                </div>
+            </div>
+        </div>
+
         {{-- CABEÇALHO HERO COMPACTO --}}
         <div class="relative overflow-hidden rounded-[28px] mb-6 bg-gradient-to-r from-[#001D42] to-[#002F6C] p-6 shadow-xl shadow-blue-900/30">
             <div class="absolute -right-10 -top-10 w-48 h-48 bg-blue-400/10 rounded-full blur-2xl pointer-events-none"></div>
