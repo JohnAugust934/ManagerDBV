@@ -43,6 +43,10 @@
             <div class="w-full h-11 border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50 dark:bg-emerald-900/10 flex items-center justify-center rounded-xl text-emerald-600 dark:text-emerald-500 font-bold text-[11px] tracking-wide">
                 Quitada em {{ \Carbon\Carbon::parse($m->data_pagamento)->format('d/m/Y') }}
             </div>
+            <button @click="estornar('{{ route('mensalidades.estornar', $m->id) }}')"
+                    class="mt-2 w-full text-[10px] font-black uppercase tracking-widest text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition-colors">
+                Estornar
+            </button>
         @endif
     </div>
 </div>

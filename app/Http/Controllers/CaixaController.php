@@ -55,11 +55,11 @@ class CaixaController extends Controller
 
         $validado['club_id'] = ClubContext::currentClubId();
 
-        // Lançamento + trilha de auditoria numa única transação: se o log falhar,
-        // a movimentação financeira também é revertida (nunca fica sem auditoria).
+        // Lançamento + trilha de auditoria numa única transação: o CaixaObserver
+        // grava o log no evento `created`; se ele falhar, a movimentação é revertida
+        // (nunca fica sem auditoria).
         \Illuminate\Support\Facades\DB::retryOnDeadlock(function () use ($validado) {
-            $caixa = Caixa::create($validado);
-            CaixaAuditLog::registrar('criado', $caixa, null, $this->dadosAuditaveis($caixa));
+            Caixa::create($validado);
         });
 
         return redirect()->route('caixa.index')
@@ -85,11 +85,9 @@ class CaixaController extends Controller
             'categoria' => 'nullable|string|max:100',
         ]);
 
-        $antes = $this->dadosAuditaveis($caixa);
-
-        \Illuminate\Support\Facades\DB::retryOnDeadlock(function () use ($caixa, $validado, $antes) {
+        // O CaixaObserver grava o log `editado` (com dados_antes/dados_depois).
+        \Illuminate\Support\Facades\DB::retryOnDeadlock(function () use ($caixa, $validado) {
             $caixa->update($validado);
-            CaixaAuditLog::registrar('editado', $caixa, $antes, $this->dadosAuditaveis($caixa));
         });
 
         return redirect()->route('caixa.index')
@@ -100,41 +98,13 @@ class CaixaController extends Controller
     {
         Gate::authorize('financeiro');
 
-        $antes = $this->dadosAuditaveis($caixa);
-
-        // Mantém referência ao club_id antes de deletar para salvar no log.
-        $clubId = $caixa->club_id;
-        $caixaId = $caixa->id;
-
-        // Exclusão + log na mesma transação: a exclusão de um lançamento nunca
-        // fica sem registro de quem deletou nem do valor anterior.
-        \Illuminate\Support\Facades\DB::retryOnDeadlock(function () use ($caixa, $caixaId, $clubId, $antes) {
+        // Exclusão + log na mesma transação: o CaixaObserver grava o log `excluido`
+        // no evento `deleted`, com os dados anteriores do lançamento.
+        \Illuminate\Support\Facades\DB::retryOnDeadlock(function () use ($caixa) {
             $caixa->delete();
-
-            // Cria o log manualmente pois o model foi deletado.
-            CaixaAuditLog::create([
-                'caixa_id' => $caixaId,
-                'club_id' => $clubId,
-                'user_id' => auth()->id(),
-                'acao' => 'excluido',
-                'dados_antes' => $antes,
-                'dados_depois' => null,
-                'created_at' => now(),
-            ]);
         });
 
         return redirect()->route('caixa.index')
             ->with('success', 'Lançamento excluído com sucesso.');
-    }
-
-    private function dadosAuditaveis(Caixa $caixa): array
-    {
-        return [
-            'descricao' => $caixa->descricao,
-            'valor' => (string) $caixa->valor,
-            'tipo' => $caixa->tipo,
-            'categoria' => $caixa->categoria,
-            'data_movimentacao' => $caixa->data_movimentacao?->format('Y-m-d'),
-        ];
     }
 }

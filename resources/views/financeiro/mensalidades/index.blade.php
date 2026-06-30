@@ -52,6 +52,41 @@
             } finally {
                 this.processando = false;
             }
+        },
+        async estornar(url) {
+            if (this.processando) return;
+            if (!window.confirm('Estornar este pagamento? A entrada será removida do caixa.')) return;
+            this.processando = true;
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    window.notify(data.message || 'Não foi possível estornar o pagamento.', 'error');
+                    return;
+                }
+                const card = document.getElementById('mensalidade-card-' + data.id);
+                const html = (this.visualizacao === 'linhas' && data.row) ? data.row : data.card;
+                if (card && html) card.outerHTML = html;
+                if (data.resumo) {
+                    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+                    set('resumo-recebido', data.resumo.valorRecebido);
+                    set('resumo-pendente', data.resumo.valorPendente);
+                    set('resumo-total-pago', data.resumo.totalPago);
+                    set('resumo-total-pendente', data.resumo.totalPendente);
+                }
+                window.notify(data.message || 'Pagamento estornado!', 'success');
+            } catch (e) {
+                window.notify('Falha de conexão ao estornar o pagamento.', 'error');
+            } finally {
+                this.processando = false;
+            }
         }
     }">
 

@@ -49,9 +49,15 @@
                 Confirmar
             </button>
         @else
-            <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-500">
-                Quitada em {{ \Carbon\Carbon::parse($m->data_pagamento)->format('d/m/Y') }}
-            </span>
+            <div class="inline-flex items-center gap-3">
+                <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-500">
+                    Quitada em {{ \Carbon\Carbon::parse($m->data_pagamento)->format('d/m/Y') }}
+                </span>
+                <button @click="estornar('{{ route('mensalidades.estornar', $m->id) }}')"
+                        class="text-[10px] font-black uppercase tracking-widest text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition-colors">
+                    Estornar
+                </button>
+            </div>
         @endif
     </td>
 </tr>

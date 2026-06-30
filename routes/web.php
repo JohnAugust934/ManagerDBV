@@ -289,6 +289,7 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::post('mensalidades/preview-lote', [MensalidadeController::class, 'previewMassivo'])->name('mensalidades.preview');
         Route::post('mensalidades/gerar', [MensalidadeController::class, 'gerarMassivo'])->name('mensalidades.gerar');
         Route::post('mensalidades/{id}/pagar', [MensalidadeController::class, 'pagar'])->name('mensalidades.pagar');
+        Route::post('mensalidades/{id}/estornar', [MensalidadeController::class, 'estornar'])->name('mensalidades.estornar');
     });
 
     // 8. Eventos (visualizacao e inscricao)

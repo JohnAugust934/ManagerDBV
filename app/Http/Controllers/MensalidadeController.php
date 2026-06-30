@@ -193,6 +193,7 @@ class MensalidadeController extends Controller
                 'valor' => $mensalidade->valor,
                 'data_movimentacao' => Carbon::now(),
                 'club_id' => $clubId,
+                'mensalidade_id' => $mensalidade->id,
             ]);
         });
 
@@ -200,6 +201,69 @@ class MensalidadeController extends Controller
 
         // Requisição AJAX (atualização parcial, sem recarregar a tela): devolve o
         // HTML atualizado do card + os totais recalculados do mês.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $mensagem,
+                'id' => $mensalidade->id,
+                'card' => view('financeiro.mensalidades._card', ['m' => $mensalidade])->render(),
+                'row' => view('financeiro.mensalidades._row', ['m' => $mensalidade])->render(),
+                'resumo' => $this->resumoMes($clubId, (int) $mensalidade->mes, (int) $mensalidade->ano),
+            ]);
+        }
+
+        return back()->with('success', $mensagem);
+    }
+
+    /**
+     * Estorna um pagamento: volta a mensalidade para `pendente` e remove a entrada
+     * de caixa correspondente (o CaixaObserver registra o `excluido` na auditoria).
+     */
+    public function estornar(Request $request, $id)
+    {
+        Gate::authorize('financeiro');
+
+        $clubId = ClubContext::currentClubId();
+
+        $mensalidade = Mensalidade::doClube($clubId)
+            ->with('desbravador.unidade')
+            ->findOrFail($id);
+
+        if ($mensalidade->status !== 'pago') {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Só é possível estornar mensalidades pagas.'], 422);
+            }
+
+            return back()->with('error', 'Só é possível estornar mensalidades pagas.');
+        }
+
+        DB::transaction(function () use ($mensalidade, $clubId) {
+            // Remove a entrada de caixa gerada pelo pagamento. Prioriza o vínculo
+            // direto; cai no casamento por categoria/valor apenas para lançamentos
+            // anteriores à coluna mensalidade_id.
+            $entrada = Caixa::where('club_id', $clubId)
+                ->where('mensalidade_id', $mensalidade->id)
+                ->first();
+
+            if (! $entrada) {
+                $entrada = Caixa::where('club_id', $clubId)
+                    ->whereNull('mensalidade_id')
+                    ->where('tipo', 'entrada')
+                    ->where('categoria', 'Mensalidade')
+                    ->where('valor', $mensalidade->valor)
+                    ->where('descricao', 'Mensalidade '.str_pad($mensalidade->mes, 2, '0', STR_PAD_LEFT).'/'.$mensalidade->ano.' - '.$mensalidade->desbravador->nome)
+                    ->first();
+            }
+
+            $entrada?->delete();
+
+            $mensalidade->update([
+                'status' => 'pendente',
+                'data_pagamento' => null,
+            ]);
+        });
+
+        $mensagem = 'Pagamento estornado e entrada removida do caixa.';
+
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => $mensagem,

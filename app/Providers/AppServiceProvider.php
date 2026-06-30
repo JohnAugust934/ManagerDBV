@@ -52,6 +52,10 @@ class AppServiceProvider extends ServiceProvider
         $this->registerTelegramBackupListeners();
         $this->registerOperationalListeners();
 
+        // Auditoria automática de TODA movimentação de caixa (inclui entradas
+        // geradas por pagamento/estorno de mensalidade, fora do CaixaController).
+        \App\Models\Caixa::observe(\App\Observers\CaixaObserver::class);
+
         if (app()->isLocal()) {
             \Illuminate\Support\Facades\DB::listen(function ($query) {
                 if ($query->time > 500) {
