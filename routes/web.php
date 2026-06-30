@@ -6,6 +6,7 @@ use App\Http\Controllers\AttendanceColumnController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CaixaController;
+use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\ClubBackupController;
 use App\Http\Controllers\ClubController;
@@ -109,6 +110,10 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsActive::class, EnsureClubContextForPlatformAdmin::class])->group(function () {
     // 1. Dashboard e perfil
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Calendário unificado (reuniões, eventos e aniversariantes) — informativo,
+    // mostra apenas dados do clube ativo do usuário.
+    Route::get('/calendario', [CalendarioController::class, 'index'])->name('calendario.index');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

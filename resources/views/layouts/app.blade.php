@@ -115,6 +115,12 @@
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Painel</span>
                 </a>
 
+                <a href="{{ route('calendario.index') }}" class="{{ $linkBase }} {{ request()->routeIs('calendario*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                    @if(request()->routeIs('calendario*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('calendario*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Calendário</span>
+                </a>
+
                 @can('secretaria')
                 <!-- ACORDEON SECRETARIA -->
                 <div class="pt-4 pb-1">
