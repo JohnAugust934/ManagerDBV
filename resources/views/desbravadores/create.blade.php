@@ -322,6 +322,14 @@ function fotoUpload() {
         function cadastroDesbravador() {
             const CHAVE = 'rascunho_desbravador_{{ auth()->user()->club_id }}';
 
+            // Campos sensíveis (cifrados em repouso / dados pessoais e de saúde de
+            // menores) NUNCA vão para o sessionStorage — salvá-los em texto puro no
+            // navegador anularia a criptografia e violaria a LGPD.
+            const SENSIVEIS = [
+                'cpf', 'rg', 'numero_sus', 'tipo_sanguineo',
+                'plano_saude', 'alergias', 'medicamentos_continuos',
+            ];
+
             return {
                 temRascunho: false,
 
@@ -333,6 +341,7 @@ function fotoUpload() {
                             this.temRascunho = true;
                             this.$nextTick(() => {
                                 Object.entries(dados).forEach(([campo, valor]) => {
+                                    if (SENSIVEIS.includes(campo)) return;
                                     const el = this.$el.querySelector(`[name="${campo}"]`);
                                     if (el && el.type !== 'file' && el.type !== 'password') {
                                         el.value = valor;
@@ -356,7 +365,9 @@ function fotoUpload() {
                     const campos = {};
                     const inputs = this.$el.querySelectorAll('input:not([type=file]):not([type=hidden]):not([type=password]), select, textarea');
                     inputs.forEach(el => {
-                        if (el.name && el.name !== '_token') campos[el.name] = el.value;
+                        if (el.name && el.name !== '_token' && !SENSIVEIS.includes(el.name)) {
+                            campos[el.name] = el.value;
+                        }
                     });
                     sessionStorage.setItem(CHAVE, JSON.stringify(campos));
                 },

@@ -51,6 +51,23 @@ class ImportacaoDesbravadorTest extends TestCase
         $this->assertEquals(2, Desbravador::count());
     }
 
+    public function test_preview_rejeita_unidade_de_outro_clube()
+    {
+        $clube = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);
+        $outro = Club::create(['nome' => 'Clube B', 'cidade' => 'RJ']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $unidadeAlheia = Unidade::factory()->create(['club_id' => $outro->id]);
+
+        $csv = $this->csv("nome;data_nascimento;sexo\nMaria Importada;10/05/2012;F\n");
+
+        $this->actingAs($user)->post(route('desbravadores.importar.preview'), [
+            'arquivo' => $csv,
+            'unidade_id' => $unidadeAlheia->id,
+        ])->assertSessionHasErrors('unidade_id');
+
+        $this->assertEquals(0, Desbravador::count());
+    }
+
     public function test_linha_invalida_e_ignorada()
     {
         $clube = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);

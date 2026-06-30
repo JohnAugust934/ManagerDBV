@@ -57,6 +57,23 @@ class ComunicadoTest extends TestCase
         ])->assertSessionHasErrors('unidade_id');
     }
 
+    public function test_nao_aceita_unidade_de_outro_clube()
+    {
+        $clube = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);
+        $outro = Club::create(['nome' => 'Clube B', 'cidade' => 'RJ']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $unidadeAlheia = Unidade::factory()->create(['club_id' => $outro->id]);
+
+        $this->actingAs($user)->post(route('comunicados.store'), [
+            'titulo' => 'X',
+            'corpo' => 'Y',
+            'destinatarios' => 'unidade',
+            'unidade_id' => $unidadeAlheia->id,
+        ])->assertSessionHasErrors('unidade_id');
+
+        $this->assertDatabaseMissing('comunicados', ['titulo' => 'X']);
+    }
+
     public function test_show_nao_acessa_comunicado_de_outro_clube()
     {
         $clube = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);

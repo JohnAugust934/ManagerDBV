@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Desbravador;
 use App\Models\Unidade;
+use App\Rules\UnidadePertenceAoClube;
 use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -41,7 +42,7 @@ class ImportacaoDesbravadorController extends Controller
 
         $request->validate([
             'arquivo' => 'required|file|mimes:csv,txt|max:2048',
-            'unidade_id' => 'required|exists:unidades,id',
+            'unidade_id' => ['required', new UnidadePertenceAoClube],
         ]);
 
         $linhas = $this->lerCsv($request->file('arquivo'));

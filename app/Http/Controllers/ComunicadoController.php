@@ -7,6 +7,7 @@ use App\Models\Club;
 use App\Models\Comunicado;
 use App\Models\Desbravador;
 use App\Models\Unidade;
+use App\Rules\UnidadePertenceAoClube;
 use App\Services\ClubContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -40,7 +41,7 @@ class ComunicadoController extends Controller
             'titulo' => 'required|string|max:255',
             'corpo' => 'required|string|max:5000',
             'destinatarios' => 'required|in:todos,ativos,unidade',
-            'unidade_id' => 'nullable|required_if:destinatarios,unidade|exists:unidades,id',
+            'unidade_id' => ['nullable', 'required_if:destinatarios,unidade', new UnidadePertenceAoClube],
         ]);
 
         $clubId = ClubContext::currentClubId();
