@@ -193,6 +193,57 @@ class UnidadeManagementTest extends TestCase
         $this->assertFalse(Gate::forUser($homonimo)->allows('gerir-unidade', $unidade));
     }
 
+    public function test_conselheiro_vinculado_pode_editar_sua_unidade()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $conselheiro = User::factory()->create(['club_id' => $club->id, 'role' => 'conselheiro', 'name' => 'Tião']);
+        $unidade = Unidade::create([
+            'nome' => 'Panteras',
+            'conselheiro' => 'Tião',
+            'conselheiro_user_id' => $conselheiro->id,
+            'club_id' => $club->id,
+        ]);
+
+        $this->actingAs($conselheiro)->get(route('unidades.edit', $unidade))->assertOk();
+
+        $this->actingAs($conselheiro)->put(route('unidades.update', $unidade), [
+            'nome' => 'Panteras Negras',
+            'conselheiro' => 'Tião',
+        ])->assertRedirect(route('unidades.index'));
+
+        $this->assertDatabaseHas('unidades', ['id' => $unidade->id, 'nome' => 'Panteras Negras']);
+    }
+
+    public function test_conselheiro_nao_vinculado_recebe_403_ao_editar()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $vinculado = User::factory()->create(['club_id' => $club->id, 'role' => 'conselheiro', 'name' => 'Dono']);
+        $outro = User::factory()->create(['club_id' => $club->id, 'role' => 'conselheiro', 'name' => 'Intruso']);
+        $unidade = Unidade::create([
+            'nome' => 'Tigres',
+            'conselheiro' => 'Dono',
+            'conselheiro_user_id' => $vinculado->id,
+            'club_id' => $club->id,
+        ]);
+
+        $this->actingAs($outro)->get(route('unidades.edit', $unidade))->assertForbidden();
+        $this->actingAs($outro)->put(route('unidades.update', $unidade), [
+            'nome' => 'Hackeada',
+            'conselheiro' => 'Intruso',
+        ])->assertForbidden();
+
+        $this->assertDatabaseHas('unidades', ['id' => $unidade->id, 'nome' => 'Tigres']);
+    }
+
+    public function test_diretor_continua_podendo_editar_qualquer_unidade()
+    {
+        $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);
+        $diretor = User::factory()->create(['club_id' => $club->id, 'role' => 'diretor']);
+        $unidade = Unidade::create(['nome' => 'Águias', 'conselheiro' => 'X', 'club_id' => $club->id]);
+
+        $this->actingAs($diretor)->get(route('unidades.edit', $unidade))->assertOk();
+    }
+
     public function test_gate_gerir_unidade_cai_no_nome_quando_sem_vinculo()
     {
         $club = Club::create(['nome' => 'Clube Teste', 'cidade' => 'SP']);

@@ -74,13 +74,15 @@
                                 <div class="mt-auto"></div>
                             @endif
 
-                            <div class="grid grid-cols-2 gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 relative z-10">
+                            <div class="grid {{ Gate::allows('gerir-unidade', $unidade) ? 'grid-cols-2' : 'grid-cols-1' }} gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 relative z-10">
                                 <a href="{{ route('unidades.show', $unidade) }}" class="ui-btn-secondary px-0 text-[13px] border-2 group-hover:border-[#002F6C]/30 text-center flex items-center justify-center">
                                     Acessar
                                 </a>
-                                <a href="{{ route('unidades.edit', $unidade) }}" class="ui-btn-secondary px-0 text-[13px] border-2 group-hover:border-amber-500/30 text-center flex items-center justify-center text-amber-600 dark:text-amber-500 hover:bg-amber-50">
-                                    Editar
-                                </a>
+                                @can('gerir-unidade', $unidade)
+                                    <a href="{{ route('unidades.edit', $unidade) }}" class="ui-btn-secondary px-0 text-[13px] border-2 group-hover:border-amber-500/30 text-center flex items-center justify-center text-amber-600 dark:text-amber-500 hover:bg-amber-50">
+                                        Editar
+                                    </a>
+                                @endcan
                             </div>
                         </div>
                     @endforeach

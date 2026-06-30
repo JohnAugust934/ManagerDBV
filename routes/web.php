@@ -209,7 +209,10 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::delete('desbravadores/{desbravador}/foto', [DesbravadorController::class, 'removerFoto'])->name('desbravadores.remover-foto');
         Route::post('desbravadores/{desbravador}/avancar-classe', [DesbravadorController::class, 'avancarClasse'])->name('desbravadores.avancar-classe');
         Route::get('desbravadores/{desbravador}/exportar-dados', [DesbravadorController::class, 'exportarDadosLgpd'])->name('desbravadores.exportar-dados');
-        Route::resource('unidades', UnidadeController::class)->except(['index', 'show']);
+        // create/store/destroy seguem exclusivos da secretaria; edit/update saem
+        // daqui e passam a usar o Gate gerir-unidade (ver seção 5) para permitir
+        // que o conselheiro vinculado gerencie a própria unidade.
+        Route::resource('unidades', UnidadeController::class)->except(['index', 'show', 'edit', 'update']);
         Route::patch('unidades/{unidade}/toggle-ranking', [UnidadeController::class, 'toggleRanking'])->name('unidades.toggle-ranking');
 
         // Criacao de eventos
@@ -222,6 +225,12 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
 
     // 5. Visualizacao geral (conselheiros e outros cargos)
     Route::get('/unidades', [UnidadeController::class, 'index'])->name('unidades.index');
+    // Edição/atualização da unidade: aberta ao conselheiro/instrutor VINCULADO
+    // (Gate gerir-unidade resolve o vínculo) além de quem tem permissão 'unidades'.
+    Route::get('/unidades/{unidade}/edit', [UnidadeController::class, 'edit'])
+        ->middleware('can:gerir-unidade,unidade')->name('unidades.edit');
+    Route::match(['put', 'patch'], '/unidades/{unidade}', [UnidadeController::class, 'update'])
+        ->middleware('can:gerir-unidade,unidade')->name('unidades.update');
     Route::get('/unidades/{unidade}', [UnidadeController::class, 'show'])->name('unidades.show');
     Route::get('/desbravadores/{desbravador}', [DesbravadorController::class, 'show'])->name('desbravadores.show');
 
