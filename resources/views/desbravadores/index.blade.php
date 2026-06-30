@@ -17,10 +17,16 @@
                 <p class="text-[15px] text-slate-500 font-medium mt-1">Gerencie os membros, dados de contato e classes.</p>
             </div>
             
-            <a href="{{ route('desbravadores.create') }}" class="ui-btn-primary w-full sm:w-auto shadow-xl shadow-blue-900/20 group">
-                <svg class="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                <span>Novo Cadastro</span>
-            </a>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <a href="{{ route('desbravadores.importar.index') }}" class="ui-btn-secondary w-full sm:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span>Importar CSV</span>
+                </a>
+                <a href="{{ route('desbravadores.create') }}" class="ui-btn-primary w-full sm:w-auto shadow-xl shadow-blue-900/20 group">
+                    <svg class="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <span>Novo Cadastro</span>
+                </a>
+            </div>
         </div>
 
         {{-- Filtros e Busca --}}
