@@ -40,7 +40,9 @@ class ImportacaoDesbravadorTest extends TestCase
         $preview->assertSee('Maria Importada');
         $preview->assertSee('Pedro Importado');
 
-        $confirm = $this->actingAs($user)->post(route('desbravadores.importar.confirmar'));
+        $confirm = $this->actingAs($user)->post(route('desbravadores.importar.confirmar'), [
+            'confirmo_consentimento' => 1,
+        ]);
         $confirm->assertRedirect(route('desbravadores.index'));
 
         $this->assertDatabaseHas('desbravadores', [
@@ -84,9 +86,30 @@ class ImportacaoDesbravadorTest extends TestCase
             'unidade_id' => $unidade->id,
         ])->assertOk()->assertSee('Linha 3');
 
-        $this->actingAs($user)->post(route('desbravadores.importar.confirmar'))
-            ->assertRedirect(route('desbravadores.index'));
+        $this->actingAs($user)->post(route('desbravadores.importar.confirmar'), [
+            'confirmo_consentimento' => 1,
+        ])->assertRedirect(route('desbravadores.index'));
 
         $this->assertEquals(1, Desbravador::count());
+    }
+
+    public function test_confirmar_sem_consentimento_nao_importa()
+    {
+        $clube = Club::create(['nome' => 'Clube A', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'secretario']);
+        $unidade = Unidade::factory()->create(['club_id' => $clube->id]);
+
+        $csv = $this->csv("nome;data_nascimento;sexo\nMaria Importada;10/05/2012;F\n");
+
+        $this->actingAs($user)->post(route('desbravadores.importar.preview'), [
+            'arquivo' => $csv,
+            'unidade_id' => $unidade->id,
+        ])->assertOk();
+
+        // Sem marcar o consentimento → validação falha e nada é persistido.
+        $this->actingAs($user)->post(route('desbravadores.importar.confirmar'))
+            ->assertSessionHasErrors('confirmo_consentimento');
+
+        $this->assertEquals(0, Desbravador::count());
     }
 }

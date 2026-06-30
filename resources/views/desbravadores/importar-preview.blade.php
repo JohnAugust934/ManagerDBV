@@ -73,6 +73,17 @@
         <form action="{{ route('desbravadores.importar.confirmar') }}" method="POST" class="ui-card p-6 space-y-4">
             @csrf
 
+            @error('confirmo_consentimento')
+                <p class="text-sm font-bold text-red-600 dark:text-red-400">{{ $message }}</p>
+            @enderror
+
+            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-xl bg-blue-50/60 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50">
+                <input type="checkbox" name="confirmo_consentimento" value="1" required class="mt-0.5 w-5 h-5 rounded border-slate-300 text-[#002F6C]">
+                <span class="text-sm font-bold text-slate-600 dark:text-slate-300">
+                    Confirmo que possuo o consentimento LGPD dos responsáveis pelos dados aqui importados.
+                </span>
+            </label>
+
             @if ($duplicados > 0)
                 <label class="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" name="substituir_duplicados" value="1" class="w-5 h-5 rounded border-slate-300 text-[#002F6C]">

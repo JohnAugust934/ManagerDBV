@@ -109,6 +109,15 @@ class ImportacaoDesbravadorController extends Controller
     {
         Gate::authorize('secretaria');
 
+        // Consentimento LGPD não é presumido: o secretário precisa atestar
+        // explicitamente que possui o consentimento dos responsáveis. Sem isso,
+        // nada é persistido.
+        $request->validate([
+            'confirmo_consentimento' => 'accepted',
+        ], [
+            'confirmo_consentimento.accepted' => 'É necessário confirmar que há consentimento LGPD dos responsáveis para importar.',
+        ]);
+
         $sessao = session('importacao_csv');
         abort_if(! $sessao || (now()->timestamp - $sessao['timestamp']) > 1800, 422, 'Sessão de importação expirada.');
 
