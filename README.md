@@ -9,7 +9,7 @@ Secretaria · Financeiro · Pedagógico · Eventos · Patrimônio · Relatórios
 
 <br />
 
-[![Versão](https://img.shields.io/badge/versão-v2026__5.0.0-6366f1?style=for-the-badge)](#)
+[![Versão](https://img.shields.io/badge/versão-v2026__5.2.0-6366f1?style=for-the-badge)](#)
 [![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
@@ -89,7 +89,7 @@ A v5.0.0 introduz multi-tenancy completo. Cada clube opera em isolamento total �
 
 ### Como funciona
 
-- **Global scopes automáticos:** models com `club_id` direto usam `ClubScope`; `Desbravador` usa `DesbravadorClubScope` (filtra via `unidade.club_id`). O escopo é aplicado a todas as queries automaticamente.
+- **Global scopes automáticos:** todos os models de clube usam o trait `BelongsToTenant`, que aplica o global scope `ClubScope` a cada query. Models sem `club_id` direto (`Desbravador`, `Mensalidade`) resolvem o clube pela relação (`unidade` / `desbravador`) através do mesmo trait.
 - **Fail-closed:** usuário sem clube ativo não enxerga nenhum dado (ao contrário da versão anterior, que era fail-open).
 - **Índices compostos por tenant:** unicidades (ex.: CPF) são garantidas _por clube_, não globalmente.
 - **Contexto fora do HTTP:** `ClubContext::actAs($clube, fn() => ...)` propaga o tenant em jobs de fila, commands e outros contextos sem request.
@@ -98,7 +98,7 @@ A v5.0.0 introduz multi-tenancy completo. Cada clube opera em isolamento total �
 
 O cargo `platform_admin` é um super-administrador cross-tenant, separado dos usuários de clube:
 
-- Acessa o painel de gestão de clubes (`/clubes`) — cria, suspende e exclui clubes
+- Acessa o painel de gestão de clubes (`/platform`) — cria, suspende e exclui clubes
 - Enxerga dados de todos os clubes (sem restrição de scope)
 - Gerencia a equipe da plataforma
 - **Não pertence a nenhum clube** — `club_id = null` permanece nulo
@@ -278,7 +278,7 @@ Após `migrate --seed`, o seeder cria **5 clubes** (São Paulo, um por Associaç
 
 | Perfil | E-mail |
 |---|---|
-| 👑 Platform Admin | `admin@clube.com` |
+| 👑 Platform Admin | `admin@plataforma.com` |
 
 **Por clube** — padrão `<cargo>.<slug>@clube.com` (ex.: `diretor.orion@clube.com`):
 
@@ -317,7 +317,7 @@ Cada usuário recebe os padrões do seu papel, podendo ter `extra_permissions` a
 app/
 ├─ Console/Commands/   # Comandos artisan personalizados (backup, ranking, tenant:upgrade-legacy)
 ├─ Http/               # Controllers e middleware
-├─ Models/             # Models, global scopes (ClubScope, DesbravadorClubScope) e traits
+├─ Models/             # Models, global scope (ClubScope) e traits (BelongsToTenant)
 ├─ Services/           # Backup integrity, Telegram, ClubContext (tenant em fila/console)
 └─ Support/            # Utilitários (janelas operacionais, etc.)
 bootstrap/             # bootstrap/app.php (config central do Laravel 11/12)
