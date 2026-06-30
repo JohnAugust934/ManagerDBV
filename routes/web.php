@@ -18,6 +18,7 @@ use App\Http\Controllers\FrequenciaController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MensalidadeController;
+use App\Http\Controllers\PainelConselheiroController;
 use App\Http\Controllers\PatrimonioController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ProfileController;
@@ -237,6 +238,9 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
             Route::post('/store', [FrequenciaController::class, 'store'])->name('store');
             Route::delete('/data/{data}', [FrequenciaController::class, 'destroyData'])->name('destroy-data');
         });
+
+        // Painel focado do conselheiro de unidade.
+        Route::get('/minha-unidade', [PainelConselheiroController::class, 'index'])->name('conselheiro.painel');
     });
 
     // 6.1 Gestão do CATÁLOGO GLOBAL (especialidades, requisitos, requisitos de
