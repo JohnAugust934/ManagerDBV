@@ -1,14 +1,11 @@
 <x-app-layout>
-    <x-slot name="header">Unidades do Clube</x-slot>
 
     <div class="ui-page max-w-7xl space-y-8 ui-animate-fade-up">
 
         {{-- Cabeçalho / Título --}}
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 sm:px-0">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800 dark:text-white mb-2">Unidades</h1>
-                <p class="text-slate-500 font-medium">Gerencie e visualize as estatísticas das unidades ativas.</p>
-            </div>
+        <x-page-title title="Unidades" subtitle="Gerencie e visualize as estatísticas das unidades ativas." />
+
+        <div class="flex px-4 sm:px-0 sm:justify-end">
             <a href="{{ route('unidades.create') }}" class="ui-btn-primary w-full sm:w-auto shrink-0 shadow-xl shadow-blue-900/20 group">
                 <svg class="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 Nova Unidade

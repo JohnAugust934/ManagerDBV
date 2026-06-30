@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Confirmar Importação</x-slot>
 
     <div class="ui-page space-y-6 max-w-4xl mx-auto">
 

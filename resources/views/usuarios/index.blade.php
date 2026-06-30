@@ -1,25 +1,19 @@
 <x-app-layout>
-    <x-slot name="header">Gestão de Usuários</x-slot>
 
     <div class="ui-page max-w-6xl mx-auto space-y-6 ui-animate-fade-up">
 
         {{-- Cabeçalho da Tela --}}
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-0">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
-                    <svg class="w-8 h-8 text-[#002F6C] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5V10l-12-8L0 10v10h5m7-12h4m-4 4h4m-4 4h4M7 10h.01M7 14h.01M7 18h.01" /></svg>
-                    {{ ($isPlatformContext ?? false) ? 'Equipe da Plataforma' : 'Equipe do Clube' }}
-                </h1>
-                <p class="text-slate-500 font-medium mt-1">{{ ($isPlatformContext ?? false) ? 'Gerencie os administradores que ajudam a operar a plataforma.' : 'Gerencie os acessos, cargos e permissões dos membros da diretoria.' }}</p>
-            </div>
-            
-            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                {{-- Verifica se a rota de convites existe para renderizar este link. Normalmente é pra existir. --}}
-                <a href="{{ route('invites.index') }}" class="ui-btn-secondary w-full sm:w-auto px-6 h-12 flex justify-center items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    Gerenciar Convites
-                </a>
-            </div>
+        <div class="px-4 sm:px-0">
+            <x-page-title
+                :title="($isPlatformContext ?? false) ? 'Equipe da Plataforma' : 'Equipe do Clube'"
+                :subtitle="($isPlatformContext ?? false) ? 'Gerencie os administradores que ajudam a operar a plataforma.' : 'Gerencie os acessos, cargos e permissões dos membros da diretoria.'" />
+        </div>
+
+        <div class="flex px-4 sm:px-0 sm:justify-end">
+            <a href="{{ route('invites.index') }}" class="ui-btn-secondary w-full sm:w-auto px-6 h-12 flex justify-center items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                Gerenciar Convites
+            </a>
         </div>
 
         {{-- Tabela de Usuários --}}

@@ -1,20 +1,11 @@
 <x-app-layout>
-    <x-slot name="header">
-        Termos Oficiais (Atas)
-    </x-slot>
 
     <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up">
 
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                    <svg class="w-6 h-6 text-[#002F6C] dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    Atas de Reunião
-                </h2>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Registros Administrativos</p>
-            </div>
-            
-            <a href="{{ route('atas.create') }}" class="ui-btn-primary w-full md:w-auto flex items-center justify-center gap-2">
+        <x-page-title title="Atas de Reunião" subtitle="Registros administrativos oficiais das reuniões do clube." />
+
+        <div class="flex sm:justify-end">
+            <a href="{{ route('atas.create') }}" class="ui-btn-primary w-full sm:w-auto flex items-center justify-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                 Nova Ata
             </a>

@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Nova Chamada</x-slot>
 
     <div class="ui-page space-y-0 max-w-4xl mx-auto pb-32 ui-animate-fade-up" x-data="chamadaApp()">
 

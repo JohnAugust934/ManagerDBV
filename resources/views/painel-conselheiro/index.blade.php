@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Minha Unidade — {{ $unidade->nome }}</x-slot>
 
     <div class="ui-page space-y-6 max-w-5xl mx-auto">
 

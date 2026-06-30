@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Sobre o Sistema</x-slot>
 
     <div class="ui-page max-w-3xl mx-auto ui-animate-fade-up pb-20">
         

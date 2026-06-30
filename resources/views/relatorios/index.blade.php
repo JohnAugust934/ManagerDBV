@@ -27,7 +27,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
                 </div>
-                <h3 class="text-2xl font-black {{ $stats['saldo_caixa'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
+                <h3 class="text-lg sm:text-2xl font-black tracking-tight tabular-nums break-words {{ $stats['saldo_caixa'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
                     R$&nbsp;{{ number_format($stats['saldo_caixa'], 2, ',', '.') }}
                 </h3>
                 <p class="text-[11px] font-semibold text-slate-400 mt-1">Balanço total acumulado</p>
@@ -40,10 +40,10 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                     </div>
                 </div>
-                <h3 class="text-2xl font-black {{ $stats['inadimplentes_count'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200' }}">
+                <h3 class="text-lg sm:text-2xl font-black tracking-tight break-words {{ $stats['inadimplentes_count'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200' }}">
                     {{ $stats['inadimplentes_count'] }} pend{{ $stats['inadimplentes_count'] !== 1 ? 'ências' : 'ência' }}
                 </h3>
-                <p class="text-[11px] font-semibold text-slate-400 mt-1">
+                <p class="text-[11px] font-semibold text-slate-400 mt-1 break-words">
                     @if($stats['inadimplentes_count'] > 0)
                         R$&nbsp;{{ number_format($stats['inadimplentes_valor'], 2, ',', '.') }} em aberto
                     @else

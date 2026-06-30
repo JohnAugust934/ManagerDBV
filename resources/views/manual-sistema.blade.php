@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Manual do Sistema</x-slot>
 
     <div class="ui-page max-w-4xl mx-auto space-y-8 ui-animate-fade-up pb-20">
 

@@ -1,5 +1,4 @@
 ﻿<x-app-layout>
-    <x-slot name="header">Ata de Reunião</x-slot>
 
     @php
         $clubeNome = auth()->user()?->club?->nome?? 'Clube de Desbravadores';

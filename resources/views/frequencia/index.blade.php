@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Histórico de Frequência</x-slot>
 
     <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up">
 

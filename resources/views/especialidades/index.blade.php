@@ -1,20 +1,10 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">
-                Biblioteca de Especialidades
-            </h2>
-        </div>
-    </x-slot>
 
     <div class="ui-page space-y-8 max-w-[1400px] ui-animate-fade-up">
 
         {{-- Cabeçalho Titular & Busca --}}
         <div class="flex flex-col gap-6 px-4 sm:px-0">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Especialidades</h1>
-                <p class="text-slate-500 font-medium">Catalogo completo de honras, conhecimentos e aptidoes dos membros.</p>
-            </div>
+            <x-page-title title="Especialidades" subtitle="Catálogo completo de honras, conhecimentos e aptidões dos membros." />
 
             <div class="w-full">
                 <form method="GET" action="{{ route('especialidades.index') }}" class="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 items-stretch">

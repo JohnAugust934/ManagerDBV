@@ -1,6 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">Gestão Master de Convites</x-slot>
+
     <div class="ui-page space-y-6">
+        <x-page-title title="Gestão de Convites" subtitle="Gere links de cadastro para novos diretores e acompanhe o histórico." />
+
         <div class="ui-card p-6">
             <h3 class="ui-title text-lg mb-4">Gerar Novo Convite (Diretor)</h3>
             <form action="{{ route('master.invites.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">

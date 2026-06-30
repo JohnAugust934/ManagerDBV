@@ -1,14 +1,11 @@
 <x-app-layout>
-    <x-slot name="header">Gestão de Patrimônio</x-slot>
 
     <div class="ui-page space-y-6 max-w-[1400px] ui-animate-fade-up">
 
         {{-- Cabeçalho --}}
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight">Inventário de Patrimônio</h1>
-                <p class="text-slate-500 font-medium mt-1 text-sm">Controle de bens, barracas, equipamentos e almoxarifado.</p>
-            </div>
+        <x-page-title title="Inventário de Patrimônio" subtitle="Controle de bens, barracas, equipamentos e almoxarifado." />
+
+        <div class="flex sm:justify-end">
             <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary w-full sm:w-auto h-12 px-6 flex items-center justify-center gap-2 rounded-2xl">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
                 Novo Item

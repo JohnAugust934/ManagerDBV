@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Comunicado</x-slot>
 
     <div class="ui-page max-w-2xl mx-auto space-y-6">
         <div class="ui-card p-6 space-y-4">

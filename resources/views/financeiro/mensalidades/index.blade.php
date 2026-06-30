@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Financeiro & Mensalidades</x-slot>
 
     <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up" x-data="{
         visualizacao: localStorage.getItem('mensalidades_viz') ?? 'cards',
@@ -55,16 +54,10 @@
         }
     }">
 
-        <!-- Control Bar -->
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-                <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                    <svg class="w-6 h-6 text-[#002F6C] dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Controle de Mensalidades
-                </h2>
-                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Painel do Mês</p>
-            </div>
+        <x-page-title title="Controle de Mensalidades" subtitle="Acompanhe pagamentos, inadimplência e o painel do mês." />
 
+        <!-- Control Bar -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
             <form method="GET" action="{{ route('mensalidades.index') }}" class="flex flex-wrap md:flex-nowrap gap-2 w-full md:w-auto">
                 <div class="relative flex-1 md:w-48">
                     <select name="mes" onchange="this.form.submit()" class="ui-input appearance-none w-full font-black text-slate-700 dark:text-white bg-slate-50 dark:bg-slate-900 border-none shadow-sm pr-10">

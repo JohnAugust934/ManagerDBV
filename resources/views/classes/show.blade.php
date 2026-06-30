@@ -1,20 +1,17 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('classes.index') }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            </a>
-            <div class="flex items-center gap-4">
-                <div class="w-2.5 h-8 rounded-full shadow-sm" style="background-color: {{ $classe->cor }}"></div>
-                <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight uppercase tracking-tight">
-                    {{ $classe->nome }}
-                </h2>
-            </div>
-        </div>
-    </x-slot>
-
     {{-- Setup do Alpine --}}
     <div x-data="classManager({{ $classe->id }}, {{ $desbravadores->toJson() }})" class="ui-page space-y-6 max-w-7xl pb-20 ui-animate-fade-up">
+
+        {{-- Título da classe (com cor de acento) --}}
+        <div class="flex items-center gap-3">
+            <a href="{{ route('classes.index') }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors shrink-0" aria-label="Voltar">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </a>
+            <div class="w-2.5 h-8 rounded-full shadow-sm shrink-0" style="background-color: {{ $classe->cor }}"></div>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight leading-tight uppercase">
+                {{ $classe->nome }}
+            </h1>
+        </div>
 
         {{-- Estatísticas Rápidas e Controles --}}
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
@@ -30,25 +27,25 @@
         </div>
 
         {{-- UI Tabs Premium --}}
-        <div class="ui-card p-2 sm:p-3 overflow-x-auto custom-scrollbar flex gap-2 w-full sm:w-max">
-            <button @click="activeTab = 'alunos'" 
+        <div class="ui-card p-1.5 sm:p-3 grid grid-cols-3 sm:flex gap-1 sm:gap-2 w-full sm:w-max">
+            <button @click="activeTab = 'alunos'"
                 :class="activeTab === 'alunos' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all relative">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                Controle por Aluno
+                class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all relative text-center leading-tight">
+                <svg class="w-5 h-5 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span><span class="sm:hidden">Por Aluno</span><span class="hidden sm:inline">Controle por Aluno</span></span>
             </button>
-            
+
             <button @click="activeTab = 'lote'"
                 :class="activeTab === 'lote' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all relative">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                Aula em Lote
+                class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all relative text-center leading-tight">
+                <svg class="w-5 h-5 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <span><span class="sm:hidden">Em Lote</span><span class="hidden sm:inline">Aula em Lote</span></span>
             </button>
             <button @click="activeTab = 'requisitos'"
                 :class="activeTab === 'requisitos' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all relative">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                Requisitos
+                class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all relative text-center leading-tight">
+                <svg class="w-5 h-5 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                <span>Requisitos</span>
             </button>
         </div>
 

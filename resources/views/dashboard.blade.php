@@ -1,7 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">
-        Painel de Controle
-    </x-slot>
 
     <div class="ui-page min-h-full space-y-10 max-w-7xl mx-auto">
         

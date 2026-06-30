@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">{{ $evento->nome }}</x-slot>
 
     <div class="ui-page space-y-6 max-w-[1200px] ui-animate-fade-up">
 

@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Importar Desbravadores (CSV)</x-slot>
 
     <div class="ui-page space-y-6 max-w-3xl mx-auto">
 

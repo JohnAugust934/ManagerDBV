@@ -1,21 +1,18 @@
 <x-app-layout>
-    <x-slot name="header">Calendário de Eventos</x-slot>
 
     <div class="ui-page space-y-8 max-w-[1400px] ui-animate-fade-up">
 
         {{-- Cabeçalho com Ação --}}
-        <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 px-4 sm:px-0">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight mb-2">Eventos do Clube</h1>
-                <p class="text-slate-500 font-medium">Gerencie o calendário, inscrições e pagamentos de eventos.</p>
-            </div>
-            @can('secretaria')
-                <a href="{{ route('eventos.create') }}" class="ui-btn-primary shrink-0 flex items-center gap-2 px-6 h-12 rounded-2xl">
+        <x-page-title title="Eventos do Clube" subtitle="Gerencie o calendário, inscrições e pagamentos de eventos." />
+
+        @can('secretaria')
+            <div class="flex px-4 sm:px-0 sm:justify-end">
+                <a href="{{ route('eventos.create') }}" class="ui-btn-primary w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-6 h-12 rounded-2xl">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
                     Novo Evento
                 </a>
-            @endcan
-        </div>
+            </div>
+        @endcan
 
         {{-- Grid de Eventos --}}
         @if ($eventos->count() > 0)

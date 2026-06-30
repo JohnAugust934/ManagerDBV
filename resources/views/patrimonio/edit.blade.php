@@ -1,16 +1,10 @@
 <x-app-layout>
     <div class="ui-page max-w-4xl mx-auto space-y-6 ui-animate-fade-up">
 
-        <x-page-title title="Editar Item de Patrimônio" />
+        <x-page-title title="Editar Item de Patrimônio" :back="route('patrimonio.index')" />
 
-        {{-- Header Navigation --}}
-        <div class="flex items-center justify-between mb-6">
-            <a href="{{ route('patrimonio.index') }}" class="flex items-center gap-2 text-slate-500 hover:text-[#002F6C] dark:text-slate-400 dark:hover:text-blue-400 font-bold text-sm transition-colors group">
-                <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-[#002F6C]/10 dark:group-hover:bg-blue-500/20 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
-                </div>
-                Voltar ao Inventário
-            </a>
+        {{-- Ação destrutiva --}}
+        <div class="flex items-center justify-end mb-6">
             <form id="del-patrimonio" action="{{ route('patrimonio.destroy', $patrimonio->id) }}" method="POST">
                 @csrf @method('DELETE')
                 <button type="button" onclick="confirmAction({ title: 'Excluir Item', message: 'Excluir este item permanentemente?', formId: 'del-patrimonio', confirmText: 'Excluir', variant: 'danger' })" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors">

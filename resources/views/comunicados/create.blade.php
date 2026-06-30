@@ -1,7 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">Novo Comunicado</x-slot>
 
-    <div class="ui-page max-w-2xl mx-auto">
+    <div class="ui-page max-w-2xl mx-auto space-y-6">
+        <x-page-title title="Novo Comunicado" subtitle="Envie um aviso por e-mail aos responsáveis." :back="route('comunicados.index')" />
+
         <form action="{{ route('comunicados.store') }}" method="POST" class="ui-card p-6 space-y-5"
               x-data="{ destinatarios: '{{ old('destinatarios', 'ativos') }}', corpo: '{{ old('corpo') }}' }">
             @csrf
