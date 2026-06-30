@@ -8,7 +8,7 @@
  *
  * Para forçar atualização do SW, suba o número da versão abaixo.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `dbv-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
