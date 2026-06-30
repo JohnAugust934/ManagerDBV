@@ -419,5 +419,7 @@
     </div>
 
     @include('partials.session-timeout')
+
+    <x-pwa-install-banner />
 </body>
 </html>
