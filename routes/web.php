@@ -10,6 +10,7 @@ use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\ClubBackupController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\ComunicadoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesbravadorController;
 use App\Http\Controllers\EspecialidadeController;
@@ -191,6 +192,9 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::get('atas/{ata}/imprimir', [AtaController::class, 'print'])->name('atas.print');
         Route::resource('atas', AtaController::class);
         Route::resource('atos', AtoController::class);
+
+        // Comunicados para responsáveis
+        Route::resource('comunicados', ComunicadoController::class)->only(['index', 'create', 'store', 'show']);
 
         // Importação via CSV — registrada ANTES do resource para que
         // /desbravadores/importar não case com o wildcard {desbravador} do show.

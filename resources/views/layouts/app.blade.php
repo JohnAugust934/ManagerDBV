@@ -140,6 +140,12 @@
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Desbravadores</span>
                 </a>
 
+                <a href="{{ route('comunicados.index') }}" class="{{ $linkBase }} {{ request()->routeIs('comunicados*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                    @if(request()->routeIs('comunicados*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('comunicados*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Comunicados</span>
+                </a>
+
                 <a href="{{ route('club.edit') }}" class="{{ $linkBase }} {{ request()->routeIs('club.edit') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('club.edit')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
                     <svg class="w-6 h-6 {{ request()->routeIs('club.edit') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
