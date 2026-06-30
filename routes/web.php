@@ -264,6 +264,7 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::delete('patrimonio/{patrimonio}/manutencoes/{manutencao}', [PatrimonioController::class, 'destroyManutencao'])->name('patrimonio.manutencoes.destroy');
 
         Route::get('mensalidades', [MensalidadeController::class, 'index'])->name('mensalidades.index');
+        Route::post('mensalidades/preview-lote', [MensalidadeController::class, 'previewMassivo'])->name('mensalidades.preview');
         Route::post('mensalidades/gerar', [MensalidadeController::class, 'gerarMassivo'])->name('mensalidades.gerar');
         Route::post('mensalidades/{id}/pagar', [MensalidadeController::class, 'pagar'])->name('mensalidades.pagar');
     });

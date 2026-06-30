@@ -126,6 +126,41 @@ class MensalidadeController extends Controller
         return back()->with('success', "$count mensalidades geradas com sucesso!");
     }
 
+    /**
+     * Preview (dry-run) de quantas mensalidades seriam criadas. Usado pelo modal
+     * antes de confirmar a geração em lote — não persiste nada.
+     */
+    public function previewMassivo(Request $request): \Illuminate\Http\JsonResponse
+    {
+        Gate::authorize('financeiro');
+
+        $request->validate([
+            'mes' => 'required|integer|min:1|max:12',
+            'ano' => 'required|integer|min:2020',
+            'valor' => 'required|numeric|min:0',
+        ]);
+
+        $clubId = ClubContext::currentClubId();
+        abort_unless($clubId, 403);
+
+        $ids = Desbravador::ativos()->pluck('id');
+
+        $existentes = Mensalidade::whereIn('desbravador_id', $ids)
+            ->where('mes', $request->mes)
+            ->where('ano', $request->ano)
+            ->count();
+
+        $novas = max(0, $ids->count() - $existentes);
+
+        return response()->json([
+            'total_ativos' => $ids->count(),
+            'ja_existem' => $existentes,
+            'serao_criadas' => $novas,
+            'valor_formatado' => 'R$ '.number_format((float) $request->valor, 2, ',', '.'),
+            'competencia' => sprintf('%02d/%d', $request->mes, $request->ano),
+        ]);
+    }
+
     public function pagar(Request $request, $id)
     {
         Gate::authorize('financeiro');
