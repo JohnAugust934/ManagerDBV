@@ -20,7 +20,7 @@ class AtoController extends Controller
                 ->orWhere('numero', 'like', "%{$request->search}%");
         }
 
-        $atos = $query->paginate(10);
+        $atos = $query->paginate(10)->withQueryString();
 
         return view('secretaria.atos.index', compact('atos'));
     }

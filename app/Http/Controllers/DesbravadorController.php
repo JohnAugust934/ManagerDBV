@@ -54,9 +54,15 @@ class DesbravadorController extends Controller
             $query->where('ativo', false);
         }
 
-        $desbravadores = $query->paginate(10);
+        $desbravadores = $query->paginate(10)->withQueryString();
 
-        return view('desbravadores.index', compact('desbravadores', 'status'));
+        // Unidades do clube para o filtro — evita query crua no template (sem
+        // garantia de ClubScope) e executada a cada render.
+        $unidades = Unidade::where('club_id', ClubContext::currentClubId())
+            ->orderBy('nome')
+            ->get(['id', 'nome']);
+
+        return view('desbravadores.index', compact('desbravadores', 'status', 'unidades'));
     }
 
     public function create()

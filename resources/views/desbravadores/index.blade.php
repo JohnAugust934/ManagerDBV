@@ -43,7 +43,7 @@
                     <div class="relative">
                         <select name="unidade_id" id="unidade-filter" class="ui-input h-12 appearance-none pr-10">
                             <option value="">Todas as Unidades</option>
-                            @foreach (\App\Models\Unidade::orderBy('nome')->get() as $unidade)
+                            @foreach ($unidades as $unidade)
                                 <option value="{{ $unidade->id }}" {{ request('unidade_id') == $unidade->id ? 'selected' : '' }}>
                                     {{ $unidade->nome }}
                                 </option>
