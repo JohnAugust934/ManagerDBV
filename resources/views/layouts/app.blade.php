@@ -169,6 +169,12 @@
                     <div x-show="!sidebarExpanded" class="border-b border-black/5 dark:border-white/5 mx-4 mb-2 transition-opacity hidden lg:block"></div>
                 </div>
 
+                <a href="{{ route('conselheiro.painel') }}" class="{{ $linkBase }} {{ request()->routeIs('conselheiro*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                    @if(request()->routeIs('conselheiro*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('conselheiro*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Minha Unidade</span>
+                </a>
+
                 <a href="{{ route('frequencia.index') }}" class="{{ $linkBase }} {{ request()->routeIs('frequencia*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('frequencia*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
                     <svg class="w-6 h-6 {{ request()->routeIs('frequencia*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
