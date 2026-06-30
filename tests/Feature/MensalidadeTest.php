@@ -40,6 +40,23 @@ class MensalidadeTest extends TestCase
         $this->assertSame(3, Mensalidade::where('created_by', $user->id)->where('updated_by', $user->id)->count());
     }
 
+    public function test_gerar_mensalidades_nao_duplica_em_reexecucao()
+    {
+        $clube = Club::create(['nome' => 'Clube Dup', 'cidade' => 'SP']);
+        $user = User::factory()->create(['club_id' => $clube->id, 'role' => 'tesoureiro']);
+        $unidade = Unidade::create(['nome' => 'Unidade 1', 'club_id' => $clube->id]);
+        Desbravador::create(['nome' => 'João', 'unidade_id' => $unidade->id, 'ativo' => true, 'data_nascimento' => '2010-01-01', 'sexo' => 'M']);
+        Desbravador::create(['nome' => 'Maria', 'unidade_id' => $unidade->id, 'ativo' => true, 'data_nascimento' => '2010-01-01', 'sexo' => 'F']);
+
+        $payload = ['mes' => 9, 'ano' => 2026, 'valor' => 12.50];
+
+        $this->actingAs($user)->post(route('mensalidades.gerar'), $payload)->assertRedirect();
+        // Segunda execução para o mesmo mês/ano não deve recriar.
+        $this->actingAs($user)->post(route('mensalidades.gerar'), $payload)->assertRedirect();
+
+        $this->assertDatabaseCount('mensalidades', 2);
+    }
+
     public function test_gerar_mensalidades_persiste_valor_com_precisao_decimal()
     {
         $clube = Club::create(['nome' => 'Clube Decimal', 'cidade' => 'SP']);
