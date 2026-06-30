@@ -22,7 +22,8 @@ class CaixaController extends Controller
 
         $lancamentos = $query->orderBy('data_movimentacao', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
         $auditLogs = CaixaAuditLog::where('club_id', ClubContext::currentClubId())
             ->with('usuario')

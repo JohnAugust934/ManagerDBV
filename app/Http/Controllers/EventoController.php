@@ -21,7 +21,7 @@ class EventoController extends Controller
     {
         Gate::authorize('eventos');
 
-        $eventos = Evento::withCount('desbravadores')->orderBy('data_inicio', 'desc')->paginate(9);
+        $eventos = Evento::withCount('desbravadores')->orderBy('data_inicio', 'desc')->paginate(9)->withQueryString();
 
         return view('eventos.index', compact('eventos'));
     }
