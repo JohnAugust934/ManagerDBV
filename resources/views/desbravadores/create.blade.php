@@ -21,8 +21,24 @@
                 </div>
             @endif
 
-            <form action="{{ route('desbravadores.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+            <form action="{{ route('desbravadores.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8"
+                  x-data="cadastroDesbravador()" @submit="limparRascunho()">
                 @csrf
+
+                {{-- Aviso de rascunho recuperado --}}
+                <div x-show="temRascunho" x-cloak
+                     class="p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-sm font-bold text-blue-700 dark:text-blue-300">Rascunho recuperado automaticamente.</p>
+                    </div>
+                    <button type="button" @click="descartarRascunho()"
+                            class="text-xs font-black text-blue-500 hover:text-blue-700 uppercase tracking-widest shrink-0">
+                        Descartar
+                    </button>
+                </div>
 
                 {{-- DADOS PESSOAIS --}}
                 <div class="p-6 rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
@@ -302,4 +318,60 @@ function fotoUpload() {
     };
 }
 </script>
+    <script>
+        function cadastroDesbravador() {
+            const CHAVE = 'rascunho_desbravador_{{ auth()->user()->club_id }}';
+
+            return {
+                temRascunho: false,
+
+                init() {
+                    const salvo = sessionStorage.getItem(CHAVE);
+                    if (salvo) {
+                        try {
+                            const dados = JSON.parse(salvo);
+                            this.temRascunho = true;
+                            this.$nextTick(() => {
+                                Object.entries(dados).forEach(([campo, valor]) => {
+                                    const el = this.$el.querySelector(`[name="${campo}"]`);
+                                    if (el && el.type !== 'file' && el.type !== 'password') {
+                                        el.value = valor;
+                                    }
+                                });
+                            });
+                        } catch (e) {
+                            sessionStorage.removeItem(CHAVE);
+                        }
+                    }
+
+                    let timer;
+                    this.$el.addEventListener('input', (e) => {
+                        if (e.target.type === 'file') return;
+                        clearTimeout(timer);
+                        timer = setTimeout(() => this.salvarRascunho(), 800);
+                    });
+                },
+
+                salvarRascunho() {
+                    const campos = {};
+                    const inputs = this.$el.querySelectorAll('input:not([type=file]):not([type=hidden]):not([type=password]), select, textarea');
+                    inputs.forEach(el => {
+                        if (el.name && el.name !== '_token') campos[el.name] = el.value;
+                    });
+                    sessionStorage.setItem(CHAVE, JSON.stringify(campos));
+                },
+
+                limparRascunho() {
+                    sessionStorage.removeItem(CHAVE);
+                },
+
+                descartarRascunho() {
+                    sessionStorage.removeItem(CHAVE);
+                    this.temRascunho = false;
+                    const inputs = this.$el.querySelectorAll('input:not([type=hidden]), select, textarea');
+                    inputs.forEach(el => { if (el.type !== 'file') el.value = ''; });
+                }
+            };
+        }
+    </script>
 </x-app-layout>
