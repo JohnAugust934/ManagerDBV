@@ -75,6 +75,25 @@ class SeamFinanceiroTest extends TestCase
         });
     }
 
+    public function test_pagamento_de_mensalidade_gera_trilha_de_auditoria_no_caixa(): void
+    {
+        ['club' => $club, 'unidade' => $unidade, 'master' => $master] = criarClubeComDados('Clube A');
+        $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'ativo' => true]);
+        $mensalidade = Mensalidade::create([
+            'desbravador_id' => $dbv->id, 'club_id' => $club->id,
+            'mes' => 7, 'ano' => 2026, 'valor' => 30.00, 'status' => 'pendente',
+        ]);
+
+        // Antes o lançamento de caixa por pagamento não era auditado; com o
+        // CaixaObserver, toda movimentação passa a ter trilha.
+        $this->actingAs($master)->post(route('mensalidades.pagar', $mensalidade->id))->assertRedirect();
+
+        $this->assertDatabaseHas('caixa_audit_logs', [
+            'club_id' => $club->id,
+            'acao' => 'criado',
+        ]);
+    }
+
     public function test_estorno_nao_exigido_para_inscricao_nao_paga(): void
     {
         ['club' => $club, 'unidade' => $unidade] = criarClubeComDados('Clube A');
