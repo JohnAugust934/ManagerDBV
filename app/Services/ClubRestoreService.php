@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Club;
+use App\Support\TenantTables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -124,42 +125,15 @@ class ClubRestoreService
      */
     private function deleteClubChildren(int $clubId): void
     {
-        // Pivôs de desbravador (sem club_id direto — via desbravador_id)
-        $desbravadorIds = DB::table('desbravadores')->where('club_id', $clubId)->pluck('id');
+        // Pivôs/filhos SEM club_id próprio — via IDs do pai. Registro único em
+        // App\Support\TenantTables (mesma lista da exclusão definitiva).
+        foreach (TenantTables::childTables() as $table => $rel) {
+            $parentIds = DB::table($rel['via'])->where('club_id', $clubId)->pluck('id');
+            DB::table($table)->whereIn($rel['fk'], $parentIds)->delete();
+        }
 
-        DB::table('desbravador_requisito')->whereIn('desbravador_id', $desbravadorIds)->delete();
-        DB::table('desbravador_especialidade')->whereIn('desbravador_id', $desbravadorIds)->delete();
-
-        // Pivô de evento (via evento_id deste clube)
-        $eventoIds = DB::table('eventos')->where('club_id', $clubId)->pluck('id');
-        DB::table('desbravador_evento')->whereIn('evento_id', $eventoIds)->delete();
-
-        // Frequências e valores de coluna
-        $frequenciaIds = DB::table('frequencias')->where('club_id', $clubId)->pluck('id');
-        DB::table('frequencia_column_values')->whereIn('frequencia_id', $frequenciaIds)->delete();
-        DB::table('frequencias')->where('club_id', $clubId)->delete();
-
-        // Patrimônio e manutenções
-        $patrimonioIds = DB::table('patrimonios')->where('club_id', $clubId)->pluck('id');
-        DB::table('patrimonio_manutencoes')->whereIn('patrimonio_id', $patrimonioIds)->delete();
-
-        // Demais filhos com club_id direto
-        $tables = [
-            'mensalidades',
-            'caixas',
-            'caixa_audit_logs',
-            'atos',
-            'atas',
-            'eventos',
-            'patrimonios',
-            'attendance_columns',
-            'ranking_snapshots',
-            'desbravadores',
-            'unidades',
-            'invitations',
-        ];
-
-        foreach ($tables as $table) {
+        // Tabelas com club_id direto, em ordem de dependência.
+        foreach (TenantTables::clubIdTables() as $table) {
             DB::table($table)->where('club_id', $clubId)->delete();
         }
 
