@@ -215,6 +215,17 @@
         background-color: rgb(var(--ui-surface));
     }
 
+    /*
+     * Selects usam o mesmo .ui-input (py-3.5 + border-2 = ~32px verticais). Quando combinados
+     * com uma altura fixa (ex.: h-12 = 48px, box-border), sobram ~16px de conteúdo — menos que
+     * o line-height de 24px do text-base — e o texto da opção selecionada fica cortado em cima
+     * e embaixo. Reduzir o padding vertical e travar o line-height garante que a opção caiba na
+     * altura fixa em todas as telas. `min-height: 3rem` mantém o alvo de toque mesmo sem h-12.
+     */
+    select.ui-input {
+        @apply py-2 leading-tight min-h-[3rem];
+    }
+
     .ui-input-error {
         @apply flex items-center gap-1.5 text-sm font-medium mt-2 ml-1;
         color: rgb(var(--ui-danger));
