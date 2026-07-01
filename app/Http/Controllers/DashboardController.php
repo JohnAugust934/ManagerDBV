@@ -125,6 +125,20 @@ class DashboardController extends Controller
             }
         }
 
+        if ($user->temPermissao('secretaria')) {
+            $semConsentimento = Desbravador::ativos()->semConsentimentoAtivo()->count();
+            if ($semConsentimento > 0) {
+                $alertas[] = [
+                    'tipo' => 'danger',
+                    'icone' => 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+                    'titulo' => 'Consentimento LGPD pendente',
+                    'texto' => "{$semConsentimento} desbravador(es) ativo(s) sem termo de privacidade consentido.",
+                    'link' => route('desbravadores.index'),
+                    'link_texto' => 'Ver desbravadores',
+                ];
+            }
+        }
+
         if ($user->temPermissao('eventos')) {
             $eventosProximos = Evento::whereBetween('data_inicio', [now(), now()->addDays(7)])->count();
             if ($eventosProximos > 0) {

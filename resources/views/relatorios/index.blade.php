@@ -244,6 +244,33 @@
             </div>
         </div>
 
+        {{-- Termo de Privacidade (LGPD) para assinatura física --}}
+        <div class="ui-card p-0 overflow-hidden px-4 sm:px-0" x-data="{ filtro: '' }">
+            <div class="border-b border-slate-100 dark:border-slate-800 px-6 py-5">
+                <h3 class="text-base font-black text-slate-800 dark:text-white">Termo de Privacidade (para assinatura)</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Gere o termo LGPD pré-preenchido para coleta de assinatura manual. Individual, na tela de cada desbravador; ou em lote abaixo.</p>
+            </div>
+
+            <form action="{{ route('relatorios.termo-privacidade.lote') }}" method="POST" target="_blank" class="p-6 space-y-4">
+                @csrf
+                <input type="text" x-model="filtro" placeholder="Filtrar por nome…" class="ui-input">
+
+                <div class="max-h-64 overflow-y-auto border border-slate-100 dark:border-slate-800 rounded-xl divide-y divide-slate-100 dark:divide-slate-800">
+                    @forelse ($desbravadoresTermo as $d)
+                        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
+                               x-show="filtro === '' || '{{ \Illuminate\Support\Str::lower($d->nome) }}'.includes(filtro.toLowerCase())">
+                            <input type="checkbox" name="desbravador_ids[]" value="{{ $d->id }}" class="rounded border-slate-300 dark:border-slate-600">
+                            <span class="text-sm text-slate-700 dark:text-slate-200">{{ $d->nome }}</span>
+                        </label>
+                    @empty
+                        <p class="px-4 py-3 text-sm text-slate-400">Nenhum desbravador ativo.</p>
+                    @endforelse
+                </div>
+
+                <button type="submit" class="ui-btn-primary w-full sm:w-auto text-sm">Gerar termos em lote (PDF)</button>
+            </form>
+        </div>
+
         {{-- Gerador Personalizado --}}
         <div class="ui-card p-0 overflow-hidden px-4 sm:px-0">
             <div class="border-b border-slate-100 dark:border-slate-800 px-6 py-5">

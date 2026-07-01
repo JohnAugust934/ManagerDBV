@@ -3,6 +3,11 @@
     <div class="ui-page space-y-6 max-w-6xl ui-animate-fade-up">
         
         <div class="flex flex-col sm:flex-row sm:justify-end gap-3 px-2 sm:px-0 mb-2">
+            @can('secretaria')
+                <a href="{{ route('privacidade.index', $desbravador) }}" class="ui-btn-secondary w-full sm:w-auto text-sm">
+                    Termo de Privacidade
+                </a>
+            @endcan
             <a href="{{ route('desbravadores.edit', $desbravador) }}" class="ui-btn-primary w-full sm:w-auto text-sm group">
                 <svg class="w-4 h-4 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 Editar Cadastro
@@ -43,6 +48,11 @@
                             <span class="text-[13px] font-bold text-slate-500">
                                 {{ \Carbon\Carbon::parse($desbravador->data_nascimento)->age }} ANOS
                             </span>
+                            @unless ($desbravador->consentimentoPrivacidadeAtivo())
+                                <span class="ui-badge bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1" title="Sem consentimento LGPD ativo">
+                                    Consentimento pendente/revogado
+                                </span>
+                            @endunless
                         </div>
                     </div>
 

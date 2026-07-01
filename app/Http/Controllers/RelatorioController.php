@@ -97,7 +97,14 @@ class RelatorioController extends Controller
             'mes_atual' => $this->monthName(now()->month),
         ];
 
-        return view('relatorios.index', compact('unidades', 'categoriasCaixa', 'stats'));
+        // Lista enxuta para o gerador de Termo de Privacidade em lote (multi-seleção).
+        $desbravadoresTermo = Desbravador::query()
+            ->whereHas('unidade', fn (Builder $q) => $this->applyUnidadeScope($q))
+            ->where('ativo', true)
+            ->orderBy('nome')
+            ->get(['id', 'nome', 'unidade_id']);
+
+        return view('relatorios.index', compact('unidades', 'categoriasCaixa', 'stats', 'desbravadoresTermo'));
     }
 
     public function gerarPersonalizado(Request $request)
@@ -224,6 +231,57 @@ class RelatorioController extends Controller
             ['desbravador' => $desbravador],
             $this->reportContext()
         ))->stream("ficha_medica_{$desbravador->nome}.pdf");
+    }
+
+    /**
+     * Termo de Privacidade (LGPD) pré-preenchido para coleta de assinatura física.
+     * Mesmo texto do fluxo digital (view privacidade.termo), para nunca divergir.
+     */
+    public function termoPrivacidade(Desbravador $desbravador)
+    {
+        $desbravador->loadMissing('unidade');
+        $contexto = $this->reportContext();
+
+        return Pdf::loadView('relatorios.termo_privacidade', array_merge([
+            'desbravador' => $desbravador,
+            'versao' => config('privacidade.versao_termo'),
+            'termoHtml' => view('privacidade.termo', [
+                'versao' => config('privacidade.versao_termo'),
+                'clubeNome' => $contexto['clubeNome'],
+            ])->render(),
+        ], $contexto))
+            ->setPaper('a4', 'portrait')
+            ->stream("termo_privacidade_{$desbravador->id}.pdf");
+    }
+
+    /**
+     * Geração em lote (ex.: início de ano, por unidade). O ClubScope garante que
+     * IDs de outros clubes passados manualmente são ignorados.
+     */
+    public function termoPrivacidadeLote(Request $request)
+    {
+        $ids = $request->validate([
+            'desbravador_ids' => ['required', 'array'],
+            'desbravador_ids.*' => ['integer'],
+        ])['desbravador_ids'];
+
+        $desbravadores = Desbravador::whereIn('id', $ids)
+            ->with('unidade:id,nome')
+            ->orderBy('nome')
+            ->get();
+
+        $contexto = $this->reportContext();
+
+        return Pdf::loadView('relatorios.termo_privacidade_lote', array_merge([
+            'desbravadores' => $desbravadores,
+            'versao' => config('privacidade.versao_termo'),
+            'termoHtml' => view('privacidade.termo', [
+                'versao' => config('privacidade.versao_termo'),
+                'clubeNome' => $contexto['clubeNome'],
+            ])->render(),
+        ], $contexto))
+            ->setPaper('a4', 'portrait')
+            ->stream('termos_privacidade_lote.pdf');
     }
 
     private function relatorioDesbravadores(Request $request)

@@ -11,6 +11,7 @@ use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\ClubBackupController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ComunicadoController;
+use App\Http\Controllers\ConsentimentoPrivacidadeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesbravadorController;
 use App\Http\Controllers\EspecialidadeController;
@@ -209,6 +210,15 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::delete('desbravadores/{desbravador}/foto', [DesbravadorController::class, 'removerFoto'])->name('desbravadores.remover-foto');
         Route::post('desbravadores/{desbravador}/avancar-classe', [DesbravadorController::class, 'avancarClasse'])->name('desbravadores.avancar-classe');
         Route::get('desbravadores/{desbravador}/exportar-dados', [DesbravadorController::class, 'exportarDadosLgpd'])->name('desbravadores.exportar-dados');
+
+        // Consentimento LGPD (Termo de Privacidade) — histórico, aceite e revogação
+        Route::prefix('desbravadores/{desbravador}/privacidade')->name('privacidade.')->group(function () {
+            Route::get('/', [ConsentimentoPrivacidadeController::class, 'index'])->name('index');
+            Route::post('/aceitar', [ConsentimentoPrivacidadeController::class, 'aceitar'])->name('aceitar');
+            Route::post('/via-fisica', [ConsentimentoPrivacidadeController::class, 'viaFisicaRecebida'])->name('via-fisica');
+            Route::post('/{consentimento}/revogar', [ConsentimentoPrivacidadeController::class, 'revogar'])->name('revogar');
+        });
+
         Route::resource('unidades', UnidadeController::class)->except(['index', 'show']);
         Route::patch('unidades/{unidade}/toggle-ranking', [UnidadeController::class, 'toggleRanking'])->name('unidades.toggle-ranking');
 
@@ -317,6 +327,8 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::get('/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('autorizacao');
         Route::get('/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('carteirinha');
         Route::get('/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('ficha-medica');
+        Route::get('/termo-privacidade/{desbravador}', [RelatorioController::class, 'termoPrivacidade'])->name('termo-privacidade');
+        Route::post('/termo-privacidade/lote', [RelatorioController::class, 'termoPrivacidadeLote'])->name('termo-privacidade.lote');
 
         Route::middleware('can:financeiro')->group(function () {
             Route::get('/financeiro', [RelatorioController::class, 'financeiro'])->name('financeiro');
