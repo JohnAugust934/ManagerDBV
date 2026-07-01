@@ -4,18 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEventoRequest;
 use App\Http\Requests\UpdateEventoRequest;
-use App\Models\Caixa;
 use App\Models\Desbravador;
 use App\Models\Evento;
 use App\Services\ClubContext;
+use App\Services\InscricaoEventoService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class EventoController extends Controller
 {
+    public function __construct(private readonly InscricaoEventoService $inscricoes) {}
+
     // ... index, create, store, edit, update (MANTIDOS IGUAIS) ...
     public function index()
     {
@@ -139,34 +140,17 @@ class EventoController extends Controller
     {
         Gate::authorize('eventos');
 
-        DB::transaction(function () use ($evento, $desbravador) {
-            $pivot = DB::table('desbravador_evento')
-                ->where('evento_id', $evento->id)
-                ->where('desbravador_id', $desbravador->id)
-                ->lockForUpdate()
-                ->first();
+        // Remover um inscrito pago estorna dinheiro do caixa: exige permissão financeira.
+        if ($this->inscricoes->removerExigeFinanceiro($evento, $desbravador)) {
+            Gate::authorize('financeiro');
+        }
 
-            if (! $pivot) {
-                return;
-            }
-
-            // Remover um inscrito pago estorna dinheiro do caixa: exige permissao financeira
-            // e registra a saida correspondente para manter o caixa consistente.
-            if ($pivot->pago) {
-                Gate::authorize('financeiro');
-
-                if ($evento->valor > 0) {
-                    $this->registrarMovimentacaoFinanceiraDoEvento($evento, $desbravador, false);
-                }
-            }
-
-            $evento->desbravadores()->detach($desbravador->id);
-        });
+        $this->inscricoes->remover($evento, $desbravador);
 
         return back()->with('success', 'Removido do evento.');
     }
 
-    // ATUALIZADO: AJAX + Integração com Caixa
+    // AJAX + Integração com Caixa (via InscricaoEventoService)
     public function atualizarStatus(Request $request, Evento $evento, Desbravador $desbravador)
     {
         Gate::authorize('financeiro');
@@ -175,39 +159,7 @@ class EventoController extends Controller
         $valor = filter_var($request->valor, FILTER_VALIDATE_BOOLEAN);
 
         if ($campo === 'pago') {
-            $resultado = DB::transaction(function () use ($evento, $desbravador, $valor) {
-                $pivot = DB::table('desbravador_evento')
-                    ->where('evento_id', $evento->id)
-                    ->where('desbravador_id', $desbravador->id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $pivot) {
-                    return null;
-                }
-
-                $statusAtual = (bool) $pivot->pago;
-
-                if ($statusAtual === $valor) {
-                    return [
-                        'novo_status' => $valor,
-                        'status_alterado' => false,
-                        'movimentacao_registrada' => false,
-                    ];
-                }
-
-                $evento->desbravadores()->updateExistingPivot($desbravador->id, ['pago' => $valor]);
-
-                if ($evento->valor > 0) {
-                    $this->registrarMovimentacaoFinanceiraDoEvento($evento, $desbravador, $valor);
-                }
-
-                return [
-                    'novo_status' => $valor,
-                    'status_alterado' => true,
-                    'movimentacao_registrada' => $evento->valor > 0,
-                ];
-            });
+            $resultado = $this->inscricoes->definirPago($evento, $desbravador, $valor);
 
             if ($resultado === null) {
                 return response()->json(['error' => 'Inscrição não encontrada para este desbravador.'], 404);
@@ -240,19 +192,5 @@ class EventoController extends Controller
         ]);
 
         return $pdf->stream('autorizacao.pdf');
-    }
-
-    private function registrarMovimentacaoFinanceiraDoEvento(Evento $evento, Desbravador $desbravador, bool $pago): void
-    {
-        Caixa::create([
-            'descricao' => $pago
-                ? "Evento: {$evento->nome} - {$desbravador->nome}"
-                : "Estorno Evento: {$evento->nome} - {$desbravador->nome}",
-            'tipo' => $pago ? 'entrada' : 'saida',
-            'categoria' => 'Evento',
-            'valor' => $evento->valor,
-            'data_movimentacao' => now(),
-            'club_id' => ClubContext::currentClubId(),
-        ]);
     }
 }
