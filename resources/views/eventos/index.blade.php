@@ -1,14 +1,18 @@
 <x-app-layout>
 
-    <div class="ui-page space-y-8 max-w-[1400px] ui-animate-fade-up">
+    <div class="ui-page space-y-8 ui-animate-fade-up">
 
         {{-- Cabeçalho com Ação --}}
-        <x-page-title title="Eventos do Clube" subtitle="Gerencie o calendário, inscrições e pagamentos de eventos." />
+        <x-page-title title="Eventos do Clube" subtitle="Gerencie o calendário, inscrições e pagamentos de eventos.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </x-slot:icon>
+        </x-page-title>
 
         @can('secretaria')
-            <div class="flex px-4 sm:px-0 sm:justify-end">
-                <a href="{{ route('eventos.create') }}" class="ui-btn-primary w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-6 h-12 rounded-2xl">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+            <div class="flex sm:justify-end">
+                <a href="{{ route('eventos.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                    <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
                     Novo Evento
                 </a>
             </div>
@@ -16,14 +20,14 @@
 
         {{-- Grid de Eventos --}}
         @if ($eventos->count() > 0)
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 px-4 sm:px-0">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 @foreach ($eventos as $evento)
                     @php
                         $dataInicio = \Carbon\Carbon::parse($evento->data_inicio);
                         $isPassado = \Carbon\Carbon::parse($evento->data_fim)->isPast();
                     @endphp
 
-                    <div class="group relative bg-white dark:bg-slate-800/80 rounded-3xl border border-slate-100 dark:border-slate-700/60 overflow-hidden flex flex-col shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50 transition-all duration-300 hover:-translate-y-1">
+                    <div class="group relative ui-card overflow-hidden flex flex-col">
 
                         {{-- Top Banner Gradient --}}
                         <div class="h-28 relative overflow-hidden flex items-end {{ $isPassado ? 'bg-gradient-to-br from-slate-500 to-slate-600' : 'bg-gradient-to-br from-[#002F6C] to-blue-600' }}">
@@ -94,11 +98,11 @@
                 @endforeach
             </div>
 
-            <div class="mt-6 px-4 sm:px-0">
+            <div class="mt-6">
                 {{ $eventos->links() }}
             </div>
         @else
-            <div class="px-4 sm:px-0">
+            <div>
                 <div class="ui-empty">
                     <div class="ui-empty-icon"><svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
                     <h3 class="ui-empty-title">Nenhum Evento no Calendário</h3>

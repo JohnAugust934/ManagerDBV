@@ -1,7 +1,11 @@
 <x-app-layout>
-    <div class="ui-page space-y-6 max-w-[1200px] ui-animate-fade-up" x-data="{ aba: 'lancamentos', deleteId: null, deleteDesc: '' }">
+    <div class="ui-page space-y-6 ui-animate-fade-up" x-data="{ aba: 'lancamentos', deleteId: null, deleteDesc: '' }">
 
-        <x-page-title title="Fluxo de Caixa" subtitle="Entradas, saídas e saldo do clube." />
+        <x-page-title title="Fluxo de Caixa" subtitle="Entradas, saídas e saldo do clube.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            </x-slot:icon>
+        </x-page-title>
 
         {{-- 3 Cards de Resumo --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 sm:px-0">
@@ -38,9 +42,9 @@
         </div>
 
         {{-- Ação Principal --}}
-        <div class="flex justify-end px-4 sm:px-0">
-            <a href="{{ route('caixa.create') }}" class="ui-btn-primary flex items-center gap-2 h-12 px-6 rounded-2xl">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+        <div class="flex sm:justify-end">
+            <a href="{{ route('caixa.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
                 Nova Movimentação
             </a>
         </div>
@@ -72,40 +76,40 @@
 
                     {{-- Tabela Desktop --}}
                     <div class="hidden md:block overflow-x-auto">
-                        <table class="w-full">
+                        <table class="ui-table">
                             <thead>
-                                <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                                    <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500">Data</th>
-                                    <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500">Descrição</th>
-                                    <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500">Categoria</th>
-                                    <th class="px-5 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-slate-500">Valor</th>
-                                    <th class="px-5 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-slate-500">Ações</th>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th class="text-right">Valor</th>
+                                    <th class="text-right">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tbody>
                                 @foreach ($lancamentos as $lancamento)
-                                <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors group">
-                                    <td class="px-5 py-3.5 text-[13px] font-black text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                <tr class="group">
+                                    <td class="text-[13px] font-black text-slate-500 dark:text-slate-400">
                                         {{ \Carbon\Carbon::parse($lancamento->data_movimentacao)->format('d/m/Y') }}
                                     </td>
-                                    <td class="px-5 py-3.5">
+                                    <td class="!whitespace-normal">
                                         <p class="text-[13px] font-bold text-slate-800 dark:text-white">{{ $lancamento->descricao }}</p>
                                         @if($lancamento->criadoPor)
                                             <p class="text-[10px] text-slate-400 mt-0.5">por {{ $lancamento->criadoPor->name }}</p>
                                         @endif
                                     </td>
-                                    <td class="px-5 py-3.5">
+                                    <td>
                                         @if ($lancamento->categoria)
                                             <span class="px-2.5 py-1 text-[10px] font-black rounded-lg bg-[#002F6C]/10 dark:bg-blue-500/20 text-[#002F6C] dark:text-blue-400 uppercase tracking-widest">{{ $lancamento->categoria }}</span>
                                         @else
                                             <span class="text-slate-300 dark:text-slate-700">—</span>
                                         @endif
                                     </td>
-                                    <td class="px-5 py-3.5 text-right text-[13px] font-black whitespace-nowrap {{ $lancamento->tipo === 'entrada' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <td class="text-right text-[13px] font-black {{ $lancamento->tipo === 'entrada' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
                                         {{ $lancamento->tipo === 'entrada' ? '+' : '-' }} R$ {{ number_format($lancamento->valor, 2, ',', '.') }}
                                     </td>
-                                    <td class="px-5 py-3.5 text-right whitespace-nowrap">
-                                        <div class="flex items-center justify-end gap-1">
+                                    <td class="text-right">
+                                        <div class="ui-row-actions justify-end">
                                             <a href="{{ route('caixa.edit', $lancamento) }}"
                                                class="p-2 rounded-xl text-slate-400 hover:text-[#002F6C] hover:bg-[#002F6C]/10 dark:hover:text-blue-400 dark:hover:bg-blue-500/20 transition-colors">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>

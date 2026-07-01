@@ -1,25 +1,27 @@
 <x-app-layout>
 
-    <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up">
-        
-        <x-page-title title="Publicações e Atos" subtitle="Atos oficiais da diretoria — mudanças de cargo e diretrizes." />
+    <div class="ui-page space-y-6 ui-animate-fade-up">
+
+        <x-page-title title="Publicações e Atos" subtitle="Atos oficiais da diretoria — mudanças de cargo e diretrizes.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+            </x-slot:icon>
+        </x-page-title>
 
         <div class="flex sm:justify-end">
-            <a href="{{ route('atos.create') }}" class="ui-btn-primary w-full sm:w-auto flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            <a href="{{ route('atos.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                 Registrar Ato
             </a>
         </div>
 
         <div class="mt-8">
             @if ($atos->isEmpty())
-                <div class="ui-card p-12 flex flex-col items-center justify-center text-center border-dashed border-2 border-slate-200 dark:border-slate-800 bg-transparent shadow-none">
-                    <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-[#002F6C] dark:text-blue-400">
-                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-black text-slate-800 dark:text-white mb-2">Sem atos publicados</h3>
-                    <p class="text-sm font-bold text-slate-400 mb-6 max-w-md">Os atos oficiais de mudanças de cargo e diretrizes ficam arquivados aqui.</p>
-                </div>
+                <x-empty-state title="Sem atos publicados" description="Os atos oficiais de mudanças de cargo e diretrizes ficam arquivados aqui.">
+                    <x-slot:icon>
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+                    </x-slot:icon>
+                </x-empty-state>
             @else
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach ($atos as $ato)

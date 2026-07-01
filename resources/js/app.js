@@ -73,6 +73,43 @@ if ("serviceWorker" in navigator) {
     });
 }
 
+// --- Estado "enviando" em submits (evita duplo-envio e dá feedback) ---
+// Listener no nível do documento: roda na fase de bubbling, DEPOIS dos listeners
+// do próprio <form>. Assim, formulários com @submit.prevent (Alpine, envios via
+// fetch) já marcaram e.defaultPrevented e são ignorados aqui — o spinner só entra
+// em envios reais que navegam de página. Validação HTML5 que falha nem dispara o
+// evento, então não há botão preso.
+const SPINNER_SVG =
+    '<svg class="w-5 h-5 animate-spin shrink-0" fill="none" viewBox="0 0 24 24" aria-hidden="true">' +
+    '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>' +
+    '<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path></svg>';
+
+// Aplica o estado "enviando" no botão primário do formulário (idempotente).
+function marcarEnviando(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+    if (form.hasAttribute("data-sem-loading")) return;
+
+    const btn = form.querySelector(
+        "button.ui-btn-primary, button.ui-btn-accent, button.ui-btn-danger"
+    );
+    if (!btn || btn.dataset.enviando) return;
+
+    btn.dataset.enviando = "1";
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+    btn.insertAdjacentHTML("afterbegin", SPINNER_SVG);
+}
+
+// Envio nativo: o listener roda na fase de bubbling (depois dos listeners do form),
+// então formulários com @submit.prevent (fetch/AJAX) já marcaram defaultPrevented
+// e são ignorados. Validação HTML5 que falha nem dispara o evento.
+// (Fluxos que enviam programaticamente via Alpine com modal de confirmação — ex.: o
+// caixa — já têm o feedback do próprio modal e não passam por aqui, por design.)
+document.addEventListener("submit", (e) => {
+    if (e.defaultPrevented) return;
+    marcarEnviando(e.target);
+});
+
 // 3. Ao clicar em links (Saída Suave)
 // Respeita prefers-reduced-motion (pula o fade) e protege contra href ausente,
 // esquemas externos e tela branca presa caso a navegação não conclua.

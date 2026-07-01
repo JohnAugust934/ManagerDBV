@@ -96,6 +96,59 @@
         @apply w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10;
     }
 
+    /* Variante estreita: formulários create/edit e telas de leitura focada.
+       Substitui os max-w-3xl/2xl/5xl avulsos espalhados pelas views. */
+    .ui-page--narrow {
+        @apply max-w-3xl;
+    }
+
+    /*
+     * Assinatura visual DBV — régua tri-cor derivada do emblema dos Desbravadores
+     * (azul = Lealdade, vermelho = Sacrifício, amarelo = Excelência). Aparece uma
+     * única vez por página, ancorada ao cabeçalho (ver componente page-title).
+     */
+    .ui-accent-rule {
+        @apply h-[3px] w-14 rounded-full;
+        background: linear-gradient(90deg, #002F6C, #D9222A 55%, #FCD116);
+    }
+
+    .dark .ui-accent-rule {
+        background: linear-gradient(90deg, #3B82F6, #F87171 55%, #FDE047);
+    }
+
+    /* Wrapper padrão do cabeçalho de conteúdo (usado por page-title). */
+    .ui-page-header {
+        @apply mb-6;
+    }
+
+    /* Pill do ícone do módulo, à esquerda do título (azul DBV). */
+    .ui-page-icon {
+        @apply w-11 h-11 rounded-2xl flex items-center justify-center shrink-0;
+        color: rgb(var(--ui-primary));
+        background-color: rgb(var(--ui-primary) / 0.1);
+        border: 1px solid rgb(var(--ui-primary) / 0.15);
+    }
+
+    .ui-page-icon > svg {
+        @apply w-6 h-6;
+    }
+
+    /* Ações de linha em tabelas/cards — comportamento único (antes: 40/50/100 divergentes).
+       Em telas sem hover (toque), permanecem sempre visíveis. */
+    .ui-row-actions {
+        @apply flex items-center gap-2 opacity-60 transition-opacity duration-200;
+    }
+
+    .group:hover .ui-row-actions {
+        @apply opacity-100;
+    }
+
+    @media (hover: none) {
+        .ui-row-actions {
+            @apply opacity-100;
+        }
+    }
+
     /* Premium Glass/Card Effects */
     .ui-glass {
         background-color: var(--glass-bg);
@@ -240,6 +293,36 @@
     /* Badges */
     .ui-badge {
         @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider;
+    }
+
+    /*
+     * Badges de status semânticos — pares light/dark com contraste AA. Substituem os
+     * match(true)/mapas de classe montados em PHP espalhados por patrimonio/usuarios/
+     * mensalidades. Use sobre .ui-badge (ou solto, já trazem o formato de pill).
+     */
+    .ui-badge-success {
+        @apply ui-badge border;
+        @apply bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30;
+    }
+
+    .ui-badge-warning {
+        @apply ui-badge border;
+        @apply bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30;
+    }
+
+    .ui-badge-danger {
+        @apply ui-badge border;
+        @apply bg-red-100 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30;
+    }
+
+    .ui-badge-neutral {
+        @apply ui-badge border;
+        @apply bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700/40 dark:text-slate-300 dark:border-slate-600/40;
+    }
+
+    .ui-badge-info {
+        @apply ui-badge border;
+        @apply bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30;
     }
 
     /* Empty States */

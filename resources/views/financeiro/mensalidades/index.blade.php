@@ -1,6 +1,6 @@
 <x-app-layout>
 
-    <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up" x-data="{
+    <div class="ui-page space-y-6 ui-animate-fade-up" x-data="{
         visualizacao: localStorage.getItem('mensalidades_viz') ?? 'cards',
         setViz(v) { this.visualizacao = v; localStorage.setItem('mensalidades_viz', v); },
         modalPagamentoOpen: false,
@@ -54,7 +54,11 @@
         }
     }">
 
-        <x-page-title title="Controle de Mensalidades" subtitle="Acompanhe pagamentos, inadimplência e o painel do mês." />
+        <x-page-title title="Controle de Mensalidades" subtitle="Acompanhe pagamentos, inadimplência e o painel do mês.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </x-slot:icon>
+        </x-page-title>
 
         <!-- Control Bar -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
@@ -194,37 +198,35 @@
         </div>
 
         {{-- Linhas --}}
-        <div x-show="visualizacao === 'linhas'" style="display:none" class="ui-card overflow-hidden p-0">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                            <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500">Membro</th>
-                            <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-slate-500 hidden md:table-cell">Unidade</th>
-                            <th class="px-5 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-slate-500">Valor</th>
-                            <th class="px-5 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-slate-500 hidden sm:table-cell">Status</th>
-                            <th class="px-5 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-slate-500">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                        @foreach ($mensalidades as $m)
-                            @include('financeiro.mensalidades._row', ['m' => $m])
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+        <div x-show="visualizacao === 'linhas'" style="display:none" class="ui-table-wrapper">
+            <table class="ui-table">
+                <thead>
+                    <tr>
+                        <th>Membro</th>
+                        <th class="hidden md:table-cell">Unidade</th>
+                        <th class="text-right">Valor</th>
+                        <th class="text-center hidden sm:table-cell">Status</th>
+                        <th class="text-right">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($mensalidades as $m)
+                        @include('financeiro.mensalidades._row', ['m' => $m])
+                    @endforeach
+                </tbody>
+            </table>
         </div>
         @else
-        <div class="ui-card p-12 flex flex-col items-center justify-center text-center border-dashed border-2 border-slate-200 dark:border-slate-800 bg-transparent shadow-none">
-            <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                <svg class="w-10 h-10 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <h3 class="text-xl font-black text-slate-800 dark:text-white mb-2">Nenhuma cobrança registrada neste mês</h3>
-            <p class="text-sm font-bold text-slate-400 mb-6 max-w-md">Utilize o controle de "Lançar Novo Lote" para rodar a mensalidade padrão do mês para todos da base num clique mágico.</p>
-            <button @click="modalGerarOpen = true" class="ui-btn-primary flex items-center gap-2">
-                Começar a Gerar Carnês
-            </button>
-        </div>
+        <x-empty-state
+            title="Nenhuma cobrança registrada neste mês"
+            description="Gere o lote mensal para rodar a mensalidade padrão do mês para toda a base num clique.">
+            <x-slot:icon>
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </x-slot:icon>
+            <x-slot:action>
+                <button @click="modalGerarOpen = true" class="ui-btn-primary">Começar a Gerar Carnês</button>
+            </x-slot:action>
+        </x-empty-state>
         @endif
 
 

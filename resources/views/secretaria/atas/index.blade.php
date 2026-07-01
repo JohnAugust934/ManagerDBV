@@ -1,25 +1,27 @@
 <x-app-layout>
 
-    <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up">
+    <div class="ui-page space-y-6 ui-animate-fade-up">
 
-        <x-page-title title="Atas de Reunião" subtitle="Registros administrativos oficiais das reuniões do clube." />
+        <x-page-title title="Atas de Reunião" subtitle="Registros administrativos oficiais das reuniões do clube.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </x-slot:icon>
+        </x-page-title>
 
         <div class="flex sm:justify-end">
-            <a href="{{ route('atas.create') }}" class="ui-btn-primary w-full sm:w-auto flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            <a href="{{ route('atas.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                 Nova Ata
             </a>
         </div>
 
         <div class="mt-8">
             @if ($atas->isEmpty())
-                <div class="ui-card p-12 flex flex-col items-center justify-center text-center border-dashed border-2 border-slate-200 dark:border-slate-800 bg-transparent shadow-none">
-                    <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                        <svg class="w-10 h-10 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-black text-slate-800 dark:text-white mb-2">Nenhuma ata registrada</h3>
-                    <p class="text-sm font-bold text-slate-400 mb-6 max-w-md">Crie a primeira ata para iniciar o histórico oficial de reuniões do clube.</p>
-                </div>
+                <x-empty-state title="Nenhuma ata registrada" description="Crie a primeira ata para iniciar o histórico oficial de reuniões do clube.">
+                    <x-slot:icon>
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </x-slot:icon>
+                </x-empty-state>
             @else
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach ($atas as $ata)

@@ -12,20 +12,28 @@ Este guia resume os padrões visuais do sistema para novas telas e ajustes.
 ## 2. Estrutura de Página
 
 - Use `x-app-layout` e `ui-page` como base.
-- O `header` deve conter apenas título/contexto.
+- Título/contexto no componente `<x-page-title>` (garante `<h1>` e a **assinatura DBV**).
 - Botões de ação ficam fora do header, no início do conteúdo.
 
-Exemplo:
+**Largura canônica:** o `.ui-page` já centraliza em `max-w-[1600px]`. **Não** adicione
+`max-w-*` avulsos (nada de `max-w-7xl/6xl/5xl mx-auto` soltos). Para formulários create/edit
+e telas de leitura focada, use o modificador `.ui-page--narrow` (`max-w-3xl`).
+
+**Assinatura visual (régua tri-cor DBV):** a fina régua azul→vermelho→amarelo do
+`<x-page-title>` é a marca do sistema — aparece **uma vez por página**, no cabeçalho. Não a
+replique em cards/seções internas.
+
+**Cabeçalho padrão:** passe um ícone de módulo pelo slot `icon` (exibido em pill azul DBV):
 
 ```blade
-<x-slot name="header">
-    <h2 class="font-bold text-xl text-dbv-blue dark:text-gray-100 leading-tight">
-        Título da Tela
-    </h2>
-</x-slot>
-
 <div class="ui-page space-y-6">
-    <div class="px-4 sm:px-0 flex justify-end">
+    <x-page-title title="Título da Tela" subtitle="Descrição curta.">
+        <x-slot:icon>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">...</svg>
+        </x-slot:icon>
+    </x-page-title>
+
+    <div class="flex sm:justify-end">
         <a href="#" class="ui-btn-primary w-full sm:w-auto">Nova Ação</a>
     </div>
 </div>
@@ -64,6 +72,27 @@ Exemplos:
 - Cards: `ui-card`
 - Blocos de suporte: `ui-card-muted`
 - Estado vazio: `x-empty-state`
+
+## 5.1 Tabelas, Badges e Ações de Linha (Padrão Oficial)
+
+- **Tabelas:** use `ui-table-wrapper` (contêiner com borda/scroll) + `table.ui-table`. Não
+  recrie `<table class="w-full">` com `<thead>` estilizado à mão — o `ui-table` já define
+  cabeçalho, padding, divisórias e hover. Alinhe colunas com `text-right`/`text-center` no `th`/`td`.
+  Onde precisar de célula com quebra de linha, use `!whitespace-normal` no `td`.
+- **Badges de status:** use as classes semânticas `ui-badge-success` (pago/ativo/bom),
+  `ui-badge-warning` (pendente/regular), `ui-badge-danger` (erro/ruim), `ui-badge-neutral` e
+  `ui-badge-info`. Evite montar mapas de classe (`match(true)`/arrays) com hex/utilitários no PHP.
+  Exceção justificada: quando a cor codifica **identidade** distinta (ex.: cor por cargo), e não
+  status — aí um mapa próprio é legítimo.
+- **Ações de linha** (editar/excluir em tabelas e cards): use `.ui-row-actions` (opacidade única,
+  sempre visível em telas de toque). Não invente `opacity-40/50` ad-hoc.
+
+## 5.2 Estado "Enviando" nos Formulários
+
+Botões de submit com `ui-btn-primary`/`ui-btn-accent`/`ui-btn-danger` entram automaticamente em
+estado "enviando" (spinner + desabilitado) ao enviar o formulário — tratado globalmente em
+`resources/js/app.js`. Não é preciso código por tela. Envios via `fetch`/`@submit.prevent` são
+ignorados (não navegam); se precisar desativar o comportamento num form, adicione `data-sem-loading`.
 
 ## 6. Mensagens e Feedback
 
