@@ -2,9 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\Desbravador;
-use App\Models\RankingSnapshot;
-use App\Models\Unidade;
 use App\Models\User;
 use App\Services\TelegramNotifier;
 use Carbon\Carbon;
@@ -18,7 +15,6 @@ use Illuminate\Queue\Events\QueueBusy;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Backup\Events\BackupHasFailed;
@@ -223,73 +219,14 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * Wrapper estático mantido por compatibilidade (comando agendado
+     * ranking:snapshot em routes/console.php). Delega para o RankingService, que
+     * é a fonte da verdade única do ranking — ver App\Services\RankingService.
+     */
     public static function snapshotRankingYear(int $year, int $clubId, ?int $generatedBy = null): void
     {
-        $hasColumnValues = Schema::hasTable('frequencia_column_values');
-        $frequenciasLoader = function ($query) use ($year, $hasColumnValues) {
-            $query->whereYear('data', $year);
-            if ($hasColumnValues) {
-                $query->with('columnValues');
-            }
-        };
-
-        // Consistente com o ranking ao vivo (RankingController): só unidades que
-        // participam do ranking (no_ranking = true) entram no snapshot.
-        $unitEntries = Unidade::where('club_id', $clubId)
-            ->where('no_ranking', true)
-            ->with([
-                'desbravadores:id,nome,unidade_id,ativo',
-                'desbravadores.frequencias' => $frequenciasLoader,
-            ])
-            ->orderBy('nome')
-            ->get(['id', 'nome', 'club_id', 'no_ranking'])
-            ->map(function (Unidade $unidade) {
-                $points = $unidade->desbravadores
-                    ->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
-
-                // Chaves em pt_BR para casar com o snapshot ao vivo
-                // (RankingController::salvarSnapshot) e a view ranking/snapshot —
-                // as duas implementações DUPLICADAS precisam do mesmo schema.
-                return [
-                    'id' => $unidade->id,
-                    'nome' => $unidade->nome,
-                    'pontos' => $points,
-                ];
-            })
-            ->sortByDesc('pontos')
-            ->values()
-            ->all();
-
-        $memberEntries = Desbravador::with([
-            'unidade:id,nome,no_ranking',
-            'frequencias' => $frequenciasLoader,
-        ])
-            ->where('ativo', true)
-            ->whereHas('unidade', fn ($q) => $q->where('club_id', $clubId)->where('no_ranking', true))
-            ->orderBy('nome')
-            ->get(['id', 'nome', 'unidade_id', 'ativo'])
-            ->map(function (Desbravador $desbravador) {
-                // Mesmo schema pt_BR do snapshot ao vivo e da view (ver acima).
-                return [
-                    'id' => $desbravador->id,
-                    'nome' => $desbravador->nome,
-                    'unidade' => $desbravador->unidade->nome ?? 'Sem unidade',
-                    'pontos' => $desbravador->frequencias->sum('pontos'),
-                ];
-            })
-            ->sortByDesc('pontos')
-            ->values()
-            ->all();
-
-        RankingSnapshot::updateOrCreate(
-            ['year' => $year, 'scope' => 'unidades', 'club_id' => $clubId],
-            ['generated_by' => $generatedBy, 'entries' => $unitEntries, 'generated_at' => now()]
-        );
-
-        RankingSnapshot::updateOrCreate(
-            ['year' => $year, 'scope' => 'desbravadores', 'club_id' => $clubId],
-            ['generated_by' => $generatedBy, 'entries' => $memberEntries, 'generated_at' => now()]
-        );
+        app(\App\Services\RankingService::class)->snapshot($clubId, $year, $generatedBy);
     }
 
     private function normalizeLocale(string $locale): string
