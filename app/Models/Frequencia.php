@@ -53,24 +53,81 @@ class Frequencia extends Model
         return $this->hasMany(FrequenciaColumnValue::class);
     }
 
+    /**
+     * Pontos fixos por coluna no caminho legado (colunas booleanas), também usados
+     * como defaults do modo novo (ver App\Services\AttendanceColumnService).
+     */
+    public const PONTOS_LEGADO = [
+        'presente' => 10,
+        'pontual' => 5,
+        'biblia' => 5,
+        'uniforme' => 10,
+    ];
+
+    /**
+     * Pontuação total desta frequência. FONTE DA VERDADE ÚNICA do ranking — todos
+     * os consumidores (RankingService, snapshot de console, PDFs, ficha do
+     * desbravador) somam por aqui. Conta apenas colunas MARCADAS (checked); no
+     * modo novo isso casa com o breakdown de detalhePontos().
+     */
     public function getPontosAttribute(): int
     {
-        if ($this->relationLoaded('columnValues') && $this->columnValues->isNotEmpty()) {
-            return (int) $this->columnValues->sum('points_awarded');
-        }
-
-        if ($this->columnValues()->exists()) {
-            return (int) $this->columnValues()->sum('points_awarded');
-        }
-
-        return $this->calcularPontosLegado();
+        return $this->detalhePontos()['total'];
     }
 
-    private function calcularPontosLegado(): int
+    /**
+     * Detalhamento da pontuação por chave de coluna fixa
+     * (presente/pontual/biblia/uniforme) + 'total'. Some apenas colunas marcadas.
+     *
+     * Para evitar N+1 no breakdown, o chamador deve carregar 'columnValues.column'
+     * (o RankingService já faz). Fallback para o modo legado quando não há
+     * column_values.
+     *
+     * @return array{presente:int,pontual:int,biblia:int,uniforme:int,total:int}
+     */
+    public function detalhePontos(): array
     {
-        return ($this->presente ? 10 : 0)
-            + ($this->pontual ? 5 : 0)
-            + ($this->biblia ? 5 : 0)
-            + ($this->uniforme ? 10 : 0);
+        $stats = ['presente' => 0, 'pontual' => 0, 'biblia' => 0, 'uniforme' => 0, 'total' => 0];
+
+        $columnValues = $this->relationLoaded('columnValues')
+            ? $this->columnValues
+            : ($this->exists ? $this->columnValues()->with('column')->get() : collect());
+
+        if ($columnValues->isNotEmpty()) {
+            foreach ($columnValues as $columnValue) {
+                if (! $columnValue->checked) {
+                    continue;
+                }
+
+                $points = (int) $columnValue->points_awarded;
+                $stats['total'] += $points;
+
+                $columnKey = $columnValue->column?->key;
+                if ($columnKey !== null && array_key_exists($columnKey, $stats)) {
+                    $stats[$columnKey] += $points;
+                }
+            }
+
+            return $stats;
+        }
+
+        return $this->detalhePontosLegado();
+    }
+
+    /**
+     * @return array{presente:int,pontual:int,biblia:int,uniforme:int,total:int}
+     */
+    private function detalhePontosLegado(): array
+    {
+        $stats = ['presente' => 0, 'pontual' => 0, 'biblia' => 0, 'uniforme' => 0, 'total' => 0];
+
+        foreach (self::PONTOS_LEGADO as $chave => $valor) {
+            if ($this->{$chave}) {
+                $stats[$chave] = $valor;
+                $stats['total'] += $valor;
+            }
+        }
+
+        return $stats;
     }
 }

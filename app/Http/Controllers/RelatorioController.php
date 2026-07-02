@@ -10,6 +10,7 @@ use App\Models\Mensalidade;
 use App\Models\Patrimonio;
 use App\Models\RelatorioGerado;
 use App\Models\Unidade;
+use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Storage;
 
 class RelatorioController extends Controller
 {
+    public function __construct(private readonly RankingService $ranking) {}
+
     private const REPORT_TYPES = [
         'desbravadores',
         'fichas_completas',
@@ -552,25 +555,16 @@ class RelatorioController extends Controller
     private function relatorioRankingUnidades()
     {
         $ano = $this->rankingYear();
-        $ranking = $this->baseUnidadeQuery()
-            ->with([
-                'desbravadores:id,nome,unidade_id,ativo',
-                'desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)->select('id', 'desbravador_id', 'presente', 'pontual', 'biblia', 'uniforme'),
-            ])
-            ->get(['id', 'nome', 'club_id'])
-            ->map(function (Unidade $unidade) {
-                $membros = $unidade->desbravadores->count();
-                $pontos = $unidade->desbravadores->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
 
-                return [
-                    'nome' => $unidade->nome,
-                    'subtexto' => $membros.' membros',
-                    'pontos' => $pontos,
-                    'media' => $membros > 0 ? round($pontos / $membros, 1) : 0,
-                ];
-            })
-            ->sortByDesc('pontos')
-            ->values();
+        // Fonte da verdade única do ranking — mesmo cálculo e mesmo filtro
+        // no_ranking das telas ao vivo e do snapshot (ver App\Services\RankingService).
+        $ranking = $this->ranking->unidades((int) \App\Services\ClubContext::currentClubId(), $ano)
+            ->map(fn (array $item) => [
+                'nome' => $item['nome'],
+                'subtexto' => $item['membros'].' membros',
+                'pontos' => $item['pontos'],
+                'media' => $item['media'],
+            ]);
 
         return $this->renderTablePdf(
             titulo: 'Ranking das Unidades',
@@ -598,23 +592,15 @@ class RelatorioController extends Controller
     private function relatorioRankingDesbravadores()
     {
         $ano = $this->rankingYear();
-        $ranking = $this->baseDesbravadorQuery(new Request(['status' => 'ativos']))
-            ->with([
-                'unidade:id,nome',
-                'frequencias' => fn ($query) => $query->whereYear('data', $ano)->select('id', 'desbravador_id', 'presente', 'pontual', 'biblia', 'uniforme'),
-            ])
-            ->orderBy('nome')
-            ->get(['id', 'nome', 'unidade_id'])
-            ->map(function (Desbravador $desbravador) {
-                return [
-                    'nome' => $desbravador->nome,
-                    'unidade' => $desbravador->unidade->nome ?? 'Sem unidade',
-                    'pontos' => $desbravador->frequencias->sum('pontos'),
-                    'presencas' => $desbravador->frequencias->where('presente', true)->count(),
-                ];
-            })
-            ->sortByDesc('pontos')
-            ->values();
+
+        // Mesma fonte da verdade do ranking ao vivo/snapshot (ver RankingService).
+        $ranking = $this->ranking->desbravadores((int) \App\Services\ClubContext::currentClubId(), $ano)
+            ->map(fn (array $item) => [
+                'nome' => $item['nome'],
+                'unidade' => $item['unidade'],
+                'pontos' => $item['pontos'],
+                'presencas' => $item['presencas'],
+            ]);
 
         return $this->renderTablePdf(
             titulo: 'Ranking Individual',

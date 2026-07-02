@@ -400,56 +400,15 @@ class BackupController extends Controller
 
     private function extractBackupArchiveSafely(string $zipPath, string $extractPath): void
     {
-        File::makeDirectory($extractPath, 0755, true, true);
-
-        $zip = new \ZipArchive;
-        $result = $zip->open($zipPath);
-
-        if ($result !== true) {
-            throw new \RuntimeException('O arquivo selecionado está corrompido ou não é um ZIP válido.');
-        }
-
-        try {
-            if ($zip->numFiles === 0) {
-                throw new \RuntimeException('O arquivo ZIP está vazio.');
-            }
-
-            for ($index = 0; $index < $zip->numFiles; $index++) {
-                $entryName = str_replace('\\', '/', $zip->getNameIndex($index));
-                $normalizedEntry = ltrim($entryName, '/');
-
-                if ($normalizedEntry === '' || str_contains($normalizedEntry, '../') || preg_match('/^[A-Za-z]:\//', $normalizedEntry)) {
-                    throw new \RuntimeException('O backup contém caminhos inválidos e foi bloqueado por segurança.');
-                }
-
-                $destinationPath = $extractPath.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $normalizedEntry);
-
-                if (str_ends_with($entryName, '/')) {
-                    File::makeDirectory($destinationPath, 0755, true, true);
-
-                    continue;
-                }
-
-                File::makeDirectory(dirname($destinationPath), 0755, true, true);
-
-                $stream = $zip->getStream($entryName);
-                if (! $stream) {
-                    throw new \RuntimeException("Não foi possível ler o item '{$entryName}' do backup.");
-                }
-
-                $target = fopen($destinationPath, 'wb');
-                if ($target === false) {
-                    fclose($stream);
-                    throw new \RuntimeException("Não foi possível preparar o destino de extração para '{$entryName}'.");
-                }
-
-                stream_copy_to_stream($stream, $target);
-                fclose($stream);
-                fclose($target);
-            }
-        } finally {
-            $zip->close();
-        }
+        // Extração com proteção a path traversal centralizada em SafeZipExtractor
+        // (ver Candidato D). Restauração de backup completo: exige ZIP não vazio e
+        // aborta em qualquer entrada ilegível (nada de restauração parcial silenciosa).
+        (new \App\Support\SafeZipExtractor)->extract(
+            $zipPath,
+            $extractPath,
+            requireNonEmpty: true,
+            tolerateUnreadable: false,
+        );
     }
 
     private function runManualBackup(): array
