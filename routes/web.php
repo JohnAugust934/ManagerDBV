@@ -216,6 +216,7 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
             Route::get('/', [ConsentimentoPrivacidadeController::class, 'index'])->name('index');
             Route::post('/aceitar', [ConsentimentoPrivacidadeController::class, 'aceitar'])->name('aceitar');
             Route::post('/via-fisica', [ConsentimentoPrivacidadeController::class, 'viaFisicaRecebida'])->name('via-fisica');
+            Route::get('/{consentimento}/via-fisica/download', [ConsentimentoPrivacidadeController::class, 'baixarViaFisica'])->name('via-fisica.download');
             Route::post('/{consentimento}/revogar', [ConsentimentoPrivacidadeController::class, 'revogar'])->name('revogar');
         });
 

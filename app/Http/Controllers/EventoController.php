@@ -186,6 +186,14 @@ class EventoController extends Controller
     {
         Gate::authorize('eventos');
 
+        // Só emite autorização para quem está de fato inscrito no evento (ambos os
+        // models são tenant-scoped → 404 cross-tenant; aqui garantimos o vínculo).
+        abort_unless(
+            $evento->desbravadores()->where('desbravador_id', $desbravador->id)->exists(),
+            404,
+            'Este desbravador não está inscrito no evento.'
+        );
+
         $pdf = Pdf::loadView('relatorios.autorizacao', [
             'desbravador' => $desbravador,
             'evento' => $evento,

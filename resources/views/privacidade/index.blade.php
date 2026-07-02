@@ -87,7 +87,12 @@
                         <p class="text-xs text-slate-500">Responsável: {{ $c->responsavel_nome }}</p>
                     @endif
                     @if ($c->via_fisica_recebida_em)
-                        <p class="text-xs text-slate-500">Via física recebida em {{ $c->via_fisica_recebida_em->format('d/m/Y') }}</p>
+                        <p class="text-xs text-slate-500">
+                            Via física recebida em {{ $c->via_fisica_recebida_em->format('d/m/Y') }}
+                            @if ($c->via_fisica_caminho)
+                                · <a href="{{ route('privacidade.via-fisica.download', [$desbravador, $c]) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Baixar documento</a>
+                            @endif
+                        </p>
                     @endif
                     @if ($c->revogado_em)
                         <p class="text-xs text-red-600 dark:text-red-400 mt-1">

@@ -305,6 +305,9 @@ class EventoTest extends TestCase
             'club_id' => $clube->id,
         ]);
 
+        // A autorização só é emitida para quem está inscrito no evento.
+        $evento->desbravadores()->attach($dbv->id, ['pago' => false, 'autorizacao_entregue' => false]);
+
         $pdfWrapper = \Mockery::mock(DomPdfWrapper::class);
         $pdfWrapper->shouldReceive('stream')
             ->once()
