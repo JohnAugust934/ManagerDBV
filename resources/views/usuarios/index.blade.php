@@ -9,14 +9,13 @@
             <x-slot:icon>
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-.13a4 4 0 10-4-4 4 4 0 004 4zm6-4a3 3 0 10-3-3"/></svg>
             </x-slot:icon>
+            <x-slot:actions>
+                <a href="{{ route('invites.index') }}" class="ui-btn-secondary w-full sm:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Gerenciar Convites
+                </a>
+            </x-slot:actions>
         </x-page-title>
-
-        <div class="flex sm:justify-end">
-            <a href="{{ route('invites.index') }}" class="ui-btn-secondary w-full sm:w-auto">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                Gerenciar Convites
-            </a>
-        </div>
 
         {{-- Tabela de Usuários --}}
         <div class="ui-card p-0 overflow-hidden">

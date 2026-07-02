@@ -7,14 +7,13 @@
             <x-slot:icon>
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
             </x-slot:icon>
+            <x-slot:actions>
+                <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                    <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                    Novo Item
+                </a>
+            </x-slot:actions>
         </x-page-title>
-
-        <div class="flex sm:justify-end">
-            <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary w-full sm:w-auto group">
-                <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                Novo Item
-            </a>
-        </div>
 
         {{-- ============================================= --}}
         {{-- CARDS DE RESUMO — layout equilibrado mobile  --}}

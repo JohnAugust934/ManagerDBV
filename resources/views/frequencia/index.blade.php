@@ -2,15 +2,28 @@
 
     <div class="ui-page space-y-6 max-w-7xl mx-auto ui-animate-fade-up">
 
-        {{-- HERO BANNER FILTRO — compacto no mobile --}}
+        {{-- Cabeçalho padrão da página --}}
+        <x-page-title title="Frequência" subtitle="Histórico de chamadas e presença por mês.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </x-slot:icon>
+            <x-slot:actions>
+                <a href="{{ route('frequencia.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                    <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                    Nova Chamada
+                </a>
+            </x-slot:actions>
+        </x-page-title>
+
+        {{-- BARRA DE FILTRO DO PERÍODO --}}
         <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#001D42] to-[#002F6C] px-5 py-4 shadow-xl shadow-blue-900/30">
             <div class="absolute -right-8 -top-8 w-36 h-36 bg-blue-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
             <div class="relative z-10 flex items-center gap-3">
-                {{-- Título (oculto em telas muito pequenas) --}}
+                {{-- Rótulo do filtro (oculto em telas muito pequenas) --}}
                 <div class="shrink-0 hidden xs:block sm:block">
-                    <p class="text-blue-300/70 text-[9px] font-black uppercase tracking-widest leading-none mb-0.5">Frequência</p>
-                    <h1 class="text-base font-black text-white tracking-tight leading-none whitespace-nowrap">Histórico</h1>
+                    <p class="text-blue-200 text-[9px] font-black uppercase tracking-widest leading-none mb-0.5">Período</p>
+                    <p class="text-base font-black text-white tracking-tight leading-none whitespace-nowrap">Filtrar</p>
                 </div>
 
                 {{-- Divider vertical (desktop) --}}
@@ -51,13 +64,6 @@
                         <span class="hidden sm:inline">Filtrar</span>
                     </button>
                 </form>
-
-                {{-- Botão Nova Chamada (apenas ícone no mobile) --}}
-                <a href="{{ route('frequencia.create') }}"
-                    class="shrink-0 h-10 w-10 sm:w-auto sm:px-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                    <span class="hidden sm:inline whitespace-nowrap">Nova Chamada</span>
-                </a>
             </div>
         </div>
 

@@ -7,16 +7,15 @@
             <x-slot:icon>
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             </x-slot:icon>
+            @can('secretaria')
+                <x-slot:actions>
+                    <a href="{{ route('eventos.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                        <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                        Novo Evento
+                    </a>
+                </x-slot:actions>
+            @endcan
         </x-page-title>
-
-        @can('secretaria')
-            <div class="flex sm:justify-end">
-                <a href="{{ route('eventos.create') }}" class="ui-btn-primary w-full sm:w-auto group">
-                    <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                    Novo Evento
-                </a>
-            </div>
-        @endcan
 
         {{-- Grid de Eventos --}}
         @if ($eventos->count() > 0)

@@ -3,18 +3,21 @@
     <div class="ui-page space-y-8 max-w-[1400px]">
 
         {{-- Cabeçalho da Página --}}
-        <x-page-title title="Gestão de Desbravadores" subtitle="Gerencie os membros, dados de contato e classes." />
-
-        <div class="flex flex-col sm:flex-row sm:justify-end gap-2 w-full ui-animate-fade-up">
-            <a href="{{ route('desbravadores.importar.index') }}" class="ui-btn-secondary w-full sm:w-auto">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                <span>Importar CSV</span>
-            </a>
-            <a href="{{ route('desbravadores.create') }}" class="ui-btn-primary w-full sm:w-auto shadow-xl shadow-blue-900/20 group">
-                <svg class="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                <span>Novo Cadastro</span>
-            </a>
-        </div>
+        <x-page-title title="Gestão de Desbravadores" subtitle="Gerencie os membros, dados de contato e classes.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </x-slot:icon>
+            <x-slot:actions>
+                <a href="{{ route('desbravadores.importar.index') }}" class="ui-btn-secondary w-full sm:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span>Importar CSV</span>
+                </a>
+                <a href="{{ route('desbravadores.create') }}" class="ui-btn-primary w-full sm:w-auto shadow-xl shadow-blue-900/20 group">
+                    <svg class="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <span>Novo Cadastro</span>
+                </a>
+            </x-slot:actions>
+        </x-page-title>
 
         {{-- Filtros e Busca --}}
         <div class="ui-card p-6 border-b-4 border-b-[#002F6C] dark:border-b-blue-600 ui-animate-fade-up" style="animation-delay: 100ms;">

@@ -5,6 +5,12 @@
             <x-slot:icon>
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             </x-slot:icon>
+            <x-slot:actions>
+                <a href="{{ route('caixa.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                    <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                    Nova Movimentação
+                </a>
+            </x-slot:actions>
         </x-page-title>
 
         {{-- 3 Cards de Resumo --}}
@@ -39,14 +45,6 @@
                 </div>
                 <h3 class="text-2xl font-black text-red-600 dark:text-red-400">- R$ {{ number_format($saidas, 2, ',', '.') }}</h3>
             </div>
-        </div>
-
-        {{-- Ação Principal --}}
-        <div class="flex sm:justify-end">
-            <a href="{{ route('caixa.create') }}" class="ui-btn-primary w-full sm:w-auto group">
-                <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                Nova Movimentação
-            </a>
         </div>
 
         {{-- Abas: Lançamentos / Auditoria --}}

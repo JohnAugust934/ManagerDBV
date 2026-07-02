@@ -4,7 +4,19 @@
 
         {{-- Cabeçalho Titular & Busca --}}
         <div class="flex flex-col gap-6 px-4 sm:px-0">
-            <x-page-title title="Especialidades" subtitle="Catálogo completo de honras, conhecimentos e aptidões dos membros." />
+            <x-page-title title="Especialidades" subtitle="Catálogo completo de honras, conhecimentos e aptidões dos membros.">
+                <x-slot:icon>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </x-slot:icon>
+                @can('platform-admin')
+                    <x-slot:actions>
+                        <a href="{{ route('especialidades.create') }}" class="ui-btn-primary w-full sm:w-auto">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+                            <span>Nova Especialidade</span>
+                        </a>
+                    </x-slot:actions>
+                @endcan
+            </x-page-title>
 
             <div class="w-full">
                 <form method="GET" action="{{ route('especialidades.index') }}" class="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 items-stretch">
@@ -17,38 +29,29 @@
                         <input type="text" name="search" value="{{ $search }}" placeholder="Buscar por nome..." class="ui-input pl-11 h-12 w-full text-[14px] font-bold tracking-wide rounded-2xl border-2 hover:border-slate-300 focus:border-[#002F6C] dark:focus:border-blue-500 transition-all bg-white dark:bg-slate-800/80">
                     </div>
 
-                    <select name="area" class="ui-input h-12 w-full text-[14px] font-bold rounded-2xl border-2 hover:border-slate-300 focus:border-[#002F6C] dark:focus:border-blue-500 transition-all bg-white dark:bg-slate-800/80 sm:col-span-1 xl:col-span-2">
+                    <select name="area" class="ui-input h-12 w-full text-[14px] font-bold rounded-2xl border-2 hover:border-slate-300 focus:border-[#002F6C] dark:focus:border-blue-500 transition-all bg-white dark:bg-slate-800/80 sm:col-span-1 xl:col-span-3">
                         <option value="">Todas as categorias</option>
                         @foreach($areas as $area)
                             <option value="{{ $area }}" {{ $selectedArea === $area ? 'selected' : '' }}>{{ $area }}</option>
                         @endforeach
                     </select>
 
-                    <select name="investidos" class="ui-input h-12 w-full text-[14px] font-bold rounded-2xl border-2 hover:border-slate-300 focus:border-[#002F6C] dark:focus:border-blue-500 transition-all bg-white dark:bg-slate-800/80 sm:col-span-1 xl:col-span-2">
-                        <option value="">Todos os niveis</option>
+                    <select name="investidos" class="ui-input h-12 w-full text-[14px] font-bold rounded-2xl border-2 hover:border-slate-300 focus:border-[#002F6C] dark:focus:border-blue-500 transition-all bg-white dark:bg-slate-800/80 sm:col-span-1 xl:col-span-3">
+                        <option value="">Todos os níveis</option>
                         <option value="com" {{ $investidos === 'com' ? 'selected' : '' }}>Com investidos</option>
                         <option value="sem" {{ $investidos === 'sem' ? 'selected' : '' }}>Sem investidos</option>
                     </select>
 
-                    <label class="inline-flex items-center gap-2 px-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 min-h-12 bg-white dark:bg-slate-800/80 text-sm font-bold text-slate-600 dark:text-slate-200 sm:col-span-1 xl:col-span-2">
+                    <label class="inline-flex items-center gap-2 px-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 min-h-12 bg-white dark:bg-slate-800/80 text-sm font-bold text-slate-600 dark:text-slate-200 sm:col-span-2 xl:col-span-2 whitespace-nowrap">
                         <input type="checkbox" name="avancadas" value="1" {{ $somenteAvancadas ? 'checked' : '' }} class="rounded border-slate-300 text-[#002F6C] focus:ring-[#002F6C]">
-                        Somente avancadas
+                        Somente avançadas
                     </label>
 
-                    <div class="grid grid-cols-2 gap-3 sm:col-span-2 xl:col-span-2">
-                        <button type="submit" class="ui-btn-primary h-12 px-5 rounded-2xl">Filtrar</button>
-                        <a href="{{ route('especialidades.index') }}" class="h-12 px-5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 inline-flex items-center justify-center">Limpar</a>
+                    <div class="grid grid-cols-2 gap-3 sm:col-span-2 xl:col-span-12 xl:flex xl:justify-end">
+                        <button type="submit" class="ui-btn-primary h-12 px-6 rounded-2xl">Filtrar</button>
+                        <a href="{{ route('especialidades.index') }}" class="h-12 px-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 inline-flex items-center justify-center">Limpar</a>
                     </div>
                 </form>
-
-                @can('platform-admin')
-                <div class="mt-3 flex justify-stretch sm:justify-end">
-                    <a href="{{ route('especialidades.create') }}" class="ui-btn-primary h-12 w-full sm:w-auto px-6 rounded-2xl flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
-                        <span>Nova <span class="hidden sm:inline">Especialidade</span></span>
-                    </a>
-                </div>
-                @endcan
             </div>
         </div>
 
