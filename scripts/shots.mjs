@@ -36,7 +36,8 @@ const asDirector = [
 const asMaster = [
   ['usuarios-index', '/usuarios'],
   ['invites-index', '/invites'],
-  ['backups-index', '/backups'],
+  // Backups isolados do clube — o /backups completo é só do platform-admin.
+  ['backups-index', '/backups/clube'],
 ];
 
 const browser = await chromium.launch();

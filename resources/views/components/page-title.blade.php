@@ -3,10 +3,14 @@
 {{-- Título de página padrão. Garante um <h1> visível e na hierarquia de headings.
      Use no início do conteúdo (dentro do .ui-page). `back` adiciona seta de voltar.
      `icon` (slot) mostra um SVG em pill à esquerda do título.
+     `actions` (slot) alinha os botões de ação da tela à direita do título no desktop
+     e em largura total abaixo dele no mobile — evita a faixa vazia entre título e
+     conteúdo sem colocar botões "no header" (o bloco todo já é conteúdo).
      A régua tri-cor (.ui-accent-rule) é a assinatura visual DBV — aparece uma vez por página. --}}
 <div class="ui-page-header ui-animate-fade-up">
     <span class="ui-accent-rule block mb-4"></span>
-    <div class="flex items-center gap-3">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
         @if ($back)
             <a href="{{ $back }}"
                class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors shrink-0"
@@ -27,5 +31,11 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">{{ $subtitle }}</p>
             @endisset
         </div>
+    </div>
+    @isset($actions)
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            {{ $actions }}
+        </div>
+    @endisset
     </div>
 </div>

@@ -31,7 +31,7 @@
 
                     {{-- Conteúdo do Cartão --}}
                     <div class="p-6 text-center flex flex-col flex-1 relative z-10">
-                        <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-tight mb-2 uppercase group-hover:text-blue-500 transition-colors">
+                        <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-tight mb-2 uppercase group-hover:text-[#002F6C] dark:group-hover:text-blue-400 transition-colors">
                             {{ $classe->nome }}
                         </h3>
                         
@@ -49,9 +49,9 @@
 
                     {{-- Action Row Bottom --}}
                     <div class="px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center transition-colors group-hover:bg-slate-100 dark:group-hover:bg-slate-800">
-                        <span class="text-[12px] font-black text-slate-500 uppercase tracking-widest group-hover:text-amber-500 transition-colors">Entrar na Sala</span>
+                        <span class="text-[12px] font-black text-slate-500 uppercase tracking-widest group-hover:text-[#002F6C] dark:group-hover:text-blue-400 transition-colors">Entrar na Sala</span>
                         <div class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center transform group-hover:translate-x-2 transition-transform duration-300">
-                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                            <svg class="w-4 h-4 text-[#002F6C] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                         </div>
                     </div>
                 </a>

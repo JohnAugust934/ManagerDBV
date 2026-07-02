@@ -1,22 +1,23 @@
 <x-app-layout>
     <div class="ui-page">
 
-        <x-page-title title="Gestão de Convites" />
+        <x-page-title
+            title="Gestão de Convites"
+            :subtitle="($isPlatformContext ?? false) ? 'Convide outros admins para gerenciar a plataforma com você. Links usados/expirados ficam no histórico.' : 'Gerencie convites enviados. Links utilizados ou expirados continuam no histórico.'">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </x-slot:icon>
+            <x-slot:actions>
+                <a href="{{ route('invites.create') }}" class="ui-btn-primary w-full sm:w-auto">Novo Convite</a>
+            </x-slot:actions>
+        </x-page-title>
 
         <div class="ui-card overflow-hidden">
-            <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <p class="ui-subtitle">{{ ($isPlatformContext ?? false) ? 'Convide outros admins para gerenciar a plataforma com você. Links usados/expirados ficam no histórico.' : 'Gerencie convites enviados. Links utilizados ou expirados continuam no histórico.' }}</p>
-                <a href="{{ route('invites.create') }}" class="ui-btn-primary w-full sm:w-auto">Novo Convite</a>
-            </div>
-
             @if ($invites->isEmpty())
                 <div class="p-6">
                     <x-empty-state
                         title="Nenhum convite gerado"
-                        description="Crie um novo convite para compartilhar acesso seguro ao sistema.">
-                        <x-slot:action>
-                            <a href="{{ route('invites.create') }}" class="ui-btn-primary">Criar Convite</a>
-                        </x-slot:action>
+                        description="Use o botão “Novo Convite” acima para compartilhar acesso seguro ao sistema.">
                     </x-empty-state>
                 </div>
             @else
