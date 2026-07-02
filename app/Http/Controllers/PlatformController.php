@@ -171,7 +171,8 @@ class PlatformController extends Controller
             'associacao' => $validated['associacao'] ?? null,
         ]);
 
-        User::create([
+        // forceCreate: role/is_master/club_id são campos de privilégio (fora de $fillable).
+        User::forceCreate([
             'name' => $validated['master_name'],
             'email' => $validated['master_email'],
             'password' => Hash::make($validated['master_password']),

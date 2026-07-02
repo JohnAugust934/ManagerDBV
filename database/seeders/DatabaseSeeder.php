@@ -221,14 +221,16 @@ class DatabaseSeeder extends Seeder
         // ---------------------------------------------------------
         // 1. SUPER ADMIN DE PLATAFORMA (cross-tenant, sem clube)
         // ---------------------------------------------------------
-        User::updateOrCreate(['email' => 'admin@plataforma.com'], [
+        // forceFill: campos de privilégio (role/is_platform_admin/club_id) ficam fora
+        // de $fillable. firstOrNew + save reproduz o updateOrCreate por e-mail.
+        User::firstOrNew(['email' => 'admin@plataforma.com'])->forceFill([
             'name' => 'Administrador da Plataforma',
             'password' => Hash::make('password'),
             'role' => 'platform_admin',
             'is_master' => false,
             'is_platform_admin' => true,
             'club_id' => null,
-        ]);
+        ])->save();
         $this->command->info('🛡️  Platform admin: admin@plataforma.com / password');
 
         // ---------------------------------------------------------
@@ -283,16 +285,20 @@ class DatabaseSeeder extends Seeder
         foreach ($cargos as $c) {
             $email = "{$c['cargo']}.{$slug}@clube.com";
 
-            $user = User::firstOrCreate(['email' => $email], [
-                'name' => $c['nome'],
-                'password' => Hash::make('password'),
-                'role' => $c['role'],
-                'is_master' => $c['is_master'],
-                'is_platform_admin' => false,
-                'club_id' => $clube->id,
-                'email_verified_at' => now(),
-                'termos_aceitos_em' => now()->subMonths(random_int(2, 8)),
-            ]);
+            // forceFill: role/is_master/club_id são campos de privilégio (fora de $fillable).
+            $user = User::firstOrNew(['email' => $email]);
+            if (! $user->exists) {
+                $user->forceFill([
+                    'name' => $c['nome'],
+                    'password' => Hash::make('password'),
+                    'role' => $c['role'],
+                    'is_master' => $c['is_master'],
+                    'is_platform_admin' => false,
+                    'club_id' => $clube->id,
+                    'email_verified_at' => now(),
+                    'termos_aceitos_em' => now()->subMonths(random_int(2, 8)),
+                ])->save();
+            }
 
             if ($c['role'] === 'diretor') {
                 $diretor = $user;
@@ -306,16 +312,20 @@ class DatabaseSeeder extends Seeder
 
         $unidades = collect();
         foreach ($nomesUnidades as $pos => $nome) {
-            $conselheiroUser = User::firstOrCreate(['email' => $emailsConselheiros[$pos]], [
-                'name' => "Conselheiro {$nome}",
-                'password' => Hash::make('password'),
-                'role' => 'conselheiro',
-                'is_master' => false,
-                'is_platform_admin' => false,
-                'club_id' => $clube->id,
-                'email_verified_at' => now(),
-                'termos_aceitos_em' => now()->subMonths(random_int(2, 8)),
-            ]);
+            // forceFill: role/club_id são campos de privilégio (fora de $fillable).
+            $conselheiroUser = User::firstOrNew(['email' => $emailsConselheiros[$pos]]);
+            if (! $conselheiroUser->exists) {
+                $conselheiroUser->forceFill([
+                    'name' => "Conselheiro {$nome}",
+                    'password' => Hash::make('password'),
+                    'role' => 'conselheiro',
+                    'is_master' => false,
+                    'is_platform_admin' => false,
+                    'club_id' => $clube->id,
+                    'email_verified_at' => now(),
+                    'termos_aceitos_em' => now()->subMonths(random_int(2, 8)),
+                ])->save();
+            }
 
             $unidade = Unidade::firstOrCreate(
                 ['nome' => $nome, 'club_id' => $clube->id],

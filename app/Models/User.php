@@ -10,15 +10,16 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    // Campos de PRIVILÉGIO (club_id, role, is_master, is_platform_admin,
+    // extra_permissions) ficam DELIBERADAMENTE fora de $fillable: eles nunca podem
+    // ser mass-assigned a partir de input HTTP (um `$request->all()` acidental viraria
+    // escalada a platform_admin / troca de tenant). São atribuídos explicitamente
+    // (forceFill/forceCreate) apenas em pontos confiáveis (controllers de gestão,
+    // registro por convite, seeders). Factories usam Model::unguarded automaticamente.
     protected $fillable = [
         'name',
         'email',
         'password',
-        'club_id',
-        'role',              // master, diretor, secretario, tesoureiro, conselheiro, instrutor
-        'extra_permissions', // array json
-        'is_master',         // mantido para compatibilidade, mas o foco agora e 'role'
-        'is_platform_admin', // super admin de plataforma (cross-tenant)
         'termos_aceitos_em',
         'passkey_banner_dispensado_em',
     ];

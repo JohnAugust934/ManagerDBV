@@ -84,7 +84,9 @@ class UsuarioController extends Controller
 
         $extraPermissions = $this->sanitizeExtraPermissions($validated['extra_permissions'] ?? []);
 
-        User::create([
+        // forceCreate: role/club_id/extra_permissions são campos de privilégio (fora
+        // de $fillable). Os valores já passaram por validação/allowlist acima.
+        User::forceCreate([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
@@ -153,12 +155,20 @@ class UsuarioController extends Controller
             'extra_permissions' => $this->sanitizeExtraPermissions($validated['extra_permissions'] ?? []),
         ];
 
+        // Autogestão de privilégio: ninguem edita o proprio cargo/permissoes (evita
+        // auto-promocao de quem tem gestao_acessos). Mantem os valores atuais.
+        if ($usuario->id === auth()->id()) {
+            $dados['role'] = $usuario->role;
+            $dados['extra_permissions'] = $usuario->extra_permissions;
+        }
+
         if ($request->filled('password')) {
             $request->validate(['password' => ['confirmed', Rules\Password::defaults()]]);
             $dados['password'] = Hash::make($request->password);
         }
 
-        $usuario->update($dados);
+        // forceFill: role/extra_permissions são campos de privilégio (fora de $fillable).
+        $usuario->forceFill($dados)->save();
 
         return redirect()->route('usuarios.index')->with('success', 'Usuario atualizado!');
     }
