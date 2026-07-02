@@ -36,7 +36,7 @@ const asDirector = [
 const asMaster = [
   ['usuarios-index', '/usuarios'],
   ['invites-index', '/invites'],
-  ['backups-index', '/backups'],
+  ['backups-index', '/backups/clube'],
 ];
 
 const browser = await chromium.launch();
@@ -69,8 +69,8 @@ async function capture(email, list) {
   await ctx.close();
 }
 
-await capture('diretor@clube.com', asDirector);
-await capture('admin@clube.com', asMaster);
+await capture('diretor.orion@clube.com', asDirector);
+await capture('master.orion@clube.com', asMaster);
 
 await browser.close();
 console.log('done');
