@@ -8,6 +8,7 @@ use App\Services\ClubContext;
 use App\Services\LgpdService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Consentimento LGPD do desbravador: aceite, revogação e registro da via física.
@@ -110,7 +111,10 @@ class ConsentimentoPrivacidadeController extends Controller
 
         $caminho = null;
         if ($request->hasFile('arquivo')) {
-            $caminho = $request->file('arquivo')->store("consentimentos/{$desbravador->id}", 'public');
+            // Disco PRIVADO ('local'): documento assinado de menor NUNCA pode ficar
+            // sob public/storage (servível sem autenticação). É entregue apenas pela
+            // rota baixarViaFisica(), autenticada e escopada por tenant.
+            $caminho = $request->file('arquivo')->store("consentimentos/{$desbravador->id}", 'local');
         }
 
         if ($consentimento) {
@@ -147,6 +151,22 @@ class ConsentimentoPrivacidadeController extends Controller
         );
 
         return back()->with('success', 'Via física registrada com sucesso.');
+    }
+
+    /**
+     * Entrega o arquivo da via física assinada. O documento fica no disco privado
+     * ('local'); esta é a ÚNICA porta de saída. Autorização vem do grupo de rotas
+     * (can:secretaria) e o isolamento de tenant do route-model binding (ambos os
+     * models usam BelongsToTenant → 404 para outro clube). Confere ainda o vínculo
+     * consentimento↔desbravador para evitar troca de IDs na URL.
+     */
+    public function baixarViaFisica(Desbravador $desbravador, ConsentimentoPrivacidade $consentimento)
+    {
+        abort_if($consentimento->desbravador_id !== $desbravador->id, 404);
+        abort_if(! $consentimento->via_fisica_caminho, 404, 'Nenhuma via física registrada.');
+        abort_unless(Storage::disk('local')->exists($consentimento->via_fisica_caminho), 404, 'Arquivo não encontrado.');
+
+        return Storage::disk('local')->download($consentimento->via_fisica_caminho);
     }
 
     private function renderizarTermo(string $versao): string

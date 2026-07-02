@@ -5,6 +5,8 @@ namespace Tests\Feature\Privacidade;
 use App\Models\ConsentimentoPrivacidade;
 use App\Models\Desbravador;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ConsentimentoPrivacidadeTest extends TestCase
@@ -64,6 +66,50 @@ class ConsentimentoPrivacidadeTest extends TestCase
 
         $this->assertSame(2, ConsentimentoPrivacidade::count());
         $this->assertNotNull($dbv->consentimentoPrivacidadeAtivo());
+    }
+
+    public function test_via_fisica_grava_em_disco_privado_e_download_autorizado_funciona(): void
+    {
+        Storage::fake('local');
+        Storage::fake('public');
+
+        ['master' => $master, 'unidade' => $unidade] = criarClubeComDados('Clube A');
+        $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id]);
+
+        $this->actingAs($master)->post(route('privacidade.via-fisica', $dbv), [
+            'arquivo' => UploadedFile::fake()->create('termo-assinado.pdf', 40, 'application/pdf'),
+        ])->assertSessionHas('success');
+
+        $consentimento = ConsentimentoPrivacidade::first();
+        $this->assertNotNull($consentimento->via_fisica_caminho);
+
+        // Documento sensível de menor: fica no disco PRIVADO, nunca no público.
+        Storage::disk('local')->assertExists($consentimento->via_fisica_caminho);
+        Storage::disk('public')->assertMissing($consentimento->via_fisica_caminho);
+
+        // A única porta de saída é a rota autenticada, escopada por tenant.
+        $this->actingAs($master)
+            ->get(route('privacidade.via-fisica.download', [$dbv, $consentimento]))
+            ->assertOk();
+    }
+
+    public function test_download_da_via_fisica_de_outro_clube_da_404(): void
+    {
+        Storage::fake('local');
+
+        ['master' => $masterA] = criarClubeComDados('Clube A');
+        ['unidade' => $unidadeB, 'master' => $masterB] = criarClubeComDados('Clube B');
+
+        $dbvB = Desbravador::factory()->create(['unidade_id' => $unidadeB->id]);
+        $this->actingAs($masterB)->post(route('privacidade.via-fisica', $dbvB), [
+            'arquivo' => UploadedFile::fake()->create('termo.pdf', 20, 'application/pdf'),
+        ]);
+        $consentimentoB = ConsentimentoPrivacidade::withoutGlobalScopes()->first();
+
+        // Route-model binding aplica o ClubScope → 404 para outro clube.
+        $this->actingAs($masterA)
+            ->get(route('privacidade.via-fisica.download', [$dbvB, $consentimentoB]))
+            ->assertNotFound();
     }
 
     public function test_usuario_de_outro_clube_nao_ve_nem_revoga_consentimento(): void
