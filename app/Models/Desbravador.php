@@ -190,4 +190,30 @@ class Desbravador extends Model
     {
         return $this->hasMany(Mensalidade::class);
     }
+
+    public function consentimentosPrivacidade(): HasMany
+    {
+        return $this->hasMany(ConsentimentoPrivacidade::class);
+    }
+
+    /**
+     * Consentimento LGPD atualmente vigente (aceito e não revogado), ou null.
+     * O mais recente vence, caso haja mais de um por inconsistência de dados.
+     */
+    public function consentimentoPrivacidadeAtivo(): ?ConsentimentoPrivacidade
+    {
+        return $this->consentimentosPrivacidade()
+            ->whereNull('revogado_em')
+            ->whereNotNull('aceito_em')
+            ->latest('aceito_em')
+            ->first();
+    }
+
+    /** Query scope: desbravadores SEM consentimento de privacidade ativo. */
+    public function scopeSemConsentimentoAtivo($query)
+    {
+        return $query->whereDoesntHave('consentimentosPrivacidade', function ($q) {
+            $q->whereNull('revogado_em')->whereNotNull('aceito_em');
+        });
+    }
 }

@@ -71,15 +71,21 @@ tudo configurado em `bootstrap/app.php`). As partes não óbvias e transversais:
   nenhuma rota — melhoria futura intencional; já suporta vínculo por `conselheiro_user_id` ou
   fallback pelo nome).
 
-### Multi-tenancy: isolamento automático por `club_id` via global scopes
-- Os dados de cada clube são isolados por `club_id`. Models com coluna `club_id` direta usam
-  `App\Models\Scopes\ClubScope` (ex.: `Caixa`, `Evento`, `Patrimonio`, `Ata`, `Ato`, `Unidade`
-  indireta); `Desbravador` **não** tem coluna direta e usa `DesbravadorClubScope` (filtra via
-  `unidade.club_id`).
-- Os scopes leem `auth()->user()->club_id` e fazem curto-circuito quando não há autenticação ou
-  clube (assim seeders, factories e comandos de console sem usuário autenticado veem todas as
-  linhas). O usuário `master` tem `club_id = null` → enxerga tudo.
-- Ao adicionar um model com escopo de tenant, registre o global scope apropriado em `booted()`.
+### Multi-tenancy: isolamento automático por `club_id` via global scope
+- Os dados de cada clube são isolados por `club_id`. **Todos** os models de clube usam o trait
+  `App\Models\Concerns\BelongsToTenant`, que registra o global scope `App\Models\Scopes\ClubScope`
+  (ex.: `Caixa`, `Evento`, `Patrimonio`, `Ata`, `Ato`, `Unidade`, `Desbravador`, `Mensalidade`).
+  Não existem classes de scope separadas (`DesbravadorClubScope`/`MensalidadeClubScope`) — é o
+  mesmo `ClubScope` filtrando a coluna `club_id` direta.
+- `Desbravador` e `Mensalidade` também têm `club_id` direto (adicionado no upgrade multi-tenant),
+  mas como podem ser criados sem ele explícito, o trait resolve o clube na criação a partir da
+  relação: `Desbravador` via `unidade.club_id`, `Mensalidade` via `desbravador` (ver
+  `resolveClubIdForTenant()` em cada model).
+- O scope lê o clube ativo via `App\Services\ClubContext` e faz curto-circuito quando não há
+  autenticação ou clube (assim seeders, factories e comandos de console sem usuário autenticado
+  veem todas as linhas). O `platform_admin` tem `club_id = null` → enxerga tudo (fail-closed para
+  os demais).
+- Ao adicionar um model com escopo de tenant, use o trait `BelongsToTenant`.
 
 ### Trilha de auditoria
 - O trait `App\Models\Concerns\RegistraAutoria` preenche `created_by`/`updated_by` a partir do

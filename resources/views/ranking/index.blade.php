@@ -1,15 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">Mural Estelar / Ranking</x-slot>
 
     <div class="ui-page max-w-6xl mx-auto space-y-12 ui-animate-fade-up">
 
         {{-- Cabeçalho da Gamificação --}}
-        <div>
-            <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
-                <span class="text-3xl">🏆</span> {{ $titulo }}
-            </h1>
-            <p class="text-slate-500 font-medium mt-1">Acompanhe as pontuações e destaque das unidades e desbravadores.</p>
-        </div>
+        <x-page-title :title="$titulo" subtitle="Acompanhe as pontuações e destaque das unidades e desbravadores.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15a7 7 0 01-7-7V4h14v4a7 7 0 01-7 7zm0 0v4m-4 2h8M5 6H3a1 1 0 00-1 1v1a4 4 0 004 4m13-6h2a1 1 0 011 1v1a4 4 0 01-4 4"/></svg>
+            </x-slot:icon>
+        </x-page-title>
 
         @if ($top3->count() > 0)
             {{-- Painel do Pódio --}}

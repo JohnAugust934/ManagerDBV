@@ -3,16 +3,21 @@
 namespace App\Services;
 
 use App\Models\AttendanceColumn;
+use App\Models\Frequencia;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
 class AttendanceColumnService
 {
+    /**
+     * Colunas fixas padrão. Os pontos vêm de Frequencia::PONTOS_LEGADO — fonte
+     * única, para o padrão do modo novo não divergir do fallback legado.
+     */
     private const DEFAULT_FIXED_COLUMNS = [
-        ['key' => 'presente', 'name' => 'Presente', 'points' => 10, 'sort_order' => 10],
-        ['key' => 'pontual', 'name' => 'Pontual', 'points' => 5, 'sort_order' => 20],
-        ['key' => 'biblia', 'name' => 'Biblia', 'points' => 5, 'sort_order' => 30],
-        ['key' => 'uniforme', 'name' => 'Uniforme', 'points' => 10, 'sort_order' => 40],
+        ['key' => 'presente', 'name' => 'Presente', 'sort_order' => 10],
+        ['key' => 'pontual', 'name' => 'Pontual', 'sort_order' => 20],
+        ['key' => 'biblia', 'name' => 'Biblia', 'sort_order' => 30],
+        ['key' => 'uniforme', 'name' => 'Uniforme', 'sort_order' => 40],
     ];
 
     public function usesLegacyColumns(): bool
@@ -34,7 +39,7 @@ class AttendanceColumnService
                 ],
                 [
                     'name' => $defaultColumn['name'],
-                    'points' => $defaultColumn['points'],
+                    'points' => Frequencia::PONTOS_LEGADO[$defaultColumn['key']],
                     'is_fixed' => true,
                     'is_active' => true,
                     'sort_order' => $defaultColumn['sort_order'],
@@ -81,7 +86,7 @@ class AttendanceColumnService
                 'id' => $column['key'],
                 'key' => $column['key'],
                 'name' => $column['name'],
-                'points' => $column['points'],
+                'points' => Frequencia::PONTOS_LEGADO[$column['key']],
                 'is_fixed' => true,
                 'is_active' => true,
                 'sort_order' => $column['sort_order'],

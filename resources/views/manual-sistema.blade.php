@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Manual do Sistema</x-slot>
 
     <div class="ui-page max-w-4xl mx-auto space-y-8 ui-animate-fade-up pb-20">
 
@@ -62,19 +61,20 @@
 
             // 1. PRIMEIROS PASSOS
             ['id' => 'primeiros-passos-e-configuracao', 'titulo' => 'Primeiros Passos e Configuração', 'icon' => 'M13 10V3L4 14h7v7l9-11h-7z', 'items' => [
-                ['titulo' => 'Como se ganha acesso ao sistema', 'desc' => 'O sistema é fechado: ninguém se cadastra sozinho. O acesso acontece exclusivamente por convite enviado por e-mail por quem tem a permissão de Gestão de Acessos (Master ou Diretor).', 'passos' => [
+                ['titulo' => 'Como se ganha acesso ao sistema', 'desc' => 'O sistema é fechado: ninguém se cadastra sozinho. O acesso acontece exclusivamente por convite enviado por e-mail por quem tem a permissão de Gestão de Acessos — por padrão, o Master do clube (ou quem receber essa permissão extra).', 'passos' => [
                     'O administrador gera o convite informando o e-mail e o cargo da pessoa.',
                     'A pessoa recebe um e-mail com um link de cadastro válido por 7 dias.',
                     'Ao abrir o link, ela define nome e senha e confirma o e-mail para ativar a conta.',
                 ], 'nota' => 'Convites expiram em 7 dias. Se vencer, use "Reenviar" na lista de convites para renovar o link por mais 7 dias. Um e-mail já cadastrado não pode receber novo convite — gerencie-o pela tela de Usuários.'],
-                ['titulo' => 'Ordem correta da implantação', 'desc' => 'Em um clube novo, existe uma sequência obrigatória para que tudo funcione. O Master inicia o processo e o Diretor finaliza a base do clube.', 'passos' => [
-                    'O Master convida o DIRETOR (enquanto o clube não existe, só é possível convidar o Diretor).',
-                    'O Diretor acessa "Meu Clube" e preenche nome, cidade e associação — isso cria o clube e vincula os usuários a ele.',
-                    'Com o clube criado, o Diretor/Master convida a equipe (Secretário, Tesoureiro, Conselheiros, Instrutores).',
-                    'A equipe cadastra Unidades e, em seguida, os Desbravadores.',
-                ], 'nota' => 'Só pode existir UM Diretor no sistema. O cadastro de um segundo diretor é bloqueado automaticamente.'],
+                ['titulo' => 'Ordem correta da implantação', 'desc' => 'No modelo atual, cada clube é criado pelo Administrador da Plataforma, que já cadastra o primeiro usuário Master do clube. A partir daí, o Master monta a equipe e a base de dados.', 'passos' => [
+                    'O Administrador da Plataforma cria o clube (nome, cidade, associação) e define o login do Master inicial.',
+                    'O Master acessa "Meu Clube", completa a identidade (brasão e dados) e convida a equipe (Diretor, Secretário, Tesoureiro, Conselheiros e Instrutores).',
+                    'A equipe cadastra as Unidades e, em seguida, os Desbravadores.',
+                ], 'nota' => 'Cada clube pode ter no máximo UM Diretor. O cadastro ou convite de um segundo diretor no mesmo clube é bloqueado automaticamente.'],
                 ['titulo' => 'Configurar os dados do clube', 'desc' => 'Em "Meu Clube" você define a identidade do clube (nome, cidade, associação) e envia o brasão/logo. Esses dados aparecem no topo do sistema, nos PDFs e nos documentos oficiais.', 'nota' => 'O logo aceita JPG, PNG ou GIF de até 2 MB. Use o botão de remover brasão para voltar ao logo padrão.'],
+                ['titulo' => 'Navegar pelo Calendário', 'desc' => 'O Calendário reúne, mês a mês, as reuniões registradas na frequência, os eventos do clube e os aniversários dos membros — uma visão rápida da agenda para qualquer usuário autenticado.'],
                 ['titulo' => 'Confirmação de e-mail e senha', 'desc' => 'A confirmação de e-mail é obrigatória — sem ela o sistema não libera os módulos. Caso esqueça a senha, use "Esqueci minha senha" na tela de login; o link de redefinição também tem prazo de validade.'],
+                ['titulo' => 'Login sem senha (passkey)', 'desc' => 'No seu perfil é possível cadastrar uma passkey (digital, rosto ou PIN do dispositivo) para entrar sem digitar a senha. É um método adicional e seguro — a senha continua válida como alternativa, e você pode remover uma passkey a qualquer momento.'],
             ]],
 
             // 2. PERFIS E PERMISSÕES
@@ -86,6 +86,7 @@
                     'Tesoureiro: Financeiro, Eventos e Relatórios.',
                     'Conselheiro e Instrutor: módulo Pedagógico (classes, requisitos e especialidades).',
                 ]],
+                ['titulo' => 'Administrador da Plataforma', 'desc' => 'Acima dos cargos de clube existe o Administrador da Plataforma — um acesso cross-tenant que não pertence a nenhum clube. Ele cria e administra os clubes e pode entrar em "modo suporte" para operar dentro de um clube específico quando necessário. Esse perfil não participa da rotina diária de um clube.'],
                 ['titulo' => 'Permissões extras por usuário', 'desc' => 'Além do padrão do cargo, o administrador pode conceder permissões adicionais marcando caixas no cadastro do usuário (ex.: liberar Relatórios para um Conselheiro). Assim você ajusta acessos sem mudar o cargo da pessoa.', 'nota' => 'A permissão de "Gestão de Acessos" (criar usuários e convites) só pode ser concedida pelo Master.'],
                 ['titulo' => 'Regras específicas de Conselheiro e Instrutor', 'desc' => 'O conselheiro responsável por uma unidade pode ser vinculado a um usuário do sistema (campo opcional no cadastro da unidade) — é esse vínculo, e não apenas o nome digitado, que identifica o responsável de forma confiável. A gestão das unidades em si (criar, editar e excluir) exige a permissão de Unidades/Secretaria. O Instrutor é bloqueado de visualizar a listagem de Unidades, mantendo o foco no acompanhamento pedagógico.'],
                 ['titulo' => 'Quem pode gerenciar colunas da chamada', 'desc' => 'A personalização dos critérios de frequência (colunas e pontuação) é restrita a Master, Diretor e Secretário, pois afeta o cálculo de pontos de todo o clube.'],
@@ -100,11 +101,14 @@
                     'Salve. O desbravador nasce com status "ativo".',
                 ], 'nota' => 'A unidade selecionada precisa pertencer ao seu clube, e o CPF não pode estar repetido. Sem foto, o avatar exibe a inicial do nome.'],
                 ['titulo' => 'Buscar, filtrar e organizar', 'desc' => 'A listagem permite buscar por nome, e-mail ou CPF e filtrar por unidade e por status (ativos, inativos ou todos). Os resultados são paginados de 10 em 10. Use o status "inativos" para desligar um membro sem perder o histórico, em vez de excluí-lo.'],
+                ['titulo' => 'Importar desbravadores via CSV', 'desc' => 'Para cadastrar vários membros de uma vez, use Desbravadores → Importar CSV. O sistema exibe uma pré-visualização para conferência antes de gravar os registros.', 'nota' => 'A importação exige a confirmação explícita do consentimento LGPD dos responsáveis para ser concluída.'],
+                ['titulo' => 'Enviar comunicados aos responsáveis', 'desc' => 'Em Comunicados você envia um aviso por e-mail aos responsáveis dos desbravadores. Informe o título, a mensagem e o público: todos os membros ativos ou apenas uma unidade específica.', 'nota' => 'O envio alcança apenas os desbravadores ativos que tenham e-mail cadastrado. A tela mantém o histórico com quantos destinatários receberam cada comunicado.'],
                 ['titulo' => 'Avançar de classe', 'desc' => 'No perfil do desbravador, o botão "Avançar classe" promove o membro automaticamente para a próxima classe na ordem oficial. O sistema avisa caso ele não tenha classe definida ou já esteja na classe mais avançada.'],
                 ['titulo' => 'Gerenciar unidades', 'desc' => 'Em Unidades você cadastra nome, grito de guerra e conselheiro responsável. A contagem de membros é calculada em tempo real e cada unidade pode ser incluída ou removida do ranking.', 'nota' => 'Uma unidade só pode ser excluída se não tiver nenhum desbravador vinculado. Reatribua os membros antes de excluir.'],
                 ['titulo' => 'Atas e Atos oficiais', 'desc' => 'Registre as atas de reunião e os atos administrativos do clube. As atas podem ser impressas/exportadas diretamente para documentação e arquivo da secretaria.'],
                 ['titulo' => 'Excluir um desbravador', 'desc' => 'A exclusão é definitiva e remove, em uma única transação, todos os dados vinculados ao membro (frequências, mensalidades, inscrições, especialidades). Prefira inativar quando quiser preservar o histórico.'],
                 ['titulo' => 'Trilha de autoria', 'desc' => 'O sistema registra automaticamente quem cadastrou e quem fez a última atualização de cada desbravador (e também das movimentações de caixa). No perfil do desbravador essa informação aparece no rodapé — útil para auditoria e para saber a quem recorrer em caso de dúvida sobre um cadastro.'],
+                ['titulo' => 'Dados pessoais e LGPD', 'desc' => 'O sistema trata dados de menores e segue a política de privacidade do projeto. A partir do perfil do desbravador é possível exportar os seus dados (portabilidade), e a importação em massa só conclui com a confirmação de consentimento dos responsáveis.'],
             ]],
 
             // 4. PEDAGÓGICO
@@ -187,11 +191,17 @@
             // 10. ADMIN E BACKUPS
             ['id' => 'administracao-e-backups', 'titulo' => 'Administração e Backups', 'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', 'items' => [
                 ['titulo' => 'Gerir usuários e convites (Gestão de Acessos)', 'desc' => 'Quem tem essa permissão cria e edita usuários, define o cargo e marca as permissões extras, além de emitir, reenviar e cancelar convites.', 'nota' => 'Apenas o Master pode criar/gerir outros Masters e conceder a permissão de Gestão de Acessos. Você não consegue excluir o próprio usuário.'],
-                ['titulo' => 'Fazer backup (somente Master)', 'desc' => 'Em Backups, o botão de gerar backup cria uma cópia completa e a sincroniza com a nuvem (R2). A lista mostra os backups disponíveis no armazenamento local e na nuvem, com tamanho e data.', 'passos' => [
-                    'Gere o backup manualmente quando fizer mudanças importantes.',
+                ['titulo' => 'Administrar clubes (Plataforma)', 'desc' => 'O Administrador da Plataforma usa o painel Plataforma para gerir todos os clubes e acompanhar a saúde do sistema (filas, falhas, último backup por clube).', 'passos' => [
+                    'Criar um clube informando nome, cidade, associação e o nome, e-mail e senha do Master inicial.',
+                    'Entrar em "modo suporte" para operar dentro de um clube e, ao terminar, sair do modo suporte.',
+                    'Exportar os dados de um clube em JSON (portabilidade) e desativar ou reativar o acesso de um clube.',
+                ], 'nota' => 'Para excluir um clube definitivamente é preciso antes desativá-lo — é um passo deliberado e a remoção apaga todos os dados do clube.'],
+                ['titulo' => 'Backups completos na nuvem (Plataforma)', 'desc' => 'Em Backups Cloud, o Administrador da Plataforma gera uma cópia completa do banco e a sincroniza com a nuvem (R2). A lista mostra os backups disponíveis no armazenamento local e na nuvem, com tamanho e data.', 'passos' => [
+                    'Gere o backup manualmente antes de mudanças importantes (além das rotinas automáticas diárias).',
                     'Baixe o arquivo .zip para guardar uma cópia externa, se desejar.',
                     'Use "Importar" para subir um .zip de backup gerado pelo próprio sistema.',
                 ], 'nota' => 'Localmente no Windows o backup do banco pode falhar por permissão do servidor — em produção (Linux) funciona normalmente. Nesse caso, gere pelo terminal.'],
+                ['titulo' => 'Backup do clube (Master)', 'desc' => 'O Master de cada clube tem em "Backup do Clube" uma cópia restrita apenas aos dados do próprio clube, que pode gerar, baixar e restaurar — sem acessar dados de outros clubes.'],
                 ['titulo' => 'Restaurar um backup', 'desc' => 'A restauração substitui os dados atuais pelos dados do backup escolhido. É uma operação destrutiva e deve ser feita com cautela.', 'passos' => [
                     'O sistema entra em modo de manutenção e cria um snapshot de emergência do estado atual.',
                     'Os dados são substituídos pelos do backup e os arquivos (fotos, logos) são restaurados.',

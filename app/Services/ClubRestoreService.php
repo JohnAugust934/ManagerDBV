@@ -3,11 +3,12 @@
 namespace App\Services;
 
 use App\Models\Club;
+use App\Support\SafeZipExtractor;
+use App\Support\TenantTables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use ZipArchive;
 
 /**
  * Restaura os dados de um clube a partir de um ZIP gerado pelo ClubBackupService.
@@ -124,42 +125,15 @@ class ClubRestoreService
      */
     private function deleteClubChildren(int $clubId): void
     {
-        // Pivôs de desbravador (sem club_id direto — via desbravador_id)
-        $desbravadorIds = DB::table('desbravadores')->where('club_id', $clubId)->pluck('id');
+        // Pivôs/filhos SEM club_id próprio — via IDs do pai. Registro único em
+        // App\Support\TenantTables (mesma lista da exclusão definitiva).
+        foreach (TenantTables::childTables() as $table => $rel) {
+            $parentIds = DB::table($rel['via'])->where('club_id', $clubId)->pluck('id');
+            DB::table($table)->whereIn($rel['fk'], $parentIds)->delete();
+        }
 
-        DB::table('desbravador_requisito')->whereIn('desbravador_id', $desbravadorIds)->delete();
-        DB::table('desbravador_especialidade')->whereIn('desbravador_id', $desbravadorIds)->delete();
-
-        // Pivô de evento (via evento_id deste clube)
-        $eventoIds = DB::table('eventos')->where('club_id', $clubId)->pluck('id');
-        DB::table('desbravador_evento')->whereIn('evento_id', $eventoIds)->delete();
-
-        // Frequências e valores de coluna
-        $frequenciaIds = DB::table('frequencias')->where('club_id', $clubId)->pluck('id');
-        DB::table('frequencia_column_values')->whereIn('frequencia_id', $frequenciaIds)->delete();
-        DB::table('frequencias')->where('club_id', $clubId)->delete();
-
-        // Patrimônio e manutenções
-        $patrimonioIds = DB::table('patrimonios')->where('club_id', $clubId)->pluck('id');
-        DB::table('patrimonio_manutencoes')->whereIn('patrimonio_id', $patrimonioIds)->delete();
-
-        // Demais filhos com club_id direto
-        $tables = [
-            'mensalidades',
-            'caixas',
-            'caixa_audit_logs',
-            'atos',
-            'atas',
-            'eventos',
-            'patrimonios',
-            'attendance_columns',
-            'ranking_snapshots',
-            'desbravadores',
-            'unidades',
-            'invitations',
-        ];
-
-        foreach ($tables as $table) {
+        // Tabelas com club_id direto, em ordem de dependência.
+        foreach (TenantTables::clubIdTables() as $table) {
             DB::table($table)->where('club_id', $clubId)->delete();
         }
 
@@ -255,56 +229,11 @@ class ClubRestoreService
 
     private function extractSafely(string $zipPath, string $extractPath): void
     {
-        File::makeDirectory($extractPath, 0755, true, true);
+        // Extração com proteção a path traversal centralizada em SafeZipExtractor
+        // (ver Candidato D). Tolera entradas ilegíveis, acumulando-as como avisos.
+        $extractor = new SafeZipExtractor;
+        $extractor->extract($zipPath, $extractPath, requireNonEmpty: false, tolerateUnreadable: true);
 
-        $zip = new ZipArchive;
-        if ($zip->open($zipPath) !== true) {
-            throw new \RuntimeException('O arquivo de backup está corrompido ou não é um ZIP válido.');
-        }
-
-        $ilegiveis = 0;
-
-        try {
-            for ($i = 0; $i < $zip->numFiles; $i++) {
-                $entry = str_replace('\\', '/', $zip->getNameIndex($i));
-                $entry = ltrim($entry, '/');
-
-                if ($entry === '' || str_contains($entry, '../') || preg_match('/^[A-Za-z]:\//', $entry)) {
-                    throw new \RuntimeException('Backup contém caminhos inválidos (possível path traversal).');
-                }
-
-                $dest = $extractPath.'/'.$entry;
-
-                if (str_ends_with($entry, '/')) {
-                    File::makeDirectory($dest, 0755, true, true);
-
-                    continue;
-                }
-
-                File::makeDirectory(dirname($dest), 0755, true, true);
-                $stream = $zip->getStream($entry);
-                if (! $stream) {
-                    // Entrada presente no indice mas ilegivel (corrompida). Pular em
-                    // silencio mascararia uma restauracao incompleta como bem-sucedida.
-                    Log::warning("ClubRestoreService: entrada ilegível no ZIP, ignorada: {$entry}");
-                    $ilegiveis++;
-
-                    continue;
-                }
-
-                $out = fopen($dest, 'wb');
-                if ($out !== false) {
-                    stream_copy_to_stream($stream, $out);
-                    fclose($out);
-                }
-                fclose($stream);
-            }
-        } finally {
-            $zip->close();
-        }
-
-        if ($ilegiveis > 0) {
-            $this->warnings[] = "{$ilegiveis} entrada(s) do backup estavam ilegíveis e foram ignoradas na extração.";
-        }
+        $this->warnings = array_merge($this->warnings, $extractor->warnings());
     }
 }

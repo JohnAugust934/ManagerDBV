@@ -1,27 +1,23 @@
 <x-app-layout>
-    <x-slot name="header">
-        Secretaria | Desbravadores
-    </x-slot>
 
     <div class="ui-page space-y-8 max-w-[1400px]">
 
         {{-- Cabeçalho da Página --}}
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ui-animate-fade-up">
-            <div>
-                <h2 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#002F6C] to-blue-600 text-white flex items-center justify-center shadow-inner">
-                        <svg class="w-5 h-5 text-[#FCD116]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    </div>
-                    Gestão de Desbravadores
-                </h2>
-                <p class="text-[15px] text-slate-500 font-medium mt-1">Gerencie os membros, dados de contato e classes.</p>
-            </div>
-            
-            <a href="{{ route('desbravadores.create') }}" class="ui-btn-primary w-full sm:w-auto shadow-xl shadow-blue-900/20 group">
-                <svg class="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                <span>Novo Cadastro</span>
-            </a>
-        </div>
+        <x-page-title title="Gestão de Desbravadores" subtitle="Gerencie os membros, dados de contato e classes.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </x-slot:icon>
+            <x-slot:actions>
+                <a href="{{ route('desbravadores.importar.index') }}" class="ui-btn-secondary w-full sm:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span>Importar CSV</span>
+                </a>
+                <a href="{{ route('desbravadores.create') }}" class="ui-btn-primary w-full sm:w-auto shadow-xl shadow-blue-900/20 group">
+                    <svg class="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <span>Novo Cadastro</span>
+                </a>
+            </x-slot:actions>
+        </x-page-title>
 
         {{-- Filtros e Busca --}}
         <div class="ui-card p-6 border-b-4 border-b-[#002F6C] dark:border-b-blue-600 ui-animate-fade-up" style="animation-delay: 100ms;">
@@ -43,7 +39,7 @@
                     <div class="relative">
                         <select name="unidade_id" id="unidade-filter" class="ui-input h-12 appearance-none pr-10">
                             <option value="">Todas as Unidades</option>
-                            @foreach (\App\Models\Unidade::orderBy('nome')->get() as $unidade)
+                            @foreach ($unidades as $unidade)
                                 <option value="{{ $unidade->id }}" {{ request('unidade_id') == $unidade->id ? 'selected' : '' }}>
                                     {{ $unidade->nome }}
                                 </option>

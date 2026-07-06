@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Caixa;
 use App\Models\Desbravador;
 use App\Models\Mensalidade;
 use App\Models\Unidade;
 use App\Services\ClubContext;
-use Carbon\Carbon;
+use App\Services\MensalidadeService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class MensalidadeController extends Controller
 {
+    public function __construct(private readonly MensalidadeService $mensalidades) {}
+
     public function index(Request $request)
     {
         Gate::authorize('financeiro');
@@ -81,49 +81,45 @@ class MensalidadeController extends Controller
         // e o insert espalharia mensalidades órfãs por todos os clubes. Fail-closed.
         abort_unless($clubId, 403);
 
-        // Obtém apenas IDs dos desbravadores ativos do clube — sem carregar objetos.
-        $ids = Desbravador::ativos()
-            ->pluck('id');
-
-        if ($ids->isEmpty()) {
+        if (Desbravador::ativos()->doesntExist()) {
             return back()->with('warning', 'Nenhum desbravador ativo encontrado no clube.');
         }
 
-        // Descobre quais já têm mensalidade para evitar duplicatas — 1 query.
-        $existentes = Mensalidade::whereIn('desbravador_id', $ids)
-            ->where('mes', $request->mes)
-            ->where('ano', $request->ano)
-            ->pluck('desbravador_id')
-            ->flip();
-
-        $novas = $ids
-            ->reject(fn ($id) => $existentes->has($id))
-            ->map(fn ($id) => [
-                'desbravador_id' => $id,
-                'club_id' => $clubId, // insert() em massa não dispara o auto-fill do BelongsToTenant
-                'mes' => (int) $request->mes,
-                'ano' => (int) $request->ano,
-                // Grava como string decimal de 2 casas (coluna decimal(10,2)). O
-                // insert() em massa nao passa pelo cast decimal:2 do model, entao
-                // formatamos aqui para nao persistir um float impreciso.
-                'valor' => number_format((float) $request->valor, 2, '.', ''),
-                'status' => 'pendente',
-                // insert() também não dispara RegistraAutoria — preenchemos a autoria manualmente.
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])
-            ->values()
-            ->all();
-
-        if (! empty($novas)) {
-            Mensalidade::insert($novas);
-        }
-
-        $count = count($novas);
+        $count = $this->mensalidades->gerar(
+            $clubId,
+            (int) $request->mes,
+            (int) $request->ano,
+            (float) $request->valor,
+            auth()->id(),
+        );
 
         return back()->with('success', "$count mensalidades geradas com sucesso!");
+    }
+
+    /**
+     * Preview (dry-run) de quantas mensalidades seriam criadas. Usado pelo modal
+     * antes de confirmar a geração em lote — não persiste nada.
+     */
+    public function previewMassivo(Request $request): \Illuminate\Http\JsonResponse
+    {
+        Gate::authorize('financeiro');
+
+        $request->validate([
+            'mes' => 'required|integer|min:1|max:12',
+            'ano' => 'required|integer|min:2020',
+            'valor' => 'required|numeric|min:0',
+        ]);
+
+        $clubId = ClubContext::currentClubId();
+        abort_unless($clubId, 403);
+
+        $preview = $this->mensalidades->preview((int) $request->mes, (int) $request->ano);
+
+        return response()->json([
+            ...$preview,
+            'valor_formatado' => 'R$ '.number_format((float) $request->valor, 2, ',', '.'),
+            'competencia' => sprintf('%02d/%d', $request->mes, $request->ano),
+        ]);
     }
 
     public function pagar(Request $request, $id)
@@ -145,21 +141,7 @@ class MensalidadeController extends Controller
             return back()->with('error', 'Esta mensalidade já consta como paga.');
         }
 
-        DB::transaction(function () use ($mensalidade, $clubId) {
-            $mensalidade->update([
-                'status' => 'pago',
-                'data_pagamento' => Carbon::now(),
-            ]);
-
-            Caixa::create([
-                'descricao' => 'Mensalidade '.str_pad($mensalidade->mes, 2, '0', STR_PAD_LEFT).'/'.$mensalidade->ano.' - '.$mensalidade->desbravador->nome,
-                'tipo' => 'entrada',
-                'categoria' => 'Mensalidade',
-                'valor' => $mensalidade->valor,
-                'data_movimentacao' => Carbon::now(),
-                'club_id' => $clubId,
-            ]);
-        });
+        $this->mensalidades->pagar($mensalidade, $clubId);
 
         $mensagem = 'Pagamento recebido e lançado no caixa com sucesso!';
 

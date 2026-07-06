@@ -1,7 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">
-        Painel de Controle
-    </x-slot>
 
     <div class="ui-page min-h-full space-y-10 max-w-7xl mx-auto">
         
@@ -47,6 +44,43 @@
                 @endcan
             </div>
         </div>
+
+        {{-- ALERTAS PROATIVOS (já filtrados por permissão no controller) --}}
+        @if (!empty($alertas))
+            <div class="space-y-3 ui-animate-fade-up" style="animation-delay: 50ms;">
+                @foreach ($alertas as $alerta)
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 rounded-2xl border
+                        @if($alerta['tipo'] === 'danger') bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50
+                        @elseif($alerta['tipo'] === 'warning') bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50
+                        @else bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/50
+                        @endif">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0
+                                @if($alerta['tipo'] === 'danger') bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400
+                                @elseif($alerta['tipo'] === 'warning') bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400
+                                @else bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400
+                                @endif">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $alerta['icone'] }}"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-black text-slate-800 dark:text-white">{{ $alerta['titulo'] }}</p>
+                                <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">{{ $alerta['texto'] }}</p>
+                            </div>
+                        </div>
+                        <a href="{{ $alerta['link'] }}"
+                           class="w-full sm:w-auto text-center shrink-0 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl
+                           @if($alerta['tipo'] === 'danger') bg-red-100 hover:bg-red-200 dark:bg-red-500/20 text-red-700 dark:text-red-400
+                           @elseif($alerta['tipo'] === 'warning') bg-amber-100 hover:bg-amber-200 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400
+                           @else bg-blue-100 hover:bg-blue-200 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400
+                           @endif transition-colors">
+                            {{ $alerta['link_texto'] }}
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        @endif
 
         {{-- GRID DE ESTATÍSTICAS KPI (FINTECH STYLE) --}}
         <div class="grid grid-cols-1 {{ auth()->user()->can('financeiro') ? 'md:grid-cols-3' : 'md:grid-cols-1 max-w-md' }} gap-6">

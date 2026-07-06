@@ -1,8 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">Gerar Novo Convite</x-slot>
 
     <div class="ui-page">
-        <div class="max-w-3xl mx-auto">
+        <div class="max-w-3xl mx-auto space-y-6">
+            <x-page-title title="Novo Convite" subtitle="Gere um link de cadastro exclusivo e vinculado a um e-mail." :back="route('invites.index')" />
+
             <div class="ui-card p-6 md:p-8">
                 <form action="{{ route('invites.store') }}" method="POST" class="space-y-7">
                     @csrf

@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\AttendanceColumn;
 use App\Models\Desbravador;
 use App\Models\Frequencia;
 use App\Models\RankingSnapshot;
 use App\Models\Unidade;
 use App\Providers\AppServiceProvider;
+use App\Services\RankingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -113,6 +115,66 @@ class RankingSincroniaTest extends TestCase
         $this->assertNotContains($fora->id, $ctrlUnidadesOrdem);
         $this->assertNotContains($foraDbv->id, $snapMembrosOrdem);
         $this->assertNotContains($foraDbv->id, $ctrlMembrosOrdem);
+    }
+
+    /**
+     * Cobre o caminho do modo NOVO (attendance_columns + frequencia_column_values),
+     * incluindo o gatilho da divergência histórica: uma coluna com
+     * points_awarded > 0 porém checked = false NÃO deve pontuar. Todas as fontes
+     * (Frequencia::pontos, RankingService, snapshot e telas ao vivo) precisam
+     * concordar que só o que está marcado conta.
+     */
+    public function test_column_values_nao_marcados_nao_pontuam_em_nenhuma_fonte(): void
+    {
+        ['club' => $club, 'master' => $master] = criarClubeComDados('Clube A');
+
+        $unidade = Unidade::factory()->create(['nome' => 'Alfa', 'club_id' => $club->id, 'no_ranking' => true]);
+        $dbv = Desbravador::factory()->create(['unidade_id' => $unidade->id, 'nome' => 'A1', 'ativo' => true]);
+
+        $presente = AttendanceColumn::create([
+            'club_id' => $club->id, 'key' => 'presente', 'name' => 'Presente',
+            'points' => 10, 'is_fixed' => true, 'is_active' => true, 'sort_order' => 10,
+        ]);
+        $biblia = AttendanceColumn::create([
+            'club_id' => $club->id, 'key' => 'biblia', 'name' => 'Biblia',
+            'points' => 5, 'is_fixed' => true, 'is_active' => true, 'sort_order' => 30,
+        ]);
+
+        $frequencia = Frequencia::create([
+            'desbravador_id' => $dbv->id, 'data' => now(),
+            'presente' => true, 'pontual' => false, 'biblia' => false, 'uniforme' => false,
+        ]);
+
+        // Presente marcado (conta 10).
+        $frequencia->columnValues()->create([
+            'attendance_column_id' => $presente->id, 'checked' => true, 'points_awarded' => 10,
+        ]);
+        // Biblia NÃO marcada, mas com points_awarded = 5 (dado inconsistente): não deve contar.
+        $frequencia->columnValues()->create([
+            'attendance_column_id' => $biblia->id, 'checked' => false, 'points_awarded' => 5,
+        ]);
+
+        // 1) Acessor do model, com columnValues.column carregado (caminho do serviço).
+        $frequencia->load('columnValues.column');
+        $this->assertSame(10, $frequencia->pontos, 'Frequencia::pontos deve ignorar column_values não marcados');
+        $this->assertSame(10, $frequencia->detalhePontos()['total']);
+        $this->assertSame(10, $frequencia->detalhePontos()['presente']);
+        $this->assertSame(0, $frequencia->detalhePontos()['biblia']);
+
+        // 2) RankingService (fonte da verdade única).
+        $service = app(RankingService::class);
+        $this->assertSame(10, $service->unidades($club->id, now()->year)->firstWhere('id', $unidade->id)['pontos']);
+        $this->assertSame(10, $service->desbravadores($club->id, now()->year)->firstWhere('id', $dbv->id)['pontos']);
+
+        // 3) Snapshot de console.
+        AppServiceProvider::snapshotRankingYear(now()->year, $club->id);
+        $snapUnidades = RankingSnapshot::where('club_id', $club->id)->where('scope', 'unidades')->firstOrFail()->entries;
+        $this->assertSame(10, collect($snapUnidades)->firstWhere('id', $unidade->id)['pontos']);
+
+        // 4) Telas ao vivo.
+        $this->actingAs($master);
+        $dataUnidades = $this->get(route('ranking.unidades'))->assertOk()->viewData('data');
+        $this->assertSame(10, (int) $dataUnidades->firstWhere('id', $unidade->id)->pontos);
     }
 
     public function test_paridade_respeita_isolamento_por_clube(): void

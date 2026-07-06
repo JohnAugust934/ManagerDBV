@@ -41,14 +41,18 @@ class TestClubSeeder extends Seeder
         ];
 
         foreach ($equipe as $membro) {
-            User::firstOrCreate(['email' => $membro['email']], [
-                'name' => $membro['name'],
-                'password' => Hash::make('password'),
-                'role' => $membro['role'],
-                'is_master' => $membro['is_master'],
-                'is_platform_admin' => false,
-                'club_id' => $club->id,
-            ]);
+            // forceFill: role/is_master/club_id são campos de privilégio (fora de $fillable).
+            $user = User::firstOrNew(['email' => $membro['email']]);
+            if (! $user->exists) {
+                $user->forceFill([
+                    'name' => $membro['name'],
+                    'password' => Hash::make('password'),
+                    'role' => $membro['role'],
+                    'is_master' => $membro['is_master'],
+                    'is_platform_admin' => false,
+                    'club_id' => $club->id,
+                ])->save();
+            }
         }
 
         // 3 unidades

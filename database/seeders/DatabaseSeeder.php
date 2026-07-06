@@ -4,17 +4,22 @@ namespace Database\Seeders;
 
 use App\Models\Ata;
 use App\Models\Ato;
+use App\Models\AttendanceColumn;
 use App\Models\Caixa;
 use App\Models\Classe;
 use App\Models\Club;
+use App\Models\Comunicado;
 use App\Models\Desbravador;
 use App\Models\Especialidade;
 use App\Models\Evento;
 use App\Models\Frequencia;
+use App\Models\FrequenciaColumnValue;
 use App\Models\Mensalidade;
 use App\Models\Patrimonio;
+use App\Models\PatrimonioManutencao;
 use App\Models\Unidade;
 use App\Models\User;
+use App\Services\AttendanceColumnService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -168,6 +173,9 @@ class DatabaseSeeder extends Seeder
      */
     private const NUM_CHAMADAS = 6;
 
+    /** Sequência global para gerar CPFs únicos e determinísticos entre desbravadores. */
+    private int $cpfSeq = 0;
+
     /**
      * Definição dos 5 clubes — todos na cidade de São Paulo, um por Associação
      * (campo administrativo). Todos os logins seguem o padrão <cargo>.<slug>@clube.com.
@@ -213,14 +221,16 @@ class DatabaseSeeder extends Seeder
         // ---------------------------------------------------------
         // 1. SUPER ADMIN DE PLATAFORMA (cross-tenant, sem clube)
         // ---------------------------------------------------------
-        User::updateOrCreate(['email' => 'admin@plataforma.com'], [
+        // forceFill: campos de privilégio (role/is_platform_admin/club_id) ficam fora
+        // de $fillable. firstOrNew + save reproduz o updateOrCreate por e-mail.
+        User::firstOrNew(['email' => 'admin@plataforma.com'])->forceFill([
             'name' => 'Administrador da Plataforma',
             'password' => Hash::make('password'),
             'role' => 'platform_admin',
             'is_master' => false,
             'is_platform_admin' => true,
             'club_id' => null,
-        ]);
+        ])->save();
         $this->command->info('🛡️  Platform admin: admin@plataforma.com / password');
 
         // ---------------------------------------------------------
@@ -256,6 +266,12 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info("🏢 [{$clube->nome}] — {$def['associacao']}");
 
+        // -- Colunas de chamada configuráveis (sistema novo de pontuação) ------
+        app(AttendanceColumnService::class)->ensureFixedColumns($clube->id);
+        $colunasChamada = AttendanceColumn::where('club_id', $clube->id)
+            ->get()
+            ->keyBy('key');
+
         // -- Equipe administrativa (logins padrão <cargo>.<slug>@clube.com) ----
         $cargos = [
             ['cargo' => 'master', 'role' => 'master', 'is_master' => true, 'nome' => "Master {$slug}"],
@@ -269,14 +285,20 @@ class DatabaseSeeder extends Seeder
         foreach ($cargos as $c) {
             $email = "{$c['cargo']}.{$slug}@clube.com";
 
-            $user = User::firstOrCreate(['email' => $email], [
-                'name' => $c['nome'],
-                'password' => Hash::make('password'),
-                'role' => $c['role'],
-                'is_master' => $c['is_master'],
-                'is_platform_admin' => false,
-                'club_id' => $clube->id,
-            ]);
+            // forceFill: role/is_master/club_id são campos de privilégio (fora de $fillable).
+            $user = User::firstOrNew(['email' => $email]);
+            if (! $user->exists) {
+                $user->forceFill([
+                    'name' => $c['nome'],
+                    'password' => Hash::make('password'),
+                    'role' => $c['role'],
+                    'is_master' => $c['is_master'],
+                    'is_platform_admin' => false,
+                    'club_id' => $clube->id,
+                    'email_verified_at' => now(),
+                    'termos_aceitos_em' => now()->subMonths(random_int(2, 8)),
+                ])->save();
+            }
 
             if ($c['role'] === 'diretor') {
                 $diretor = $user;
@@ -290,14 +312,20 @@ class DatabaseSeeder extends Seeder
 
         $unidades = collect();
         foreach ($nomesUnidades as $pos => $nome) {
-            $conselheiroUser = User::firstOrCreate(['email' => $emailsConselheiros[$pos]], [
-                'name' => "Conselheiro {$nome}",
-                'password' => Hash::make('password'),
-                'role' => 'conselheiro',
-                'is_master' => false,
-                'is_platform_admin' => false,
-                'club_id' => $clube->id,
-            ]);
+            // forceFill: role/club_id são campos de privilégio (fora de $fillable).
+            $conselheiroUser = User::firstOrNew(['email' => $emailsConselheiros[$pos]]);
+            if (! $conselheiroUser->exists) {
+                $conselheiroUser->forceFill([
+                    'name' => "Conselheiro {$nome}",
+                    'password' => Hash::make('password'),
+                    'role' => 'conselheiro',
+                    'is_master' => false,
+                    'is_platform_admin' => false,
+                    'club_id' => $clube->id,
+                    'email_verified_at' => now(),
+                    'termos_aceitos_em' => now()->subMonths(random_int(2, 8)),
+                ])->save();
+            }
 
             $unidade = Unidade::firstOrCreate(
                 ['nome' => $nome, 'club_id' => $clube->id],
@@ -325,24 +353,34 @@ class DatabaseSeeder extends Seeder
                 // Idade coerente com a ordem da classe (Amigo≈10 ... Líder Máster Av.≈18+).
                 $idade = 9 + (int) $classe->ordem;
 
+                $responsavel = fake()->name();
+                $consentidoEm = now()->subMonths(random_int(1, 10));
+
                 $dbv = Desbravador::create([
-                    'ativo' => true,
+                    'ativo' => fake()->boolean(92), // alguns inativos, como num clube real
                     'nome' => fake()->name($sexo === 'M' ? 'male' : 'female'),
                     'data_nascimento' => fake()->dateTimeBetween("-{$idade} years", '-'.($idade - 1).' years'),
                     'sexo' => $sexo,
+                    'cpf' => $this->gerarCpf(),
+                    'rg' => fake()->numerify('##.###.###-#'),
                     'unidade_id' => $unidade->id,
                     'club_id' => $clube->id,
                     'classe_atual' => $classe->id,
                     'email' => fake()->unique()->safeEmail(),
                     'telefone' => fake()->phoneNumber(),
                     'endereco' => fake()->address(),
-                    'nome_responsavel' => fake()->name(),
+                    'nome_responsavel' => $responsavel,
                     'telefone_responsavel' => fake()->phoneNumber(),
                     'numero_sus' => fake()->numerify('### #### #### ####'),
-                    'tipo_sanguineo' => fake()->randomElement(['A+', 'A-', 'B+', 'O+', 'O-']),
-                    'alergias' => fake()->boolean(20) ? fake()->randomElement(['Amendoim', 'Dipirona', 'Picada de Inseto']) : null,
-                    'medicamentos_continuos' => fake()->boolean(10) ? 'Insulina' : null,
-                    'plano_saude' => fake()->boolean(40) ? 'Unimed' : null,
+                    'tipo_sanguineo' => fake()->randomElement(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
+                    'alergias' => fake()->boolean(20) ? fake()->randomElement(['Amendoim', 'Dipirona', 'Picada de Inseto', 'Lactose']) : null,
+                    'medicamentos_continuos' => fake()->boolean(10) ? fake()->randomElement(['Insulina', 'Ritalina', 'Salbutamol']) : null,
+                    'plano_saude' => fake()->boolean(40) ? fake()->randomElement(['Unimed', 'Amil', 'Bradesco Saúde', 'SUS']) : null,
+                    // Consentimento LGPD Art. 14 — dado pelo responsável no cadastro do menor.
+                    'consentimento_lgpd' => true,
+                    'consentimento_lgpd_em' => $consentidoEm,
+                    'consentimento_lgpd_responsavel' => $responsavel,
+                    'usa_imagem_autorizado' => fake()->boolean(75),
                 ]);
 
                 // Especialidades distribuídas no cadastro (1 a 4 por desbravador).
@@ -369,7 +407,7 @@ class DatabaseSeeder extends Seeder
         }
 
         // -- Frequência + ranking SEM EMPATES ---------------------------------
-        $this->semearFrequencia($clube->id, $desbravadores);
+        $this->semearFrequencia($clube->id, $desbravadores, $colunasChamada);
 
         // -- 5 eventos --------------------------------------------------------
         $this->semearEventos($clube->id, $def, $desbravadores);
@@ -378,12 +416,15 @@ class DatabaseSeeder extends Seeder
         $this->semearFinanceiro($clube->id, $desbravadores);
 
         // -- Patrimônio -------------------------------------------------------
-        $this->semearPatrimonio($clube->id);
+        $this->semearPatrimonio($clube->id, $diretor);
 
         // -- Documentos: 3 atas + 3 atos --------------------------------------
         $this->semearDocumentos($clube->id, $desbravadores);
 
-        $this->command->info("   ✅ {$desbravadores->count()} desbravadores, ".$unidades->count().' unidades, 5 eventos, financeiro, patrimônio e 6 documentos.');
+        // -- Comunicados internos ---------------------------------------------
+        $this->semearComunicados($clube->id, $diretor, $unidades);
+
+        $this->command->info("   ✅ {$desbravadores->count()} desbravadores, ".$unidades->count().' unidades, 5 eventos, financeiro, patrimônio, comunicados e 6 documentos.');
     }
 
     /**
@@ -392,7 +433,7 @@ class DatabaseSeeder extends Seeder
      * empates no ranking. Os pontos são distribuídos de forma equilibrada pelas
      * chamadas (em colunas legadas presente/pontual/biblia/uniforme).
      */
-    private function semearFrequencia(int $clubId, Collection $desbravadores): void
+    private function semearFrequencia(int $clubId, Collection $desbravadores, Collection $colunasChamada): void
     {
         $datas = collect(range(0, self::NUM_CHAMADAS - 1))
             ->map(fn (int $semanasAtras) => Carbon::now()
@@ -411,10 +452,29 @@ class DatabaseSeeder extends Seeder
             $unidadesAlvo = max(0, $maxUnidades - $posicao);
 
             foreach ($this->distribuirUnidades($unidadesAlvo, self::NUM_CHAMADAS) as $i => $unidadesChamada) {
-                Frequencia::firstOrCreate(
+                $colunas = $this->unidadesParaColunas($unidadesChamada);
+
+                $freq = Frequencia::firstOrCreate(
                     ['desbravador_id' => $dbv->id, 'data' => $datas[$i]],
-                    array_merge(['club_id' => $clubId], $this->unidadesParaColunas($unidadesChamada))
+                    array_merge(['club_id' => $clubId], $colunas)
                 );
+
+                // Espelha a presença nas colunas configuráveis (sistema novo de pontuação,
+                // que é o que o ranking ao vivo lê). Mantém legado e novo em sincronia.
+                foreach ($colunas as $key => $marcado) {
+                    $coluna = $colunasChamada->get($key);
+                    if (! $coluna) {
+                        continue;
+                    }
+
+                    FrequenciaColumnValue::firstOrCreate(
+                        ['frequencia_id' => $freq->id, 'attendance_column_id' => $coluna->id],
+                        [
+                            'checked' => $marcado,
+                            'points_awarded' => $marcado ? $coluna->points : 0,
+                        ]
+                    );
+                }
             }
         }
     }
@@ -544,7 +604,7 @@ class DatabaseSeeder extends Seeder
         }
     }
 
-    private function semearPatrimonio(int $clubId): void
+    private function semearPatrimonio(int $clubId, ?User $diretor): void
     {
         $itens = [
             ['item' => 'Barraca Canadense', 'qtd' => 5, 'valor' => 450.00, 'estado' => 'Bom'],
@@ -556,7 +616,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($itens as $item) {
-            Patrimonio::create([
+            $patrimonio = Patrimonio::create([
                 'item' => $item['item'],
                 'quantidade' => $item['qtd'],
                 'valor_estimado' => $item['valor'],
@@ -566,7 +626,76 @@ class DatabaseSeeder extends Seeder
                 'observacoes' => 'Inventário Inicial '.now()->year,
                 'club_id' => $clubId,
             ]);
+
+            // Histórico de manutenção/mudança de estado para ~metade dos itens.
+            if (fake()->boolean(50)) {
+                PatrimonioManutencao::create([
+                    'patrimonio_id' => $patrimonio->id,
+                    'user_id' => $diretor?->id,
+                    'data' => fake()->dateTimeBetween('-1 year', '-1 week'),
+                    'estado_anterior' => 'Regular',
+                    'estado_novo' => $item['estado'],
+                    'descricao' => fake()->randomElement([
+                        'Revisão e limpeza após acampamento.',
+                        'Troca de peças desgastadas e reparo de costuras.',
+                        'Conferência de inventário e reorganização no almoxarifado.',
+                        'Substituição de componentes danificados.',
+                    ]),
+                ]);
+            }
         }
+    }
+
+    private function semearComunicados(int $clubId, ?User $diretor, Collection $unidades): void
+    {
+        $lista = [
+            ['titulo' => 'Reunião de Pais e Responsáveis', 'destinatarios' => 'todos', 'corpo' => 'Convidamos todos os pais e responsáveis para a reunião deste sábado, às 15h, na sede do clube. Pauta: calendário do semestre, mensalidades e próximo campori.'],
+            ['titulo' => 'Lembrete: Uniforme de Gala', 'destinatarios' => 'ativos', 'corpo' => 'Lembramos que no próximo encontro todos os desbravadores ativos devem comparecer com o uniforme de gala completo para a cerimônia de investidura.'],
+            ['titulo' => 'Mutirão de Limpeza da Unidade', 'destinatarios' => 'unidade', 'corpo' => 'A sua unidade ficou responsável pelo mutirão de limpeza e organização do material de acampamento neste domingo pela manhã. Contamos com a presença de todos!'],
+        ];
+
+        foreach ($lista as $com) {
+            $unidadeId = $com['destinatarios'] === 'unidade' ? $unidades->random()->id : null;
+
+            Comunicado::create([
+                'club_id' => $clubId,
+                'criado_por' => $diretor?->id,
+                'titulo' => $com['titulo'],
+                'corpo' => $com['corpo'],
+                'destinatarios' => $com['destinatarios'],
+                'unidade_id' => $unidadeId,
+                'total_enviados' => random_int(8, 35),
+                'enviado_em' => fake()->dateTimeBetween('-3 months', 'now'),
+            ]);
+        }
+    }
+
+    /**
+     * Gera um CPF válido (com dígitos verificadores corretos) e único entre os
+     * desbravadores semeados, a partir de uma sequência determinística.
+     */
+    private function gerarCpf(): string
+    {
+        $this->cpfSeq++;
+        $base = str_pad((string) (100000000 + $this->cpfSeq), 9, '0', STR_PAD_LEFT);
+        $n = array_map('intval', str_split(substr($base, 0, 9)));
+
+        $d1 = 0;
+        for ($i = 0; $i < 9; $i++) {
+            $d1 += $n[$i] * (10 - $i);
+        }
+        $d1 = (($d1 * 10) % 11) % 10;
+
+        $d2 = 0;
+        $nComD1 = array_merge($n, [$d1]);
+        for ($i = 0; $i < 10; $i++) {
+            $d2 += $nComD1[$i] * (11 - $i);
+        }
+        $d2 = (($d2 * 10) % 11) % 10;
+
+        $digitos = implode('', $n).$d1.$d2;
+
+        return substr($digitos, 0, 3).'.'.substr($digitos, 3, 3).'.'.substr($digitos, 6, 3).'-'.substr($digitos, 9, 2);
     }
 
     private function semearDocumentos(int $clubId, Collection $desbravadores): void

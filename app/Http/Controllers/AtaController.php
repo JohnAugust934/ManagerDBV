@@ -22,7 +22,7 @@ class AtaController extends Controller
                 ->orWhere('conteudo', 'like', "%{$request->search}%");
         }
 
-        $atas = $query->paginate(10);
+        $atas = $query->paginate(10)->withQueryString();
 
         return view('secretaria.atas.index', compact('atas'));
     }

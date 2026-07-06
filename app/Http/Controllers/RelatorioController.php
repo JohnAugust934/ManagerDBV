@@ -10,6 +10,7 @@ use App\Models\Mensalidade;
 use App\Models\Patrimonio;
 use App\Models\RelatorioGerado;
 use App\Models\Unidade;
+use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Storage;
 
 class RelatorioController extends Controller
 {
+    public function __construct(private readonly RankingService $ranking) {}
+
     private const REPORT_TYPES = [
         'desbravadores',
         'fichas_completas',
@@ -97,7 +100,14 @@ class RelatorioController extends Controller
             'mes_atual' => $this->monthName(now()->month),
         ];
 
-        return view('relatorios.index', compact('unidades', 'categoriasCaixa', 'stats'));
+        // Lista enxuta para o gerador de Termo de Privacidade em lote (multi-seleção).
+        $desbravadoresTermo = Desbravador::query()
+            ->whereHas('unidade', fn (Builder $q) => $this->applyUnidadeScope($q))
+            ->where('ativo', true)
+            ->orderBy('nome')
+            ->get(['id', 'nome', 'unidade_id']);
+
+        return view('relatorios.index', compact('unidades', 'categoriasCaixa', 'stats', 'desbravadoresTermo'));
     }
 
     public function gerarPersonalizado(Request $request)
@@ -224,6 +234,57 @@ class RelatorioController extends Controller
             ['desbravador' => $desbravador],
             $this->reportContext()
         ))->stream("ficha_medica_{$desbravador->nome}.pdf");
+    }
+
+    /**
+     * Termo de Privacidade (LGPD) pré-preenchido para coleta de assinatura física.
+     * Mesmo texto do fluxo digital (view privacidade.termo), para nunca divergir.
+     */
+    public function termoPrivacidade(Desbravador $desbravador)
+    {
+        $desbravador->loadMissing('unidade');
+        $contexto = $this->reportContext();
+
+        return Pdf::loadView('relatorios.termo_privacidade', array_merge([
+            'desbravador' => $desbravador,
+            'versao' => config('privacidade.versao_termo'),
+            'termoHtml' => view('privacidade.termo', [
+                'versao' => config('privacidade.versao_termo'),
+                'clubeNome' => $contexto['clubeNome'],
+            ])->render(),
+        ], $contexto))
+            ->setPaper('a4', 'portrait')
+            ->stream("termo_privacidade_{$desbravador->id}.pdf");
+    }
+
+    /**
+     * Geração em lote (ex.: início de ano, por unidade). O ClubScope garante que
+     * IDs de outros clubes passados manualmente são ignorados.
+     */
+    public function termoPrivacidadeLote(Request $request)
+    {
+        $ids = $request->validate([
+            'desbravador_ids' => ['required', 'array'],
+            'desbravador_ids.*' => ['integer'],
+        ])['desbravador_ids'];
+
+        $desbravadores = Desbravador::whereIn('id', $ids)
+            ->with('unidade:id,nome')
+            ->orderBy('nome')
+            ->get();
+
+        $contexto = $this->reportContext();
+
+        return Pdf::loadView('relatorios.termo_privacidade_lote', array_merge([
+            'desbravadores' => $desbravadores,
+            'versao' => config('privacidade.versao_termo'),
+            'termoHtml' => view('privacidade.termo', [
+                'versao' => config('privacidade.versao_termo'),
+                'clubeNome' => $contexto['clubeNome'],
+            ])->render(),
+        ], $contexto))
+            ->setPaper('a4', 'portrait')
+            ->stream('termos_privacidade_lote.pdf');
     }
 
     private function relatorioDesbravadores(Request $request)
@@ -494,25 +555,16 @@ class RelatorioController extends Controller
     private function relatorioRankingUnidades()
     {
         $ano = $this->rankingYear();
-        $ranking = $this->baseUnidadeQuery()
-            ->with([
-                'desbravadores:id,nome,unidade_id,ativo',
-                'desbravadores.frequencias' => fn ($query) => $query->whereYear('data', $ano)->select('id', 'desbravador_id', 'presente', 'pontual', 'biblia', 'uniforme'),
-            ])
-            ->get(['id', 'nome', 'club_id'])
-            ->map(function (Unidade $unidade) {
-                $membros = $unidade->desbravadores->count();
-                $pontos = $unidade->desbravadores->sum(fn ($desbravador) => $desbravador->frequencias->sum('pontos'));
 
-                return [
-                    'nome' => $unidade->nome,
-                    'subtexto' => $membros.' membros',
-                    'pontos' => $pontos,
-                    'media' => $membros > 0 ? round($pontos / $membros, 1) : 0,
-                ];
-            })
-            ->sortByDesc('pontos')
-            ->values();
+        // Fonte da verdade única do ranking — mesmo cálculo e mesmo filtro
+        // no_ranking das telas ao vivo e do snapshot (ver App\Services\RankingService).
+        $ranking = $this->ranking->unidades((int) \App\Services\ClubContext::currentClubId(), $ano)
+            ->map(fn (array $item) => [
+                'nome' => $item['nome'],
+                'subtexto' => $item['membros'].' membros',
+                'pontos' => $item['pontos'],
+                'media' => $item['media'],
+            ]);
 
         return $this->renderTablePdf(
             titulo: 'Ranking das Unidades',
@@ -540,23 +592,15 @@ class RelatorioController extends Controller
     private function relatorioRankingDesbravadores()
     {
         $ano = $this->rankingYear();
-        $ranking = $this->baseDesbravadorQuery(new Request(['status' => 'ativos']))
-            ->with([
-                'unidade:id,nome',
-                'frequencias' => fn ($query) => $query->whereYear('data', $ano)->select('id', 'desbravador_id', 'presente', 'pontual', 'biblia', 'uniforme'),
-            ])
-            ->orderBy('nome')
-            ->get(['id', 'nome', 'unidade_id'])
-            ->map(function (Desbravador $desbravador) {
-                return [
-                    'nome' => $desbravador->nome,
-                    'unidade' => $desbravador->unidade->nome ?? 'Sem unidade',
-                    'pontos' => $desbravador->frequencias->sum('pontos'),
-                    'presencas' => $desbravador->frequencias->where('presente', true)->count(),
-                ];
-            })
-            ->sortByDesc('pontos')
-            ->values();
+
+        // Mesma fonte da verdade do ranking ao vivo/snapshot (ver RankingService).
+        $ranking = $this->ranking->desbravadores((int) \App\Services\ClubContext::currentClubId(), $ano)
+            ->map(fn (array $item) => [
+                'nome' => $item['nome'],
+                'unidade' => $item['unidade'],
+                'pontos' => $item['pontos'],
+                'presencas' => $item['presencas'],
+            ]);
 
         return $this->renderTablePdf(
             titulo: 'Ranking Individual',

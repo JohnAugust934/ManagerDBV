@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Novo Clube</x-slot>
 
     <div class="ui-page max-w-2xl mx-auto ui-animate-fade-up pb-20">
         <div class="ui-card p-6 sm:p-8">

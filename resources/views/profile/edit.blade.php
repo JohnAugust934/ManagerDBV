@@ -1,7 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">
-        Configurações do Perfil
-    </x-slot>
 
     <div class="ui-page max-w-4xl min-h-full space-y-8">
         {{-- Profile Header info --}}

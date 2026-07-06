@@ -6,17 +6,22 @@ use App\Http\Controllers\AttendanceColumnController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CaixaController;
+use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\ClassesController;
 use App\Http\Controllers\ClubBackupController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\ComunicadoController;
+use App\Http\Controllers\ConsentimentoPrivacidadeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesbravadorController;
 use App\Http\Controllers\EspecialidadeController;
 use App\Http\Controllers\EventoController;
 use App\Http\Controllers\FrequenciaController;
+use App\Http\Controllers\ImportacaoDesbravadorController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MensalidadeController;
+use App\Http\Controllers\PainelConselheiroController;
 use App\Http\Controllers\PatrimonioController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ProfileController;
@@ -110,6 +115,10 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
     // 1. Dashboard e perfil
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Calendário unificado (reuniões, eventos e aniversariantes) — informativo,
+    // mostra apenas dados do clube ativo do usuário.
+    Route::get('/calendario', [CalendarioController::class, 'index'])->name('calendario.index');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -185,11 +194,32 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::resource('atas', AtaController::class);
         Route::resource('atos', AtoController::class);
 
+        // Comunicados para responsáveis
+        Route::resource('comunicados', ComunicadoController::class)->only(['index', 'create', 'store', 'show']);
+
+        // Importação via CSV — registrada ANTES do resource para que
+        // /desbravadores/importar não case com o wildcard {desbravador} do show.
+        Route::prefix('desbravadores/importar')->name('desbravadores.importar.')->group(function () {
+            Route::get('/', [ImportacaoDesbravadorController::class, 'index'])->name('index');
+            Route::post('/preview', [ImportacaoDesbravadorController::class, 'preview'])->name('preview');
+            Route::post('/confirmar', [ImportacaoDesbravadorController::class, 'confirmar'])->name('confirmar');
+        });
+
         // Gestao de pessoas
         Route::resource('desbravadores', DesbravadorController::class)->parameters(['desbravadores' => 'desbravador']);
         Route::delete('desbravadores/{desbravador}/foto', [DesbravadorController::class, 'removerFoto'])->name('desbravadores.remover-foto');
         Route::post('desbravadores/{desbravador}/avancar-classe', [DesbravadorController::class, 'avancarClasse'])->name('desbravadores.avancar-classe');
         Route::get('desbravadores/{desbravador}/exportar-dados', [DesbravadorController::class, 'exportarDadosLgpd'])->name('desbravadores.exportar-dados');
+
+        // Consentimento LGPD (Termo de Privacidade) — histórico, aceite e revogação
+        Route::prefix('desbravadores/{desbravador}/privacidade')->name('privacidade.')->group(function () {
+            Route::get('/', [ConsentimentoPrivacidadeController::class, 'index'])->name('index');
+            Route::post('/aceitar', [ConsentimentoPrivacidadeController::class, 'aceitar'])->name('aceitar');
+            Route::post('/via-fisica', [ConsentimentoPrivacidadeController::class, 'viaFisicaRecebida'])->name('via-fisica');
+            Route::get('/{consentimento}/via-fisica/download', [ConsentimentoPrivacidadeController::class, 'baixarViaFisica'])->name('via-fisica.download');
+            Route::post('/{consentimento}/revogar', [ConsentimentoPrivacidadeController::class, 'revogar'])->name('revogar');
+        });
+
         Route::resource('unidades', UnidadeController::class)->except(['index', 'show']);
         Route::patch('unidades/{unidade}/toggle-ranking', [UnidadeController::class, 'toggleRanking'])->name('unidades.toggle-ranking');
 
@@ -232,6 +262,9 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
             Route::post('/store', [FrequenciaController::class, 'store'])->name('store');
             Route::delete('/data/{data}', [FrequenciaController::class, 'destroyData'])->name('destroy-data');
         });
+
+        // Painel focado do conselheiro de unidade.
+        Route::get('/minha-unidade', [PainelConselheiroController::class, 'index'])->name('conselheiro.painel');
     });
 
     // 6.1 Gestão do CATÁLOGO GLOBAL (especialidades, requisitos, requisitos de
@@ -264,6 +297,7 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::delete('patrimonio/{patrimonio}/manutencoes/{manutencao}', [PatrimonioController::class, 'destroyManutencao'])->name('patrimonio.manutencoes.destroy');
 
         Route::get('mensalidades', [MensalidadeController::class, 'index'])->name('mensalidades.index');
+        Route::post('mensalidades/preview-lote', [MensalidadeController::class, 'previewMassivo'])->name('mensalidades.preview');
         Route::post('mensalidades/gerar', [MensalidadeController::class, 'gerarMassivo'])->name('mensalidades.gerar');
         Route::post('mensalidades/{id}/pagar', [MensalidadeController::class, 'pagar'])->name('mensalidades.pagar');
     });
@@ -294,6 +328,8 @@ Route::middleware(['auth', 'verified', EnsureTermosAceitos::class, EnsureClubIsA
         Route::get('/autorizacao/{desbravador}', [RelatorioController::class, 'autorizacao'])->name('autorizacao');
         Route::get('/carteirinha/{desbravador}', [RelatorioController::class, 'carteirinha'])->name('carteirinha');
         Route::get('/ficha-medica/{desbravador}', [RelatorioController::class, 'fichaMedica'])->name('ficha-medica');
+        Route::get('/termo-privacidade/{desbravador}', [RelatorioController::class, 'termoPrivacidade'])->name('termo-privacidade');
+        Route::post('/termo-privacidade/lote', [RelatorioController::class, 'termoPrivacidadeLote'])->name('termo-privacidade.lote');
 
         Route::middleware('can:financeiro')->group(function () {
             Route::get('/financeiro', [RelatorioController::class, 'financeiro'])->name('financeiro');

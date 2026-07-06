@@ -34,7 +34,13 @@ class ClubDeletionTest extends TestCase
         $freqA = Frequencia::create(['desbravador_id' => $dbvA->id, 'data' => now()]);
         $freqA->columnValues()->create(['attendance_column_id' => $col->id, 'checked' => true, 'points_awarded' => 1]);
         Mensalidade::create(['desbravador_id' => $dbvA->id, 'mes' => 1, 'ano' => 2026, 'valor' => 15, 'status' => 'pendente']);
-        Caixa::factory()->forClube($clubA->id)->create();
+        $caixaA = Caixa::factory()->forClube($clubA->id)->create();
+        // Trilha de auditoria financeira (club_id direto): antes da consolidação do
+        // registro TenantTables, esta tabela era esquecida na exclusão e orfanava.
+        DB::table('caixa_audit_logs')->insert([
+            'caixa_id' => $caixaA->id, 'club_id' => $clubA->id, 'user_id' => null,
+            'acao' => 'criado', 'dados_antes' => null, 'dados_depois' => '{}', 'created_at' => now(),
+        ]);
         $eventoA = Evento::factory()->forClube($clubA->id)->create();
         $dbvA->eventos()->attach($eventoA->id);
 
@@ -46,7 +52,7 @@ class ClubDeletionTest extends TestCase
 
         // Clube A e tudo dele sumiu.
         $this->assertDatabaseMissing('clubs', ['id' => $clubA->id]);
-        foreach (['desbravadores', 'frequencias', 'mensalidades', 'caixas', 'eventos', 'unidades', 'attendance_columns'] as $tabela) {
+        foreach (['desbravadores', 'frequencias', 'mensalidades', 'caixas', 'caixa_audit_logs', 'eventos', 'unidades', 'attendance_columns'] as $tabela) {
             $this->assertSame(0, DB::table($tabela)->where('club_id', $clubA->id)->count(), "Sobrou linha em {$tabela}");
         }
         $this->assertSame(0, DB::table('desbravador_evento')->where('desbravador_id', $dbvA->id)->count());

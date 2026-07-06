@@ -1,19 +1,19 @@
 <x-app-layout>
-    <x-slot name="header">Gestão de Patrimônio</x-slot>
 
-    <div class="ui-page space-y-6 max-w-[1400px] ui-animate-fade-up">
+    <div class="ui-page space-y-6 ui-animate-fade-up">
 
         {{-- Cabeçalho --}}
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight">Inventário de Patrimônio</h1>
-                <p class="text-slate-500 font-medium mt-1 text-sm">Controle de bens, barracas, equipamentos e almoxarifado.</p>
-            </div>
-            <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary w-full sm:w-auto h-12 px-6 flex items-center justify-center gap-2 rounded-2xl">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                Novo Item
-            </a>
-        </div>
+        <x-page-title title="Inventário de Patrimônio" subtitle="Controle de bens, barracas, equipamentos e almoxarifado.">
+            <x-slot:icon>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </x-slot:icon>
+            <x-slot:actions>
+                <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary w-full sm:w-auto group">
+                    <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                    Novo Item
+                </a>
+            </x-slot:actions>
+        </x-page-title>
 
         {{-- ============================================= --}}
         {{-- CARDS DE RESUMO — layout equilibrado mobile  --}}
@@ -84,9 +84,9 @@
                         @php
                             $estado = mb_strtolower($item->estado_conservacao, 'UTF-8');
                             $badge = match(true) {
-                                in_array($estado, ['novo', 'ótimo', 'bom']) => 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400',
-                                in_array($estado, ['regular']) => 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400',
-                                default => 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/20 dark:text-red-400'
+                                in_array($estado, ['novo', 'ótimo', 'bom']) => 'ui-badge-success',
+                                in_array($estado, ['regular']) => 'ui-badge-warning',
+                                default => 'ui-badge-danger'
                             };
                         @endphp
                         <div class="p-4 flex items-center gap-3">
@@ -99,7 +99,7 @@
                             <div class="flex-1 min-w-0">
                                 <p class="font-black text-slate-800 dark:text-white text-sm uppercase tracking-tight truncate">{{ $item->item }}</p>
                                 <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                    <span class="inline-block px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-md border {{ $badge }}">
+                                    <span class="{{ $badge }} !text-[9px] !px-2 !tracking-widest">
                                         {{ mb_strtoupper($item->estado_conservacao, 'UTF-8') }}
                                     </span>
                                     @if($item->local_armazenamento)
@@ -132,29 +132,29 @@
 
                 {{-- DESKTOP: Tabela Completa --}}
                 <div class="hidden lg:block overflow-x-auto">
-                    <table class="w-full text-left">
+                    <table class="ui-table">
                         <thead>
-                            <tr class="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                                <th class="px-5 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Item</th>
-                                <th class="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-center">Qtd</th>
-                                <th class="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Estado</th>
-                                <th class="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Localização</th>
-                                <th class="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-right">Valor Unit.</th>
-                                <th class="px-5 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-right">Ações</th>
+                            <tr>
+                                <th>Item</th>
+                                <th class="text-center">Qtd</th>
+                                <th>Estado</th>
+                                <th>Localização</th>
+                                <th class="text-right">Valor Unit.</th>
+                                <th class="text-right">Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tbody>
                             @foreach ($patrimonios as $item)
                                 @php
                                     $estado = mb_strtolower($item->estado_conservacao, 'UTF-8');
                                     $badge = match(true) {
-                                        in_array($estado, ['novo', 'ótimo', 'bom']) => 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30',
-                                        in_array($estado, ['regular']) => 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
-                                        default => 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30'
+                                        in_array($estado, ['novo', 'ótimo', 'bom']) => 'ui-badge-success',
+                                        in_array($estado, ['regular']) => 'ui-badge-warning',
+                                        default => 'ui-badge-danger'
                                     };
                                 @endphp
-                                <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors group">
-                                    <td class="px-5 py-4">
+                                <tr class="group">
+                                    <td>
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-xl bg-[#002F6C]/10 dark:bg-blue-500/20 text-[#002F6C] dark:text-blue-400 flex items-center justify-center shrink-0">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -171,19 +171,19 @@
                                     <td class="px-4 py-4 text-center">
                                         <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-sm">{{ $item->quantidade }}</span>
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap">
-                                        <span class="inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border {{ $badge }}">
+                                    <td>
+                                        <span class="{{ $badge }} !text-[10px] !tracking-widest">
                                             {{ mb_strtoupper($item->estado_conservacao, 'UTF-8') }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 max-w-[150px] truncate">
+                                    <td class="text-sm font-semibold text-slate-600 dark:text-slate-400 max-w-[150px] truncate">
                                         {{ $item->local_armazenamento ?: '-' }}
                                     </td>
-                                    <td class="px-4 py-4 text-right whitespace-nowrap">
+                                    <td class="text-right">
                                         <span class="text-sm font-black text-slate-700 dark:text-slate-300">R$ {{ number_format($item->valor_estimado, 2, ',', '.') }}</span>
                                     </td>
-                                    <td class="px-5 py-4 text-right whitespace-nowrap">
-                                        <div class="flex items-center justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                    <td class="text-right">
+                                        <div class="ui-row-actions justify-end">
                                             <a href="{{ route('patrimonio.edit', $item->id) }}" class="p-2 rounded-xl text-slate-400 hover:text-[#002F6C] hover:bg-[#002F6C]/10 dark:hover:text-blue-400 dark:hover:bg-blue-500/20 transition-colors">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                             </a>
@@ -205,14 +205,17 @@
                     {{ $patrimonios->links() }}
                 </div>
             @else
-                <div class="flex flex-col items-center justify-center py-16 px-6 text-center">
-                    <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                        <svg class="w-8 h-8 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                    </div>
-                    <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">Inventário Vazio</h3>
-                    <p class="text-sm font-bold text-slate-400 mb-6 max-w-md">Nenhum bem patrimonial cadastrado. Comece a gerenciar os equipamentos do clube.</p>
-                    <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary">Adicionar Primeiro Item</a>
-                </div>
+                <x-empty-state
+                    class="!border-0 !bg-transparent"
+                    title="Inventário Vazio"
+                    description="Nenhum bem patrimonial cadastrado. Comece a gerenciar os equipamentos do clube.">
+                    <x-slot:icon>
+                        <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </x-slot:icon>
+                    <x-slot:action>
+                        <a href="{{ route('patrimonio.create') }}" class="ui-btn-primary">Adicionar Primeiro Item</a>
+                    </x-slot:action>
+                </x-empty-state>
             @endif
         </div>
     </div>

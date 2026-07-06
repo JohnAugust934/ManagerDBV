@@ -1,18 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('desbravadores.index') }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            </a>
-            <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">
-                Perfil do Desbravador
-            </h2>
-        </div>
-    </x-slot>
 
     <div class="ui-page space-y-6 max-w-6xl ui-animate-fade-up">
         
         <div class="flex flex-col sm:flex-row sm:justify-end gap-3 px-2 sm:px-0 mb-2">
+            @can('secretaria')
+                <a href="{{ route('privacidade.index', $desbravador) }}" class="ui-btn-secondary w-full sm:w-auto text-sm">
+                    Termo de Privacidade
+                </a>
+            @endcan
             <a href="{{ route('desbravadores.edit', $desbravador) }}" class="ui-btn-primary w-full sm:w-auto text-sm group">
                 <svg class="w-4 h-4 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 Editar Cadastro
@@ -53,6 +48,11 @@
                             <span class="text-[13px] font-bold text-slate-500">
                                 {{ \Carbon\Carbon::parse($desbravador->data_nascimento)->age }} ANOS
                             </span>
+                            @unless ($desbravador->consentimentoPrivacidadeAtivo())
+                                <span class="ui-badge bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1" title="Sem consentimento LGPD ativo">
+                                    Consentimento pendente/revogado
+                                </span>
+                            @endunless
                         </div>
                     </div>
 

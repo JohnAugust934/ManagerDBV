@@ -1,22 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <h2 class="font-black text-2xl text-slate-800 dark:text-white leading-tight">
-                Classes Regulares e Avançadas
-            </h2>
-        </div>
-    </x-slot>
 
     <div class="ui-page space-y-8 max-w-7xl ui-animate-fade-up">
 
         {{-- Cabeçalho / Título --}}
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 sm:px-0">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Evolução de Classes</h1>
-                <p class="text-slate-500 font-medium">Acompanhe e gerencie os requisitos para investidura do clube.</p>
-            </div>
-            
-            <span class="ui-badge bg-[#002F6C]/10 text-[#002F6C] dark:bg-blue-500/20 dark:text-blue-400 self-start md:self-end px-4 py-2 hidden sm:flex">
+        <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 px-4 sm:px-0">
+            <x-page-title title="Evolução de Classes" subtitle="Acompanhe e gerencie os requisitos para investidura do clube." />
+
+            <span class="ui-badge bg-[#002F6C]/10 text-[#002F6C] dark:bg-blue-500/20 dark:text-blue-400 self-start px-4 py-2 hidden sm:flex shrink-0">
                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                 Pedagógico
             </span>
@@ -41,7 +31,7 @@
 
                     {{-- Conteúdo do Cartão --}}
                     <div class="p-6 text-center flex flex-col flex-1 relative z-10">
-                        <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-tight mb-2 uppercase group-hover:text-blue-500 transition-colors">
+                        <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-tight mb-2 uppercase group-hover:text-[#002F6C] dark:group-hover:text-blue-400 transition-colors">
                             {{ $classe->nome }}
                         </h3>
                         
@@ -59,9 +49,9 @@
 
                     {{-- Action Row Bottom --}}
                     <div class="px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center transition-colors group-hover:bg-slate-100 dark:group-hover:bg-slate-800">
-                        <span class="text-[12px] font-black text-slate-500 uppercase tracking-widest group-hover:text-amber-500 transition-colors">Entrar na Sala</span>
+                        <span class="text-[12px] font-black text-slate-500 uppercase tracking-widest group-hover:text-[#002F6C] dark:group-hover:text-blue-400 transition-colors">Entrar na Sala</span>
                         <div class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center transform group-hover:translate-x-2 transition-transform duration-300">
-                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                            <svg class="w-4 h-4 text-[#002F6C] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                         </div>
                     </div>
                 </a>

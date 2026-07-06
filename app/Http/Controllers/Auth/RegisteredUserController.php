@@ -78,7 +78,9 @@ class RegisteredUserController extends Controller
 
             $isPlatformAdmin = $invitation->role === 'platform_admin';
 
-            $user = User::create([
+            // forceCreate: role/club_id/is_platform_admin são campos de privilégio
+            // (fora de $fillable). Aqui a fonte da verdade é o CONVITE, não o request.
+            $user = User::forceCreate([
                 'name' => $request->name,
                 'email' => $invitation->email,
                 'password' => Hash::make($request->password),

@@ -115,6 +115,12 @@
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Painel</span>
                 </a>
 
+                <a href="{{ route('calendario.index') }}" class="{{ $linkBase }} {{ request()->routeIs('calendario*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                    @if(request()->routeIs('calendario*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('calendario*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Calendário</span>
+                </a>
+
                 @can('secretaria')
                 <!-- ACORDEON SECRETARIA -->
                 <div class="pt-4 pb-1">
@@ -132,6 +138,12 @@
                      @if(request()->routeIs('desbravadores*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
                     <svg class="w-6 h-6 {{ request()->routeIs('desbravadores*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                     <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Desbravadores</span>
+                </a>
+
+                <a href="{{ route('comunicados.index') }}" class="{{ $linkBase }} {{ request()->routeIs('comunicados*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                    @if(request()->routeIs('comunicados*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('comunicados*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Comunicados</span>
                 </a>
 
                 <a href="{{ route('club.edit') }}" class="{{ $linkBase }} {{ request()->routeIs('club.edit') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
@@ -162,6 +174,12 @@
                     <p x-show="sidebarExpanded" class="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 transition-opacity">Pedagógico</p>
                     <div x-show="!sidebarExpanded" class="border-b border-black/5 dark:border-white/5 mx-4 mb-2 transition-opacity hidden lg:block"></div>
                 </div>
+
+                <a href="{{ route('conselheiro.painel') }}" class="{{ $linkBase }} {{ request()->routeIs('conselheiro*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
+                    @if(request()->routeIs('conselheiro*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
+                    <svg class="w-6 h-6 {{ request()->routeIs('conselheiro*') ? $iconActive : $iconInactive }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span x-show="sidebarExpanded" x-transition.opacity.duration.300ms>Minha Unidade</span>
+                </a>
 
                 <a href="{{ route('frequencia.index') }}" class="{{ $linkBase }} {{ request()->routeIs('frequencia*') ? $activeClass : $inactiveClass }}" :class="!sidebarExpanded && 'lg:justify-center'">
                      @if(request()->routeIs('frequencia*')) <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#D9222A] rounded-r-full"></div> @endif
@@ -401,5 +419,7 @@
     </div>
 
     @include('partials.session-timeout')
+
+    <x-pwa-install-banner />
 </body>
 </html>

@@ -1,15 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">Configurações do Clube</x-slot>
 
     <div class="ui-page space-y-6 max-w-5xl mx-auto ui-animate-fade-up">
 
-        {{-- Header Navigation --}}
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Configurações do Clube</h1>
-                <p class="text-slate-500 font-medium mt-1">Identidade e dados cadastrais da agremiação.</p>
-            </div>
-        </div>
+        <x-page-title title="Configurações do Clube" subtitle="Identidade e dados cadastrais da agremiação." />
 
         <form method="POST" action="{{ route('club.update') }}" enctype="multipart/form-data">
             @csrf

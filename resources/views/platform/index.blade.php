@@ -1,5 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">Painel da Plataforma</x-slot>
 
     <div class="ui-page max-w-5xl mx-auto ui-animate-fade-up pb-20">
 
